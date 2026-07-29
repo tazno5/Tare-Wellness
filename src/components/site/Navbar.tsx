@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Sparkles } from "lucide-react";
 
@@ -30,18 +31,20 @@ export default function Navbar() {
   return (
     <header className="relative z-40 w-full">
       <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 sm:px-8 sm:py-6 lg:px-12">
-        {/* Logo (left) */}
+        {/* Logo (left) — die-cut sticker asset */}
         <Link
           href="/"
-          className="group flex items-center gap-2"
+          className="group inline-flex items-center"
           aria-label="BE WELL TARE home"
         >
-          <span className="font-serif text-2xl font-extrabold leading-none tracking-tight text-white drop-shadow-sm sm:text-3xl">
-            BE WELL
-          </span>
-          <span className="font-serif text-2xl font-extrabold italic leading-none tracking-tight text-magenta-100 drop-shadow-sm sm:text-3xl">
-            TARE
-          </span>
+          <Image
+            src="/logo.png"
+            alt="BE WELL TARE logo"
+            width={94}
+            height={68}
+            priority
+            className="h-12 w-auto drop-shadow-[0_4px_10px_rgba(61,0,46,0.25)] transition-transform duration-200 group-hover:scale-[1.04] sm:h-14 lg:h-16"
+          />
         </Link>
 
         {/* Center nav links (desktop only) */}
@@ -95,15 +98,16 @@ export default function Navbar() {
               <Link
                 href="/"
                 onClick={() => setOpen(false)}
-                className="flex items-center gap-2"
+                className="inline-flex items-center"
                 aria-label="BE WELL TARE home"
               >
-                <span className="font-serif text-2xl font-extrabold leading-none tracking-tight text-white">
-                  BE WELL
-                </span>
-                <span className="font-serif text-2xl font-extrabold italic leading-none tracking-tight text-magenta-100">
-                  TARE
-                </span>
+                <Image
+                  src="/logo.png"
+                  alt="BE WELL TARE logo"
+                  width={94}
+                  height={68}
+                  className="h-12 w-auto drop-shadow-[0_4px_10px_rgba(61,0,46,0.25)]"
+                />
               </Link>
               <button
                 type="button"

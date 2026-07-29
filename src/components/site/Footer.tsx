@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Instagram, Twitter, AtSign } from "lucide-react";
 
@@ -38,17 +39,18 @@ export default function Footer() {
           >
             <Link
               href="/"
-              className="flex items-baseline gap-2"
+              className="inline-flex items-center"
               aria-label="BE WELL TARE home"
             >
-              <span className="font-serif text-2xl font-extrabold leading-none tracking-tight text-white">
-                BE WELL
-              </span>
-              <span className="font-serif text-2xl font-extrabold italic leading-none tracking-tight text-magenta-100">
-                TARE
-              </span>
+              <Image
+                src="/logo.png"
+                alt="BE WELL TARE logo"
+                width={140}
+                height={100}
+                className="h-20 w-auto drop-shadow-[0_6px_16px_rgba(61,0,46,0.3)] sm:h-24"
+              />
             </Link>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-maroon/85">
+            <p className="mt-5 max-w-xs text-sm leading-relaxed text-maroon/85">
               Promoting emotional wellness through thoughtful digital gifting
               and professional support.
             </p>
