@@ -25,7 +25,7 @@ const SOCIALS = [
 
 export default function Footer() {
   return (
-    <footer className="relative z-10 w-full bg-magenta px-5 pb-10 pt-14 sm:px-8 lg:px-12 lg:pt-20">
+    <footer className="relative z-10 w-full px-5 pb-10 pt-14 sm:px-8 lg:px-12 lg:pt-20">
       <div className="mx-auto w-full max-w-7xl">
         {/* Four-column grid */}
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
@@ -45,9 +45,9 @@ export default function Footer() {
               <Image
                 src="/logo.png"
                 alt="BE WELL TARE logo"
-                width={140}
-                height={100}
-                className="h-20 w-auto drop-shadow-[0_6px_16px_rgba(61,0,46,0.3)] sm:h-24"
+                width={80}
+                height={80}
+                className="h-20 w-20 object-contain drop-shadow-[0_6px_16px_rgba(61,0,46,0.3)]"
               />
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-relaxed text-maroon/85">

@@ -82,10 +82,17 @@ const config: Config = {
                                 light: '#fff5f9',
                                 dark: '#f8bbd0',
                         },
+                        // Brand gradient endpoints
+                        brand: {
+                                from: '#F10897',
+                                to: '#AD005A',
+                        },
                 },
                 fontFamily: {
-                        sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-                        serif: ['var(--font-playfair)', 'Georgia', 'Times New Roman', 'serif'],
+                        sans: ['var(--font-plus-jakarta)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                        jakarta: ['var(--font-plus-jakarta)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                        serif: ['var(--font-fraunces)', 'Georgia', 'Times New Roman', 'serif'],
+                        fraunces: ['var(--font-fraunces)', 'Georgia', 'Times New Roman', 'serif'],
                 },
                 borderRadius: {
                         lg: 'var(--radius)',
@@ -95,6 +102,7 @@ const config: Config = {
                 boxShadow: {
                         'hero': '0 25px 45px rgba(61, 0, 46, 0.35), 0 10px 20px rgba(61, 0, 46, 0.25)',
                         'soft': '0 10px 30px rgba(61, 0, 46, 0.18)',
+                        'glass': '0 4px 25px rgba(0, 0, 0, 0.12)',
                 },
                 keyframes: {
                         'float-slow': {

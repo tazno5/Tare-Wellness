@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Gift, CalendarDays, Star } from "lucide-react";
+import { Gift, CalendarDays } from "lucide-react";
 
 // Framer Motion variants — soft fade-in + slight upward drift
 const container = {
@@ -14,7 +14,7 @@ const container = {
 };
 
 const itemUp = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 20 },
   show: {
     opacity: 1,
     y: 0,
@@ -45,7 +45,7 @@ export default function Hero() {
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-magenta-700/30 blur-3xl"
+        className="pointer-events-none absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-brand-to/40 blur-3xl"
       />
       <div
         aria-hidden
@@ -64,33 +64,23 @@ export default function Hero() {
           animate="show"
           className="order-2 flex flex-col items-start lg:order-1"
         >
-          {/* Eyebrow pill */}
-          <motion.div
-            variants={itemUp}
-            className="mb-6 inline-flex items-center gap-2 rounded-full bg-maroon/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-maroon"
-          >
-            <Star className="h-3.5 w-3.5 fill-maroon text-maroon" strokeWidth={2.5} />
-            Luma&apos;s Bubbly New Experience
-          </motion.div>
-
-          {/* Headline */}
+          {/* Headline — Fraunces serif */}
           <motion.h1
             variants={itemUp}
-            className="font-serif text-5xl font-extrabold leading-[1.02] tracking-tight text-maroon sm:text-6xl lg:text-7xl xl:text-8xl"
+            className="font-fraunces text-5xl font-extrabold leading-[1.02] tracking-tight text-maroon sm:text-6xl lg:text-7xl xl:text-8xl"
           >
             Share the Joy,
             <br />
             <span className="text-maroon-soft">Book a Session.</span>
           </motion.h1>
 
-          {/* Body copy */}
+          {/* Body copy — Plus Jakarta Sans, exactly 18px */}
           <motion.p
             variants={itemUp}
-            className="mt-7 max-w-xl text-base leading-relaxed text-maroon/80 sm:text-lg lg:text-xl"
+            className="mt-7 max-w-xl font-sans text-[18px] leading-relaxed text-maroon/80"
           >
             Give the gift of play or schedule your next unforgettable moment
-            with Luma&apos;s bubbly new experience. Thoughtful digital gifting,
-            professional support, and a touch of magic — all in one place.
+            with Luma&apos;s bubbly new experience.
           </motion.p>
 
           {/* Action buttons */}
@@ -100,33 +90,18 @@ export default function Hero() {
           >
             <button
               type="button"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-maroon px-7 py-4 text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.03] hover:bg-maroon-700 active:scale-95 sm:text-base"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-maroon px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.03] hover:bg-maroon-700 active:scale-95 sm:text-base"
             >
               <Gift className="h-5 w-5 transition-transform group-hover:rotate-[-8deg]" strokeWidth={2.5} />
               Buy a Gift Card
             </button>
             <button
               type="button"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-blush px-7 py-4 text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.03] hover:bg-blush-dark active:scale-95 sm:text-base"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-blush px-7 py-4 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.03] hover:bg-blush-dark active:scale-95 sm:text-base"
             >
               <CalendarDays className="h-5 w-5 transition-transform group-hover:scale-110" strokeWidth={2.5} />
               Redeem Gift Card
             </button>
-          </motion.div>
-
-          {/* Trust badges */}
-          <motion.div
-            variants={itemUp}
-            className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs font-medium text-maroon/70 sm:text-sm"
-          >
-            <span className="inline-flex items-center gap-1.5">
-              <span className="text-base leading-none">★★★★★</span>
-              <span>Loved by 4,200+ gifters</span>
-            </span>
-            <span className="hidden h-4 w-px bg-maroon/25 sm:inline-block" aria-hidden />
-            <span>Instant digital delivery</span>
-            <span className="hidden h-4 w-px bg-maroon/25 sm:inline-block" aria-hidden />
-            <span>No expiry on gift cards</span>
           </motion.div>
         </motion.div>
 

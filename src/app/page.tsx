@@ -4,8 +4,8 @@ import Footer from "@/components/site/Footer";
 
 export default function Home() {
   return (
-    <main className="relative flex min-h-screen flex-col bg-magenta">
-      {/* Subtle grain / vignette overlay so the magenta feels alive, not flat */}
+    <main className="relative flex min-h-screen flex-col bg-gradient-to-b from-[#F10897] to-[#AD005A]">
+      {/* Subtle grain / vignette overlay so the gradient feels alive, not flat */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 z-0 opacity-[0.07] mix-blend-overlay"

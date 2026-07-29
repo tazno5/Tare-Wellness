@@ -10,7 +10,7 @@ const NAV_LINKS = [
   { label: "Gift Cards", href: "#gift-cards" },
   { label: "How It Works", href: "#how-it-works" },
   { label: "Redeem", href: "#redeem" },
-  { label: "About", href: "#about" },
+  { label: "FAQ", href: "#faq" },
 ];
 
 export default function Navbar() {
@@ -29,21 +29,23 @@ export default function Navbar() {
   }, [open]);
 
   return (
-    <header className="relative z-40 w-full">
-      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 sm:px-8 sm:py-6 lg:px-12">
-        {/* Logo (left) — die-cut sticker asset */}
+    <header className="sticky top-0 z-50 w-full">
+      {/* Glassmorphic bar — semi-transparent white with backdrop blur + soft drop shadow */}
+      <div className="absolute inset-0 -z-10 bg-white/10 backdrop-blur-md shadow-[0_4px_25px_rgba(0,0,0,0.12)]" />
+      <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-3 sm:px-8 sm:py-4 lg:px-12">
+        {/* Logo (left) — die-cut sticker asset, fixed 80×80 */}
         <Link
           href="/"
-          className="group inline-flex items-center"
+          className="group inline-flex shrink-0 items-center"
           aria-label="BE WELL TARE home"
         >
           <Image
             src="/logo.png"
             alt="BE WELL TARE logo"
-            width={94}
-            height={68}
+            width={80}
+            height={80}
             priority
-            className="h-12 w-auto drop-shadow-[0_4px_10px_rgba(61,0,46,0.25)] transition-transform duration-200 group-hover:scale-[1.04] sm:h-14 lg:h-16"
+            className="h-20 w-20 object-contain drop-shadow-[0_4px_10px_rgba(61,0,46,0.25)] transition-transform duration-200 group-hover:scale-[1.04]"
           />
         </Link>
 
@@ -53,7 +55,7 @@ export default function Navbar() {
             <li key={link.label}>
               <Link
                 href={link.href}
-                className="relative text-sm font-medium text-maroon transition-colors hover:text-maroon-700 after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-0 after:bg-maroon after:transition-all after:duration-300 hover:after:w-full"
+                className="relative font-sans text-sm font-medium text-maroon transition-colors hover:text-maroon-700 after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-0 after:bg-maroon after:transition-all after:duration-300 hover:after:w-full"
               >
                 {link.label}
               </Link>
@@ -65,7 +67,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="hidden items-center gap-2 rounded-full bg-maroon px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-maroon-700 active:scale-95 md:inline-flex"
+            className="hidden items-center gap-2 rounded-full bg-maroon px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-maroon-700 active:scale-95 md:inline-flex"
           >
             <Sparkles className="h-4 w-4" strokeWidth={2.5} />
             Send a Gift
@@ -92,21 +94,21 @@ export default function Navbar() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-magenta/95 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-50 bg-brand-gradient backdrop-blur-md md:hidden"
           >
-            <div className="flex items-center justify-between px-5 py-5 sm:px-8">
+            <div className="flex items-center justify-between px-5 py-3 sm:px-8">
               <Link
                 href="/"
                 onClick={() => setOpen(false)}
-                className="inline-flex items-center"
+                className="inline-flex shrink-0 items-center"
                 aria-label="BE WELL TARE home"
               >
                 <Image
                   src="/logo.png"
                   alt="BE WELL TARE logo"
-                  width={94}
-                  height={68}
-                  className="h-12 w-auto drop-shadow-[0_4px_10px_rgba(61,0,46,0.25)]"
+                  width={80}
+                  height={80}
+                  className="h-20 w-20 object-contain drop-shadow-[0_4px_10px_rgba(61,0,46,0.25)]"
                 />
               </Link>
               <button
@@ -130,7 +132,7 @@ export default function Navbar() {
                   transition: { staggerChildren: 0.08, delayChildren: 0.1 },
                 },
               }}
-              className="mt-6 flex flex-col gap-2 px-5 sm:px-8"
+              className="mt-4 flex flex-col gap-2 px-5 sm:px-8"
             >
               {NAV_LINKS.map((link) => (
                 <motion.li
@@ -143,7 +145,7 @@ export default function Navbar() {
                   <Link
                     href={link.href}
                     onClick={() => setOpen(false)}
-                    className="block rounded-2xl px-4 py-4 font-serif text-3xl font-bold text-maroon transition-colors hover:bg-maroon/10"
+                    className="block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-maroon transition-colors hover:bg-maroon/10"
                   >
                     {link.label}
                   </Link>
@@ -155,12 +157,12 @@ export default function Navbar() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="px-5 pt-8 sm:px-8"
+              className="px-5 pt-6 sm:px-8"
             >
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-maroon px-6 py-4 text-base font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:bg-maroon-700 active:scale-95"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-maroon px-6 py-4 font-sans text-base font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:bg-maroon-700 active:scale-95"
               >
                 <Sparkles className="h-5 w-5" strokeWidth={2.5} />
                 Send a Gift
