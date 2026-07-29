@@ -138,6 +138,11 @@
   body {
     @apply text-foreground;
     font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+    /* Default page gradient — individual pages can override via CSS variables */
+    --page-gradient-from: #F10897;
+    --page-gradient-to: #AD005A;
+    /* Fallback background matching the bottom of the default gradient */
+    background-color: #AD005A;
   }
 }
 

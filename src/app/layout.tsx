@@ -71,8 +71,16 @@ export default function RootLayout({
         className={`${plusJakarta.variable} ${fraunces.variable} ${inter.variable} antialiased font-sans text-maroon`}
       >
         <Navbar />
-        <div className="flex min-h-screen flex-col">{children}</div>
-        <Footer />
+        <div
+          className="flex min-h-screen flex-col"
+          style={{
+            backgroundImage:
+              "linear-gradient(to bottom, var(--page-gradient-from, #F10897), var(--page-gradient-to, #AD005A))",
+          }}
+        >
+          <div className="flex-1">{children}</div>
+          <Footer />
+        </div>
         <Toaster />
       </body>
     </html>

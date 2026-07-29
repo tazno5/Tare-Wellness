@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
@@ -65,8 +66,18 @@ const itemUp = {
 };
 
 export default function GiftCardPage() {
+  // Override the page gradient CSS variables for this page
+  useEffect(() => {
+    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
+    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    return () => {
+      document.body.style.removeProperty("--page-gradient-from");
+      document.body.style.removeProperty("--page-gradient-to");
+    };
+  }, []);
+
   return (
-    <main className="relative flex flex-1 flex-col bg-gradient-to-b from-[#FCE4EC] to-[#F10897]">
+    <main className="relative flex flex-1 flex-col">
       {/* ============ HERO ============ */}
       <section className="relative w-full overflow-hidden px-5 pb-12 pt-10 sm:px-8 sm:pb-16 lg:px-12 lg:pt-16">
         {/* Decorative soft blooms */}
