@@ -1,26 +1,30 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, Minus, Plus, ArrowRight } from "lucide-react";
 
 type GiftCard = {
   id: string;
   title: string;
   sessionCount: number;
   price: string;
+  priceValue: number;
   tag: string;
   description: string;
-  gradient: string; // tailwind gradient classes for the top graphic
+  gradient: string;
 };
 
 const CARDS: GiftCard[] = [
   {
     id: "one",
-    title: "One Therapy Session",
+    title: "One Session",
     sessionCount: 1,
     price: "₦25,000",
+    priceValue: 25000,
     tag: "Flexible",
     description:
       "A single, unhurried session. Perfect for a first step or a moment of release when life gets loud.",
@@ -28,9 +32,10 @@ const CARDS: GiftCard[] = [
   },
   {
     id: "two",
-    title: "Two Therapy Sessions",
+    title: "Two Sessions",
     sessionCount: 2,
     price: "₦40,000",
+    priceValue: 40000,
     tag: "Momentum",
     description:
       "Two sessions to settle in, go deeper, and start building the rhythm of care that actually sticks.",
@@ -38,15 +43,19 @@ const CARDS: GiftCard[] = [
   },
   {
     id: "three",
-    title: "Three Therapy Sessions",
+    title: "Three Sessions",
     sessionCount: 3,
     price: "₦75,000",
+    priceValue: 75000,
     tag: "Ongoing Care",
     description:
       "Three sessions for a real arc — name it, sit with it, and leave with something you can actually carry.",
     gradient: "from-[#D6C7F2] via-[#E0CBF0] to-[#F0CFE6]",
   },
 ];
+
+const FILTERS = ["1 Session", "2 Sessions", "3 Sessions"] as const;
+type FilterLabel = (typeof FILTERS)[number];
 
 const container = {
   hidden: { opacity: 0 },
@@ -66,6 +75,16 @@ const itemUp = {
 };
 
 export default function GiftCardPage() {
+  const router = useRouter();
+  // Per-card quantity state (default 0)
+  const [quantities, setQuantities] = useState<Record<string, number>>({
+    one: 0,
+    two: 0,
+    three: 0,
+  });
+  // Active filter pill (null = show all)
+  const [activeFilter, setActiveFilter] = useState<FilterLabel | null>(null);
+
   // Override the page gradient CSS variables for this page
   useEffect(() => {
     document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
@@ -75,6 +94,30 @@ export default function GiftCardPage() {
       document.body.style.removeProperty("--page-gradient-to");
     };
   }, []);
+
+  const increment = (id: string) =>
+    setQuantities((q) => ({ ...q, [id]: (q[id] ?? 0) + 1 }));
+  const decrement = (id: string) =>
+    setQuantities((q) => ({ ...q, [id]: Math.max(0, (q[id] ?? 0) - 1) }));
+
+  const totalQty = Object.values(quantities).reduce((s, n) => s + n, 0);
+  const totalPrice = CARDS.reduce(
+    (sum, card) => sum + (quantities[card.id] ?? 0) * card.priceValue,
+    0,
+  );
+
+  const filteredCards = activeFilter
+    ? CARDS.filter((c) => `${c.sessionCount} Session${c.sessionCount === 1 ? "" : "s"}` === activeFilter)
+    : CARDS;
+
+  const handleProceed = () => {
+    if (totalQty === 0) return;
+    // Pass the cart to the recipient details page via query string
+    const cartItems = CARDS.filter((c) => (quantities[c.id] ?? 0) > 0).map(
+      (c) => `${c.id}:${quantities[c.id]}`,
+    );
+    router.push(`/recipient-details?cart=${encodeURIComponent(cartItems.join(","))}&total=${totalPrice}`);
+  };
 
   return (
     <main className="relative flex flex-1 flex-col">
@@ -115,15 +158,15 @@ export default function GiftCardPage() {
             <span className="italic font-semibold">a moment of peace</span>.
           </motion.h1>
 
-          {/* Subtitle — Plus Jakarta Sans, 16-18px */}
+          {/* Subtitle — Plus Jakarta Sans, 16-18px (no "therapy") */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="mt-5 max-w-xl font-sans text-[16px] leading-relaxed text-maroon/85 sm:text-[18px]"
           >
-            Tare gift cards provide access to premium therapy sessions,
-            curated wellness experiences, and a journey toward inner peace.
+            Tare gift cards provide access to premium sessions, curated wellness
+            experiences, and a journey toward inner peace.
           </motion.p>
 
           {/* Hero image — centered, drop shadow */}
@@ -149,73 +192,152 @@ export default function GiftCardPage() {
         </div>
       </section>
 
+      {/* ============ FILTER PILLS ============ */}
+      <section className="relative w-full px-5 sm:px-8 lg:px-12">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-2 sm:gap-3">
+          {FILTERS.map((label) => {
+            const active = activeFilter === label;
+            return (
+              <button
+                key={label}
+                type="button"
+                onClick={() => setActiveFilter(active ? null : label)}
+                className={`rounded-full px-4 py-2 font-sans text-xs font-semibold transition-all duration-200 sm:text-sm ${
+                  active
+                    ? "bg-[#4E0030] text-white shadow-md"
+                    : "bg-white/80 text-maroon hover:bg-white"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
       {/* ============ GIFT CARD GRID (3 cards only) ============ */}
-      <section className="relative w-full px-5 pb-20 sm:px-8 lg:px-12 lg:pb-28">
+      <section className="relative w-full px-5 pb-32 pt-10 sm:px-8 lg:px-12 lg:pt-14">
         <div className="mx-auto w-full max-w-6xl">
           <motion.div
+            key={activeFilter ?? "all"}
             variants={container}
             initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.15 }}
+            animate="show"
             className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8"
           >
-            {CARDS.map((card) => (
-              <motion.article
-                key={card.id}
-                variants={itemUp}
-                className="flex flex-col overflow-hidden rounded-3xl bg-white shadow-[0_10px_40px_rgba(61,0,46,0.12)] transition-transform duration-300 hover:-translate-y-1"
-              >
-                {/* Top pastel graphic */}
-                <div
-                  className={`relative flex h-36 flex-col items-center justify-center bg-gradient-to-br ${card.gradient} px-6 py-6 sm:h-40`}
+            {filteredCards.map((card) => {
+              const qty = quantities[card.id] ?? 0;
+              return (
+                <motion.article
+                  key={card.id}
+                  variants={itemUp}
+                  className="flex flex-col overflow-hidden rounded-3xl bg-white shadow-[0_10px_40px_rgba(61,0,46,0.12)] transition-transform duration-300 hover:-translate-y-1"
                 >
-                  <span className="font-fraunces text-lg font-bold text-maroon sm:text-xl">
-                    Tare Gift Card
-                  </span>
-                  <span className="mt-1 font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-maroon/70 sm:text-xs">
-                    {card.sessionCount} {card.sessionCount === 1 ? "Session" : "Sessions"}
-                  </span>
-                </div>
-
-                {/* Body */}
-                <div className="flex flex-1 flex-col p-6">
-                  <h3 className="font-sans text-lg font-bold text-maroon sm:text-xl">
-                    {card.title}
-                  </h3>
-
-                  {/* Pills */}
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <span className="inline-flex items-center rounded-full bg-blush px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon sm:text-[11px]">
-                      {card.sessionCount} Session{card.sessionCount === 1 ? "" : "s"}
+                  {/* Top pastel graphic */}
+                  <div
+                    className={`relative flex h-36 flex-col items-center justify-center bg-gradient-to-br ${card.gradient} px-6 py-6 sm:h-40`}
+                  >
+                    <span className="font-fraunces text-lg font-bold text-maroon sm:text-xl">
+                      Tare Gift Card
                     </span>
-                    <span className="inline-flex items-center rounded-full bg-blush px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon sm:text-[11px]">
-                      {card.tag}
+                    <span className="mt-1 font-sans text-[11px] font-bold uppercase tracking-[0.22em] text-maroon/70 sm:text-xs">
+                      {card.sessionCount} {card.sessionCount === 1 ? "Session" : "Sessions"}
                     </span>
                   </div>
 
-                  {/* Description */}
-                  <p className="mt-4 font-sans text-sm leading-relaxed text-maroon/75">
-                    {card.description}
-                  </p>
+                  {/* Body */}
+                  <div className="flex flex-1 flex-col p-6">
+                    <h3 className="font-sans text-lg font-bold text-maroon sm:text-xl">
+                      {card.title}
+                    </h3>
 
-                  {/* Footer: price + select */}
-                  <div className="mt-6 flex items-center justify-between gap-3 pt-2">
-                    <span className="font-sans text-xl font-extrabold text-maroon sm:text-2xl">
-                      {card.price}
-                    </span>
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center rounded-full bg-[#4E0030] px-6 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#3a0023] active:scale-95"
-                    >
-                      Select
-                    </button>
+                    {/* Pills */}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="inline-flex items-center rounded-full bg-blush px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon sm:text-[11px]">
+                        {card.sessionCount} Session{card.sessionCount === 1 ? "" : "s"}
+                      </span>
+                      <span className="inline-flex items-center rounded-full bg-blush px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon sm:text-[11px]">
+                        {card.tag}
+                      </span>
+                    </div>
+
+                    {/* Description */}
+                    <p className="mt-4 font-sans text-sm leading-relaxed text-maroon/75">
+                      {card.description}
+                    </p>
+
+                    {/* Footer: price + quantity selector */}
+                    <div className="mt-6 flex items-center justify-between gap-3 pt-2">
+                      <span className="font-sans text-xl font-extrabold text-maroon sm:text-2xl">
+                        {card.price}
+                      </span>
+
+                      {/* Quantity selector */}
+                      <div className="flex items-center gap-1 rounded-full bg-blush p-1">
+                        <button
+                          type="button"
+                          aria-label={`Decrease ${card.title} quantity`}
+                          onClick={() => decrement(card.id)}
+                          disabled={qty === 0}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-maroon shadow-sm transition-all duration-200 hover:bg-white/80 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          <Minus className="h-4 w-4" strokeWidth={2.5} />
+                        </button>
+                        <span
+                          className="min-w-[2rem] text-center font-sans text-sm font-bold text-maroon tabular-nums"
+                          aria-live="polite"
+                        >
+                          {qty}
+                        </span>
+                        <button
+                          type="button"
+                          aria-label={`Increase ${card.title} quantity`}
+                          onClick={() => increment(card.id)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#4E0030] text-white shadow-sm transition-all duration-200 hover:bg-[#3a0023] active:scale-90"
+                        >
+                          <Plus className="h-4 w-4" strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </motion.article>
-            ))}
+                </motion.article>
+              );
+            })}
           </motion.div>
         </div>
       </section>
+
+      {/* ============ MASTER CONFIRMATION BUTTON (sticky bottom) ============ */}
+      <AnimatePresence>
+        {totalQty > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-5 pb-5 sm:pb-7"
+          >
+            <button
+              type="button"
+              onClick={handleProceed}
+              className="group inline-flex w-full max-w-md items-center justify-between gap-3 rounded-full bg-[#4E0030] px-6 py-4 font-sans text-sm font-semibold text-white shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 sm:text-base"
+            >
+              <span className="inline-flex items-center gap-2">
+                <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-white/20 px-2 text-xs font-bold tabular-nums">
+                  {totalQty}
+                </span>
+                Proceed to Recipient Details
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <span className="font-bold tabular-nums">
+                  ₦{totalPrice.toLocaleString()}
+                </span>
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" strokeWidth={2.5} />
+              </span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

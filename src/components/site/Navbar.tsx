@@ -40,8 +40,14 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      {/* Glassmorphic bar — semi-transparent #F10897 with backdrop blur + soft drop shadow */}
-      <div className="absolute inset-0 -z-10 bg-[#F10897]/60 backdrop-blur-md shadow-[0_4px_25px_rgba(0,0,0,0.12)]" />
+      {/* Glassmorphic bar — transparent on /gift-cards, otherwise #F10897/60 tint */}
+      <div
+        className={`absolute inset-0 -z-10 backdrop-blur-md ${
+          pathname === "/gift-cards"
+            ? "bg-transparent shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
+            : "bg-[#F10897]/60 shadow-[0_4px_25px_rgba(0,0,0,0.12)]"
+        }`}
+      />
       <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-3 sm:px-8 sm:py-4 lg:px-12">
         {/* Logo (left) — die-cut sticker asset, fixed 80×80 */}
         <Link
