@@ -90,7 +90,7 @@ export default function Hero() {
           >
             <button
               type="button"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-maroon px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.03] hover:bg-maroon-700 active:scale-95 sm:text-base"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-[#4E0030] px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.03] hover:bg-[#3a0023] active:scale-95 sm:text-base"
             >
               <Gift className="h-5 w-5 transition-transform group-hover:rotate-[-8deg]" strokeWidth={2.5} />
               Buy a Gift Card

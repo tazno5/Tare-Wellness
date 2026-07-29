@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Sparkles } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 const NAV_LINKS = [
   { label: "Gift Cards", href: "#gift-cards" },
@@ -67,9 +67,8 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="hidden items-center gap-2 rounded-full bg-maroon px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-maroon-700 active:scale-95 md:inline-flex"
+            className="hidden items-center rounded-full bg-[#4E0030] px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#3a0023] active:scale-95 md:inline-flex"
           >
-            <Sparkles className="h-4 w-4" strokeWidth={2.5} />
             Send a Gift
           </button>
 
@@ -162,9 +161,8 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-maroon px-6 py-4 font-sans text-base font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:bg-maroon-700 active:scale-95"
+                className="inline-flex w-full items-center justify-center rounded-full bg-[#4E0030] px-6 py-4 font-sans text-base font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95"
               >
-                <Sparkles className="h-5 w-5" strokeWidth={2.5} />
                 Send a Gift
               </button>
             </motion.div>
