@@ -143,25 +143,6 @@ export default function Footer() {
                 </Link>
               </li>
             </ul>
-
-            {/* Optional mini newsletter */}
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="mt-6 flex w-full max-w-xs items-center gap-2"
-            >
-              <input
-                type="email"
-                aria-label="Email address"
-                placeholder="Your email"
-                className="h-11 w-full rounded-full border border-maroon/20 bg-white/30 px-4 text-sm text-maroon placeholder:text-maroon/55 focus:border-maroon/50 focus:outline-none focus:ring-2 focus:ring-maroon/30"
-              />
-              <button
-                type="submit"
-                className="inline-flex h-11 shrink-0 items-center justify-center rounded-full bg-maroon px-4 text-sm font-semibold text-white transition-all duration-200 hover:scale-[1.03] hover:bg-maroon-700 active:scale-95"
-              >
-                Join
-              </button>
-            </form>
           </motion.nav>
         </div>
 

@@ -4,7 +4,7 @@ import Footer from "@/components/site/Footer";
 
 export default function Home() {
   return (
-    <main className="relative flex min-h-screen flex-col bg-gradient-to-b from-[#F10897] to-[#AD005A]">
+    <main className="relative flex min-h-screen flex-col bg-gradient-to-b from-[#F10897] from-10% to-[#AD005A] to-60%">
       {/* Subtle grain / vignette overlay so the gradient feels alive, not flat */}
       <div
         aria-hidden
