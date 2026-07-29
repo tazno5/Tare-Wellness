@@ -25,7 +25,7 @@ const SOCIALS = [
 
 export default function Footer() {
   return (
-    <footer className="relative z-10 w-full bg-[#F10897] px-5 pb-10 pt-14 sm:px-8 lg:px-12 lg:pt-20">
+    <footer className="relative z-10 w-full border-t border-[#F10897]/20 bg-[#F10897] px-5 pb-10 pt-14 sm:px-8 lg:px-12 lg:pt-20">
       <div className="mx-auto w-full max-w-7xl">
         {/* Four-column grid */}
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">

@@ -2,7 +2,7 @@ import Hero from "@/components/site/Hero";
 
 export default function Home() {
   return (
-    <main className="relative flex flex-1 flex-col bg-gradient-to-b from-[#F10897] from-10% to-[#AD005A] to-60%">
+    <main className="relative flex flex-1 flex-col bg-gradient-to-b from-[#F10897] to-[#AD005A]">
       {/* Subtle grain / vignette overlay so the gradient feels alive, not flat */}
       <div
         aria-hidden
