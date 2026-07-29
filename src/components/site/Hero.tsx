@@ -69,9 +69,9 @@ export default function Hero() {
             variants={itemUp}
             className="font-fraunces text-5xl font-extrabold leading-[1.02] tracking-tight text-maroon sm:text-6xl lg:text-7xl xl:text-8xl"
           >
-            Share the Joy,
+            Send love
             <br />
-            <span className="text-maroon-soft">Book a Session.</span>
+            <span className="text-maroon-soft">they can feel</span>
           </motion.h1>
 
           {/* Body copy — Plus Jakarta Sans, exactly 18px */}
@@ -79,8 +79,7 @@ export default function Hero() {
             variants={itemUp}
             className="mt-7 max-w-xl font-sans text-[18px] leading-relaxed text-maroon/80"
           >
-            Give the gift of play or schedule your next unforgettable moment
-            with Luma&apos;s bubbly new experience.
+            A gift card. A real session. Their pace, not yours.
           </motion.p>
 
           {/* Action buttons */}
@@ -93,14 +92,14 @@ export default function Hero() {
               className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-[#4E0030] px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.03] hover:bg-[#3a0023] active:scale-95 sm:text-base"
             >
               <Gift className="h-5 w-5 transition-transform group-hover:rotate-[-8deg]" strokeWidth={2.5} />
-              Buy a Gift Card
+              Send a Gift Card
             </button>
             <button
               type="button"
               className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-blush px-7 py-4 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.03] hover:bg-blush-dark active:scale-95 sm:text-base"
             >
               <CalendarDays className="h-5 w-5 transition-transform group-hover:scale-110" strokeWidth={2.5} />
-              Redeem Gift Card
+              I Received a Gift 
             </button>
           </motion.div>
         </motion.div>

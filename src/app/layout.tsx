@@ -26,34 +26,35 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "BE WELL TARE — Share the Joy, Book a Session",
+  title: "Tare — Give Rest.",
   description:
-    "Give the gift of play or schedule your next unforgettable moment with Luma's bubbly new experience.",
+    "Send a Tare gift card. They pick a session, take their time, and rest. That’s it.",
   keywords: [
-    "BE WELL TARE",
+    "Tare",
+    "Tare Wellness",
     "gift card",
     "redeem",
     "wellness",
     "session",
-    "Luma",
+    "rest",
   ],
-  authors: [{ name: "BE WELL TARE" }],
+  authors: [{ name: "Tare Wellness Enterprise Ltd" }],
   icons: {
     icon: "/logo.png",
   },
   openGraph: {
-    title: "BE WELL TARE — Share the Joy, Book a Session",
+    title: "Tare — Give Rest.",
     description:
-      "Give the gift of play or schedule your next unforgettable moment with Luma's bubbly new experience.",
-    url: "https://bewelltare.example.com",
-    siteName: "BE WELL TARE",
+      "Send a Tare gift card. They pick a session, take their time, and rest. That’s it.",
+    url: "https://tarewellness.example.com",
+    siteName: "Tare",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "BE WELL TARE — Share the Joy, Book a Session",
+    title: "Tare — Give Rest.",
     description:
-      "Give the gift of play or schedule your next unforgettable moment with Luma's bubbly new experience.",
+      "Send a Tare gift card. They pick a session, take their time, and rest. That’s it.",
   },
 };
 

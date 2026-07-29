@@ -51,8 +51,7 @@ export default function Footer() {
               />
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-relaxed text-maroon/85">
-              Promoting emotional wellness through thoughtful digital gifting
-              and professional support.
+              Tare means love in Ijaw. This is how we send it.
             </p>
 
             {/* Socials */}
@@ -151,7 +150,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <p className="mt-6 text-center text-xs text-maroon/80 sm:text-sm">
-          © 2026 TARE. All rights reserved.
+          © 2026 Tare Wellness Enterprise Ltd. All rights reserved.
         </p>
       </div>
     </footer>
