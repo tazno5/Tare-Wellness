@@ -69,9 +69,9 @@ export default function Hero() {
             variants={itemUp}
             className="font-fraunces text-5xl font-extrabold leading-[1.02] tracking-tight text-maroon sm:text-6xl lg:text-7xl xl:text-8xl"
           >
-            Send love
+            Send Love
             <br />
-            <span className="text-maroon-soft">they can feel</span>
+            <span className="text-maroon-soft">They Can Feel</span>
           </motion.h1>
 
           {/* Body copy — Plus Jakarta Sans, exactly 18px */}
