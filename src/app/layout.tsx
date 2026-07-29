@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import Navbar from "@/components/site/Navbar";
+import Footer from "@/components/site/Footer";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -68,7 +70,9 @@ export default function RootLayout({
       <body
         className={`${plusJakarta.variable} ${fraunces.variable} ${inter.variable} antialiased font-sans text-maroon`}
       >
-        {children}
+        <Navbar />
+        <div className="flex min-h-screen flex-col">{children}</div>
+        <Footer />
         <Toaster />
       </body>
     </html>

@@ -3,18 +3,20 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 
 const NAV_LINKS = [
-  { label: "Gift Cards", href: "#gift-cards" },
-  { label: "How It Works", href: "#how-it-works" },
+  { label: "Gift Cards", href: "/gift-cards" },
   { label: "Redeem", href: "#redeem" },
+  { label: "How It Works", href: "#how-it-works" },
   { label: "FAQ", href: "#faq" },
 ];
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   // Lock body scroll when the mobile drawer is open
   useEffect(() => {
@@ -27,6 +29,14 @@ export default function Navbar() {
       document.body.style.overflow = "";
     };
   }, [open]);
+
+  // Helper: a link is "active" if its href matches the current pathname
+  // (for hash links like #redeem we only mark active on exact match of pathname root)
+  const isActive = (href: string) => {
+    if (href.startsWith("#")) return false;
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(href + "/");
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -51,26 +61,33 @@ export default function Navbar() {
 
         {/* Center nav links (desktop only) */}
         <ul className="hidden items-center gap-9 md:flex">
-          {NAV_LINKS.map((link) => (
-            <li key={link.label}>
-              <Link
-                href={link.href}
-                className="relative font-sans text-sm font-medium text-maroon transition-colors hover:text-maroon-700 after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-0 after:bg-maroon after:transition-all after:duration-300 hover:after:w-full"
-              >
-                {link.label}
-              </Link>
-            </li>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const active = isActive(link.href);
+            return (
+              <li key={link.label}>
+                <Link
+                  href={link.href}
+                  className={
+                    active
+                      ? "relative font-sans text-sm font-semibold text-[#F10897] underline decoration-[#F10897] decoration-2 underline-offset-4"
+                      : "relative font-sans text-sm font-medium text-maroon transition-colors hover:text-maroon-700 after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-0 after:bg-maroon after:transition-all after:duration-300 hover:after:w-full"
+                  }
+                >
+                  {link.label}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         {/* Right CTA (desktop) + Hamburger (mobile) */}
         <div className="flex items-center gap-3">
-          <button
-            type="button"
+          <Link
+            href="/gift-cards"
             className="hidden items-center rounded-full bg-[#4E0030] px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#3a0023] active:scale-95 md:inline-flex"
           >
             Send a Gift
-          </button>
+          </Link>
 
           <button
             type="button"
@@ -133,23 +150,30 @@ export default function Navbar() {
               }}
               className="mt-4 flex flex-col gap-2 px-5 sm:px-8"
             >
-              {NAV_LINKS.map((link) => (
-                <motion.li
-                  key={link.label}
-                  variants={{
-                    hidden: { opacity: 0, y: 10 },
-                    show: { opacity: 1, y: 0 },
-                  }}
-                >
-                  <Link
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className="block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-maroon transition-colors hover:bg-maroon/10"
+              {NAV_LINKS.map((link) => {
+                const active = isActive(link.href);
+                return (
+                  <motion.li
+                    key={link.label}
+                    variants={{
+                      hidden: { opacity: 0, y: 10 },
+                      show: { opacity: 1, y: 0 },
+                    }}
                   >
-                    {link.label}
-                  </Link>
-                </motion.li>
-              ))}
+                    <Link
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className={
+                        active
+                          ? "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F10897] underline decoration-[#F10897] decoration-2 underline-offset-4"
+                          : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-maroon transition-colors hover:bg-maroon/10"
+                      }
+                    >
+                      {link.label}
+                    </Link>
+                  </motion.li>
+                );
+              })}
             </motion.ul>
 
             <motion.div
@@ -158,13 +182,13 @@ export default function Navbar() {
               transition={{ delay: 0.4 }}
               className="px-5 pt-6 sm:px-8"
             >
-              <button
-                type="button"
+              <Link
+                href="/gift-cards"
                 onClick={() => setOpen(false)}
                 className="inline-flex w-full items-center justify-center rounded-full bg-[#4E0030] px-6 py-4 font-sans text-base font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95"
               >
                 Send a Gift
-              </button>
+              </Link>
             </motion.div>
           </motion.div>
         )}

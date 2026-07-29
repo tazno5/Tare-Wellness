@@ -1,10 +1,8 @@
-import Navbar from "@/components/site/Navbar";
 import Hero from "@/components/site/Hero";
-import Footer from "@/components/site/Footer";
 
 export default function Home() {
   return (
-    <main className="relative flex min-h-screen flex-col bg-gradient-to-b from-[#F10897] from-10% to-[#AD005A] to-60%">
+    <main className="relative flex flex-1 flex-col bg-gradient-to-b from-[#F10897] from-10% to-[#AD005A] to-60%">
       {/* Subtle grain / vignette overlay so the gradient feels alive, not flat */}
       <div
         aria-hidden
@@ -15,13 +13,9 @@ export default function Home() {
         }}
       />
 
-      <Navbar />
-
       <div className="relative z-10 flex flex-1 flex-col">
         <Hero />
       </div>
-
-      <Footer />
     </main>
   );
 }

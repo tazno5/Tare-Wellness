@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Gift, CalendarDays } from "lucide-react";
 
@@ -87,13 +88,13 @@ export default function Hero() {
             variants={itemUp}
             className="mt-9 flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap"
           >
-            <button
-              type="button"
+            <Link
+              href="/gift-cards"
               className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-[#4E0030] px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.03] hover:bg-[#3a0023] active:scale-95 sm:text-base"
             >
               <Gift className="h-5 w-5 transition-transform group-hover:rotate-[-8deg]" strokeWidth={2.5} />
               Send a Gift Card
-            </button>
+            </Link>
             <button
               type="button"
               className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-blush px-7 py-4 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.03] hover:bg-blush-dark active:scale-95 sm:text-base"
