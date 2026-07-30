@@ -153,7 +153,7 @@ function OrderConfirmationContent() {
       fetch(`/api/orders/${orderId}`)
         .then((res) => res.ok ? res.json() : null)
         .then((data) => { if (data) setApiOrder(data); })
-        .catch(() => {});
+        .catch(() => {}, []);
     }
   }, [orderId]);
 
@@ -201,7 +201,7 @@ function OrderConfirmationContent() {
           name: name && name !== "_" ? name : "",
           email: email && email !== "_" ? email : "",
         };
-      });
+      }, []);
 
     const cartSource =
       parsedCart.length > 0
@@ -273,13 +273,13 @@ function OrderConfirmationContent() {
       toast({
         title: "Code copied",
         description: "Share it carefully — this is the key to their gift.",
-      });
+      }, []);
       setTimeout(() => setCopiedUid(null), 1800);
     } catch {
       toast({
         title: "Couldn't copy",
         description: "Select the code and copy manually.",
-      });
+      }, []);
     }
   };
 

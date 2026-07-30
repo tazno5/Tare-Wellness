@@ -26,7 +26,7 @@ export default function LoginPage() {
   useEffect(() => {
     document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
     document.body.style.setProperty("--page-gradient-to", "#F10897");
-  });
+  }, []);
 
   // Redirect if already logged in
   useEffect(() => {

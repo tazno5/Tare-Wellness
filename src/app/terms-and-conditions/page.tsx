@@ -45,7 +45,7 @@ export default function TermsAndConditionsPage() {
   useEffect(() => {
     document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
     document.body.style.setProperty("--page-gradient-to", "#F10897");
-  });
+  }, []);
 
   const handleTabClick = (tab: string) => {
     setActiveTab(tab);

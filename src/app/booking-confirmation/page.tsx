@@ -70,7 +70,7 @@ export default function BookingConfirmationPage() {
   useEffect(() => {
     document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
     document.body.style.setProperty("--page-gradient-to", "#F10897");
-  });
+  }, []);
 
   const meetingUrl = "meet.mindful.com/v/sarah";
 

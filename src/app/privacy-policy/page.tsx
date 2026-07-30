@@ -60,7 +60,7 @@ export default function PrivacyPolicyPage() {
   useEffect(() => {
     document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
     document.body.style.setProperty("--page-gradient-to", "#F10897");
-  });
+  }, []);
 
   const tabSectionMap: Record<string, string> = { "Summary": "summary", "Collection": "collection", "Usage": "usage", "Security": "security", "Your Rights": "rights" };
   const handleTabClick = (tab: string) => { setActiveTab(tab); document.getElementById(tabSectionMap[tab] || "summary")?.scrollIntoView({ behavior: "smooth", block: "start" }); };
