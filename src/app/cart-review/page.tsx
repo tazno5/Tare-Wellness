@@ -194,6 +194,23 @@ function CartReviewContent() {
         className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl"
       />
 
+      {/* Empty state: no cart data */}
+      {cartItems.length === 0 ? (
+        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
+            <Gift className="h-10 w-10 text-white" strokeWidth={2} />
+          </div>
+          <h2 className="font-fraunces text-3xl font-bold text-[#4E0030]">Your cart is empty</h2>
+          <p className="mt-3 max-w-sm font-sans text-sm text-[#4E0030]/70">
+            Choose a gift card to start sending care to someone you love.
+          </p>
+          <Link href="/gift-cards" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.03] hover:bg-[#3a0023]">
+            Browse Gift Cards <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+          </Link>
+        </section>
+      ) : (
+      <>
+
       {/* ============ HERO ============ */}
       <section className="relative w-full overflow-hidden px-5 pb-6 pt-6 sm:px-8 sm:pb-10 lg:px-12">
         <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center text-center">
@@ -677,6 +694,8 @@ function CartReviewContent() {
           </button>
         </div>
       </section>
+      </>
+      )}
     </main>
   );
 }

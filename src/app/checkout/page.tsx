@@ -24,6 +24,10 @@ import {
 import { useStore } from "@/lib/store";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import {
+  isValidEmail, formatCardNumber, isValidCardNumber,
+  formatExpiry, isValidExpiry, formatCVV, isValidCVV,
+} from "@/lib/validation";
 
 const CARD_LOOKUP: Record<
   string,
@@ -164,6 +168,36 @@ function CheckoutContent() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Deep validation before submission
+    if (paymentMethod === "card") {
+      const cardNumberEl = document.getElementById("card-number") as HTMLInputElement;
+      const expiryEl = document.getElementById("expiry") as HTMLInputElement;
+      const cvvEl = document.getElementById("cvv") as HTMLInputElement;
+      const emailEl = document.getElementById("billing-email") as HTMLInputElement;
+
+      if (cardNumberEl && !isValidCardNumber(cardNumberEl.value)) {
+        toast({ title: "Invalid card number", description: "Please enter a valid 16-digit card number.", variant: "destructive" });
+        cardNumberEl.focus();
+        return;
+      }
+      if (expiryEl && !isValidExpiry(expiryEl.value)) {
+        toast({ title: "Invalid expiry date", description: "Use MM/YY format with a valid future date.", variant: "destructive" });
+        expiryEl.focus();
+        return;
+      }
+      if (cvvEl && !isValidCVV(cvvEl.value)) {
+        toast({ title: "Invalid CVV", description: "CVV must be 3 or 4 digits.", variant: "destructive" });
+        cvvEl.focus();
+        return;
+      }
+      if (emailEl && !isValidEmail(emailEl.value)) {
+        toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+        emailEl.focus();
+        return;
+      }
+    }
+
     setSubmitting(true);
     toast({
       title: "Processing payment",

@@ -18,6 +18,7 @@ import {
   Heart,
   ShieldCheck,
   Clock,
+  ArrowRight,
 } from "lucide-react";
 import {
   Accordion,
@@ -287,14 +288,25 @@ function OrderConfirmationContent() {
   return (
     <main className="relative flex flex-1 flex-col">
       {/* Decorative blooms */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-white/50 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl"
-      />
+      <div aria-hidden className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-white/50 blur-3xl" />
+      <div aria-hidden className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl" />
+
+      {/* Empty state: no order data */}
+      {receipts.length === 0 && !apiOrder ? (
+        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
+            <Gift className="h-10 w-10 text-white" strokeWidth={2} />
+          </div>
+          <h2 className="font-fraunces text-3xl font-bold text-[#4E0030]">No order found</h2>
+          <p className="mt-3 max-w-sm font-sans text-sm text-[#4E0030]/70">
+            We couldn&apos;t find any order details. Try sending a gift card to get started.
+          </p>
+          <Link href="/gift-cards" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.03] hover:bg-[#3a0023]">
+            Browse Gift Cards <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+          </Link>
+        </section>
+      ) : (
+      <>
 
       {/* ============ HERO ============ */}
       <section className="relative w-full overflow-hidden px-5 pb-6 pt-6 sm:px-8 sm:pb-10 lg:px-12">
@@ -664,6 +676,8 @@ function OrderConfirmationContent() {
           </Link>
         </div>
       </section>
+      </>
+      )}
     </main>
   );
 }

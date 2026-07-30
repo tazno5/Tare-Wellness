@@ -141,6 +141,17 @@ export async function POST(req: Request) {
       });
     });
 
+    // Send gift card emails to each recipient (fire and forget, don't block the response)
+    if (order?.orderItems) {
+      for (const item of order.orderItems) {
+        fetch(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/email/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderItemId: item.id }),
+        }).catch(() => {}); // Ignore email errors — order is still valid
+      }
+    }
+
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     console.error("Order creation error:", error);
