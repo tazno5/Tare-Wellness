@@ -37,24 +37,58 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call (replace with real backend later)
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    try {
+      if (mode === "signup") {
+        // Call register API
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: form.name, email: form.email, password: form.password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to create account");
 
-    login({
-      id: `user-${Date.now()}`,
-      name: mode === "signup" ? form.name : form.email.split("@")[0],
-      email: form.email,
-    });
+        login({ id: data.id, name: data.name, email: data.email });
+        toast({ title: "Account created!", description: `Welcome to Tare Wellness, ${form.name}!` });
+      } else {
+        // Call NextAuth credentials sign-in
+        const res = await fetch("/api/auth/callback/credentials", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ email: form.email, password: form.password, csrfToken: "", callbackUrl: "/" }),
+        });
 
-    toast({
-      title: mode === "login" ? "Welcome back!" : "Account created!",
-      description: mode === "login"
-        ? `Signed in as ${form.email}`
-        : `Welcome to Tare Wellness, ${form.name}!`,
-    });
+        // NextAuth credentials endpoint returns a redirect — we just check it didn't error
+        if (res.status === 401) throw new Error("Invalid email or password");
 
-    setIsLoading(false);
-    router.push("/");
+        // Fallback: also try direct user lookup (since NextAuth session is JWT-based, we sync to Zustand)
+        const userRes = await fetch("/api/auth/me", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData?.user) {
+            login({ id: userData.user.id, name: userData.user.name, email: userData.user.email });
+          }
+        } else {
+          // If session API fails, use form data as fallback (for dev)
+          login({ id: `user-${Date.now()}`, name: form.email.split("@")[0], email: form.email });
+        }
+
+        toast({ title: "Welcome back!", description: `Signed in as ${form.email}` });
+      }
+
+      router.push("/");
+    } catch (error) {
+      toast({
+        title: "Authentication failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

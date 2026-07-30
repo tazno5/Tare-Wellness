@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Tare Wellness — Prisma Schema
+// Full data model for gift card platform with auth, orders, bookings
 
 generator client {
   provider = "prisma-client-js"
@@ -13,20 +10,165 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============ AUTH ============
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String
+  password      String
+  role          String         @default("user") // "user" | "admin"
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // Relations
+  orders        Order[]
+  redemptions   Redemption[]
+  bookings      Booking[]
+  accounts      Account[]
+  sessions      Session[]
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============ GIFT CARDS ============
+
+model GiftCardType {
+  id            String   @id @default(cuid())
+  slug          String   @unique // "one", "two", "three"
+  title         String   // "One Session", "Two Sessions", "Three Sessions"
+  sessions      Int      // 1, 2, 3
+  price         Int      // 25000, 40000, 75000 (in kobo/naira)
+  gradient      String   // CSS gradient classes
+  description   String
+  tag           String   // "Flexible", "Momentum", "Ongoing Care"
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  orderItems    OrderItem[]
+}
+
+// ============ ORDERS ============
+
+model Order {
+  id            String      @id @default(cuid())
+  orderNumber   String      @unique // "TG-XXXXXX"
+  userId        String?
+  buyerEmail    String      // email of the purchaser
+  buyerName     String
+  status        String      @default("completed") // "pending" | "completed" | "failed" | "refunded"
+  totalAmount   Int         // total in kobo/naira
+  paymentMethod String      @default("card") // "card" | "transfer"
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  user          User?       @relation(fields: [userId], references: [id])
+  orderItems    OrderItem[]
+  redemptions   Redemption[]
+}
+
+model OrderItem {
+  id            String       @id @default(cuid())
+  orderId       String
+  giftCardTypeId String
+  cardTitle     String       // snapshot: "One Session"
+  cardSessions  Int          // snapshot: 1
+  cardPrice     Int          // snapshot: 25000
+  cardGradient  String       // snapshot: CSS gradient
+  quantity      Int          // how many of this card type
+
+  // Per-recipient data (one OrderItem = one recipient's gift)
+  recipientName  String
+  recipientEmail String
+  occasion       String      @default("Just Because")
+  deliveryMode   String      @default("now") // "now" | "schedule"
+  scheduledFor   DateTime?
+  personalNote   String?
+  confirmed      Boolean     @default(false)
+
+  // Relations
+  order          Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  giftCardType   GiftCardType @relation(fields: [giftCardTypeId], references: [id])
+
+  // The redemption code generated for this specific gift card
+  redemption     Redemption?
+}
+
+// ============ REDEMPTIONS ============
+
+model Redemption {
+  id            String     @id @default(cuid())
+  code          String     @unique // "XXXX-XXXX-XXXX-XXXX"
+  orderItemId   String     @unique // one redemption per order item
+  orderId       String
+  userId        String?    // who redeemed it (null until redeemed)
+  status        String     @default("active") // "active" | "redeemed" | "expired"
+  creditAmount  Int        // how much credit this code is worth
+  redeemedAt    DateTime?
+  createdAt     DateTime   @default(now())
+
+  // Relations
+  orderItem     OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  order         Order      @relation(fields: [orderId], references: [id])
+  user          User?      @relation(fields: [userId], references: [id])
+  booking       Booking?
+}
+
+// ============ BOOKINGS ============
+
+model Booking {
+  id              String      @id @default(cuid())
+  bookingNumber   String      @unique // "BK-2026-XXXXXX"
+  userId          String
+  redemptionId    String?     @unique // linked redemption (if paid with gift card)
+  sessionType     String      // "individual" | "couples" | "family" | "wellness"
+  sessionTitle    String      // "Individual Therapy"
+  sessionPrice    Int         // price in kobo/naira
+  therapistName  String      @default("Dr. Sarah Thompson")
+  scheduledDate   DateTime
+  scheduledTime   String      // "10:30 AM"
+  durationMinutes Int         @default(50)
+  status          String      @default("confirmed") // "confirmed" | "completed" | "cancelled" | "no_show"
+  meetingUrl      String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  redemption      Redemption? @relation(fields: [redemptionId], references: [id])
 }
