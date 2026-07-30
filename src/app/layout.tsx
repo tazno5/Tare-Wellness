@@ -69,15 +69,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${plusJakarta.variable} ${fraunces.variable} ${inter.variable} antialiased font-sans text-maroon`}
+        style={{
+          backgroundImage:
+            "linear-gradient(to bottom, var(--page-gradient-from, #F10897), var(--page-gradient-to, #AD005A))",
+          backgroundAttachment: "fixed",
+          minHeight: "100vh",
+        }}
       >
         <Navbar />
-        <div
-          className="flex min-h-screen flex-col"
-          style={{
-            backgroundImage:
-              "linear-gradient(to bottom, var(--page-gradient-from, #F10897), var(--page-gradient-to, #AD005A))",
-          }}
-        >
+        <div className="flex min-h-screen flex-col pt-[112px]">
           <div className="flex-1">{children}</div>
           <Footer />
         </div>

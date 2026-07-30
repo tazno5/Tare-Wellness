@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Minus, Plus, ArrowRight } from "lucide-react";
+import { useStore, type CartItem } from "@/lib/store";
 
 type GiftCard = {
   id: string;
@@ -76,16 +77,9 @@ const itemUp = {
 
 export default function GiftCardPage() {
   const router = useRouter();
-  // Per-card quantity state (default 0)
-  const [quantities, setQuantities] = useState<Record<string, number>>({
-    one: 0,
-    two: 0,
-    three: 0,
-  });
-  // Active filter pill (null = show all)
+  const { cart, totalQty, totalPrice, setCart, clearRecipients } = useStore();
   const [activeFilter, setActiveFilter] = useState<FilterLabel | null>(null);
 
-  // Override the page gradient CSS variables for this page
   useEffect(() => {
     document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
     document.body.style.setProperty("--page-gradient-to", "#F10897");
@@ -95,28 +89,30 @@ export default function GiftCardPage() {
     };
   }, []);
 
-  const increment = (id: string) =>
-    setQuantities((q) => ({ ...q, [id]: (q[id] ?? 0) + 1 }));
-  const decrement = (id: string) =>
-    setQuantities((q) => ({ ...q, [id]: Math.max(0, (q[id] ?? 0) - 1) }));
+  const getQty = (cardId: string) => cart.find((c) => c.cardId === cardId)?.qty ?? 0;
 
-  const totalQty = Object.values(quantities).reduce((s, n) => s + n, 0);
-  const totalPrice = CARDS.reduce(
-    (sum, card) => sum + (quantities[card.id] ?? 0) * card.priceValue,
-    0,
-  );
+  const increment = (card: typeof CARDS[0]) => {
+    const newCart = [...cart];
+    const existing = newCart.find((c) => c.cardId === card.id);
+    if (existing) existing.qty += 1;
+    else newCart.push({ cardId: card.id, title: card.title, price: card.priceValue, sessions: card.sessionCount, gradient: card.gradient, qty: 1 });
+    setCart(newCart);
+  };
+  const decrement = (cardId: string) => {
+    setCart(cart.map((c) => c.cardId === cardId ? { ...c, qty: Math.max(0, c.qty - 1) } : c).filter((c) => c.qty > 0));
+  };
 
-  const filteredCards = activeFilter
-    ? CARDS.filter((c) => `${c.sessionCount} Session${c.sessionCount === 1 ? "" : "s"}` === activeFilter)
-    : CARDS;
+  const filteredCards = activeFilter ? CARDS.filter((c) => `${c.sessionCount} Session${c.sessionCount === 1 ? "" : "s"}` === activeFilter) : CARDS;
 
   const handleProceed = () => {
     if (totalQty === 0) return;
-    // Pass the cart to the recipient details page via query string
-    const cartItems = CARDS.filter((c) => (quantities[c.id] ?? 0) > 0).map(
-      (c) => `${c.id}:${quantities[c.id]}`,
-    );
-    router.push(`/recipient-details?cart=${encodeURIComponent(cartItems.join(","))}&total=${totalPrice}`);
+    const cartItems: CartItem[] = CARDS.filter((c) => getQty(c.id) > 0).map((c) => ({ cardId: c.id, title: c.title, price: c.priceValue, sessions: c.sessionCount, gradient: c.gradient, qty: getQty(c.id) }));
+    setCart(cartItems);
+    const recipients = cartItems.flatMap((item) => Array.from({ length: item.qty }, (_, i) => ({ uid: `${item.cardId}-${i}-${Math.random().toString(36).slice(2, 7)}`, cardId: item.cardId, name: "", email: "", occasion: "Just Because", deliveryMode: "now" as const, note: "", confirmed: false })));
+    clearRecipients();
+    useStore.setState({ recipients });
+    const cartStr = cartItems.map((c) => `${c.cardId}:${c.qty}`).join(",");
+    router.push(`/recipient-details?cart=${encodeURIComponent(cartStr)}&total=${totalPrice}`);
   };
 
   return (
@@ -226,7 +222,7 @@ export default function GiftCardPage() {
             className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8"
           >
             {filteredCards.map((card) => {
-              const qty = quantities[card.id] ?? 0;
+              const qty = getQty(card.id);
               return (
                 <motion.article
                   key={card.id}
@@ -292,7 +288,7 @@ export default function GiftCardPage() {
                         <button
                           type="button"
                           aria-label={`Increase ${card.title} quantity`}
-                          onClick={() => increment(card.id)}
+                          onClick={() => increment(card)}
                           className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#4E0030] text-white shadow-sm transition-all duration-200 hover:bg-[#3a0023] active:scale-90"
                         >
                           <Plus className="h-4 w-4" strokeWidth={2.5} />

@@ -6,15 +6,15 @@ import { motion } from "framer-motion";
 import { Instagram, Twitter, AtSign } from "lucide-react";
 
 const SHOP_LINKS = [
-  { label: "Gift Cards", href: "#gift-cards" },
-  { label: "Redeem a Card", href: "#redeem" },
+  { label: "Gift Cards", href: "/gift-cards" },
+  { label: "Redeem a Card", href: "/redeem" },
 ];
 
 const RESOURCE_LINKS = [
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Privacy Policy", href: "#privacy" },
-  { label: "Terms & Conditions", href: "#terms" },
-  { label: "FAQ", href: "#faq" },
+  { label: "How It Works", href: "/how-it-works" },
+  { label: "Privacy Policy", href: "/privacy-policy" },
+  { label: "Terms & Conditions", href: "/terms-and-conditions" },
+  { label: "FAQ", href: "/faq" },
 ];
 
 const SOCIALS = [
@@ -25,7 +25,8 @@ const SOCIALS = [
 
 export default function Footer() {
   return (
-    <footer className="relative z-10 w-full border-t border-[#F10897]/20 px-5 pb-10 pt-14 sm:px-8 lg:px-12 lg:pt-20">
+    <footer className="relative z-10 w-full bg-[#F10897] px-5 pb-10 sm:px-8 lg:px-12">
+      <div className="mx-auto mb-14 h-px w-[1250px] max-w-full bg-[#F10897]/20 lg:mb-20" />
       <div className="mx-auto w-full max-w-7xl">
         {/* Four-column grid */}
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
@@ -51,7 +52,9 @@ export default function Footer() {
               />
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-relaxed text-maroon/85">
-              Tare means love in Ijaw. This is how we send it.
+              Tare means love in Ijaw.
+              <br />
+              This is how we send it.
             </p>
 
             {/* Socials */}
@@ -135,7 +138,7 @@ export default function Footer() {
             <ul className="mt-4 space-y-3">
               <li>
                 <Link
-                  href="#contact"
+                  href="/contact-us"
                   className="text-sm text-maroon/85 underline-offset-4 transition-colors hover:text-maroon hover:underline"
                 >
                   Contact Us
