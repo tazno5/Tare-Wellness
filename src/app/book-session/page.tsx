@@ -22,6 +22,7 @@ import {
   Stethoscope,
   Gift,
   HelpCircle,
+  Loader2,
 } from "lucide-react";
 import {
   Accordion,
@@ -258,6 +259,8 @@ export default function BookSessionPage() {
   const giftCardApplied = redemption.redeemed ? redemption.creditBalance : 0;
   const total = Math.max(0, session.price - giftCardApplied);
 
+  const [confirming, setConfirming] = useState(false);
+
   const canConfirm = !!selectedDate && !!selectedTime;
 
   const handleConfirmClick = (e: React.MouseEvent) => {
@@ -267,7 +270,17 @@ export default function BookSessionPage() {
         title: "Almost there",
         description: "Pick a date and time before confirming.",
       });
+      return;
     }
+    e.preventDefault();
+    setConfirming(true);
+    toast({
+      title: "Booking your session...",
+      description: "Securing your appointment — this won't take a moment.",
+    });
+    setTimeout(() => {
+      router.push("/booking-confirmation");
+    }, 1000);
   };
 
   return (
@@ -654,18 +667,14 @@ export default function BookSessionPage() {
               <Link
                 href="/booking-confirmation"
                 onClick={handleConfirmClick}
+                aria-disabled={!canConfirm || confirming}
                 className={`group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 font-sans text-sm font-semibold transition-all duration-200 ${
-                  canConfirm
+                  confirming ? "cursor-wait bg-white/15 text-white/50" : canConfirm
                     ? "bg-[#F10897] text-white shadow-[0_10px_30px_rgba(241,8,151,0.35)] hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
                     : "cursor-not-allowed bg-white/15 text-white/50"
                 }`}
-                aria-disabled={!canConfirm}
               >
-                Confirm Booking
-                <ArrowRight
-                  className="h-4 w-4 transition-transform group-hover:translate-x-1"
-                  strokeWidth={2.5}
-                />
+                {confirming ? (<><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />Booking...</>) : (<>Confirm Booking<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={2.5} /></>)}
               </Link>
 
               <p className="mt-3 text-center font-sans text-[11px] text-blush/70">

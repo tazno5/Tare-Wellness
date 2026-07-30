@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Mail, MessageCircle, Phone, Send, Check, Clock } from "lucide-react";
+import { Mail, MessageCircle, Phone, Send, Check, Clock, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const TOPICS = ["General Inquiry", "Gift Cards", "Therapy Bookings", "Technical Support"];
 
@@ -16,6 +17,8 @@ const SUPPORT_CHANNELS = [
 export default function ContactUsPage() {
   const [form, setForm] = useState({ name: "", email: "", topic: TOPICS[0], message: "" });
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   if (typeof document !== "undefined") {
     document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
@@ -26,9 +29,18 @@ export default function ContactUsPage() {
     document.body.style.setProperty("--page-gradient-to", "#F10897");
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.name.trim() && form.email.trim() && form.message.trim()) setSubmitted(true);
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return;
+    setIsLoading(true);
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    setIsLoading(false);
+    setSubmitted(true);
+    toast({
+      title: "Message sent!",
+      description: `We'll respond to ${form.email} within 24 hours.`,
+    });
   };
 
   return (
@@ -66,7 +78,7 @@ export default function ContactUsPage() {
                 <div><label htmlFor="email" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">Email Address</label><input id="email" type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@example.com" className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-[#4E0030] placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30" /></div>
                 <div><label htmlFor="topic" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">Topic</label><select id="topic" value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })} className="mt-2 h-12 w-full appearance-none rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-[#4E0030] focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30">{TOPICS.map((t) => <option key={t} value={t}>{t}</option>)}</select></div>
                 <div><label htmlFor="message" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">Message</label><textarea id="message" required rows={5} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} placeholder="How can we help you today?" className="mt-2 w-full rounded-2xl border border-maroon/15 bg-white px-4 py-3 font-sans text-sm text-[#4E0030] placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30" /></div>
-                <button type="submit" className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#3a0023] active:scale-95 sm:text-base"><Send className="h-5 w-5" strokeWidth={2.5} />Send Message</button>
+                <button type="submit" disabled={isLoading} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#3a0023] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base">{isLoading ? (<><Loader2 className="h-5 w-5 animate-spin" strokeWidth={2.5} />Sending...</>) : (<><Send className="h-5 w-5" strokeWidth={2.5} />Send Message</>)}</button>
               </form>
             )}
           </motion.div>

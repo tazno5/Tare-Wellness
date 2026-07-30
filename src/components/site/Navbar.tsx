@@ -5,7 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User, LogOut, Wallet, ChevronDown } from "lucide-react";
+import { useStore } from "@/lib/store";
+import { useToast } from "@/hooks/use-toast";
 
 const NAV_LINKS = [
   { label: "Gift Cards", href: "/gift-cards" },
@@ -16,12 +18,18 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
+  const { user, logout, redemption } = useStore();
+  const { toast } = useToast();
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
+
+  // Close profile dropdown on route change
+  useEffect(() => { setProfileOpen(false); }, [pathname]); // eslint-disable-line react-hooks/set-state-in-effect
 
   const isActive = (href: string) => {
     if (href.startsWith("#")) return false;
@@ -39,7 +47,13 @@ export default function Navbar() {
     return "relative font-sans text-sm font-semibold text-[#F10897] underline decoration-[#F10897] decoration-2 underline-offset-4";
   };
 
-  const isTransparentRoute = ["/gift-cards", "/recipient-details", "/cart-review", "/checkout", "/order-confirmation", "/redeem", "/book-session", "/booking-confirmation", "/how-it-works", "/faq", "/privacy-policy", "/terms-and-conditions", "/contact-us"].includes(pathname);
+  const isTransparentRoute = ["/gift-cards", "/recipient-details", "/cart-review", "/checkout", "/order-confirmation", "/redeem", "/book-session", "/booking-confirmation", "/how-it-works", "/faq", "/privacy-policy", "/terms-and-conditions", "/contact-us", "/login"].includes(pathname);
+
+  const handleLogout = () => {
+    logout();
+    setProfileOpen(false);
+    toast({ title: "Signed out", description: "You've been logged out successfully." });
+  };
 
   return (
     <header className="fixed top-0 left-0 w-full z-50">
@@ -58,12 +72,68 @@ export default function Navbar() {
           ); })}
         </ul>
         <div className="flex items-center gap-3">
+          {/* Auth state: Logged in → profile dropdown, Logged out → Login button */}
+          {user ? (
+            <div className="relative hidden md:block">
+              <button
+                type="button"
+                onClick={() => setProfileOpen(!profileOpen)}
+                className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-2 backdrop-blur-sm transition-colors hover:bg-white/25"
+              >
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#4E0030] font-sans text-xs font-bold text-white">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+                <span className="font-sans text-sm font-medium text-maroon">{user.name.split(" ")[0]}</span>
+                <ChevronDown className={`h-4 w-4 text-maroon transition-transform ${profileOpen ? "rotate-180" : ""}`} strokeWidth={2.5} />
+              </button>
+              <AnimatePresence>
+                {profileOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute right-0 mt-2 w-64 rounded-2xl bg-white p-2 shadow-[0_15px_50px_rgba(61,0,46,0.20)]"
+                  >
+                    {/* User info */}
+                    <div className="px-3 py-3 border-b border-maroon/10">
+                      <p className="font-sans text-sm font-bold text-[#4E0030]">{user.name}</p>
+                      <p className="font-sans text-xs text-[#4E0030]/55">{user.email}</p>
+                    </div>
+                    {/* Balance */}
+                    {redemption.redeemed && redemption.creditBalance > 0 && (
+                      <div className="mx-1 my-1 flex items-center gap-2 rounded-xl bg-[#FCE4EC] px-3 py-2">
+                        <Wallet className="h-4 w-4 text-[#F10897]" strokeWidth={2.5} />
+                        <span className="font-sans text-xs text-[#4E0030]/70">Balance:</span>
+                        <span className="font-sans text-sm font-bold text-[#4E0030]">₦{redemption.creditBalance.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {/* Menu items */}
+                    <Link href="/book-session" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2.5 font-sans text-sm font-medium text-[#4E0030] transition-colors hover:bg-blush/40">
+                      <User className="h-4 w-4" strokeWidth={2.5} />My Bookings
+                    </Link>
+                    <button type="button" onClick={handleLogout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 font-sans text-sm font-medium text-[#4E0030] transition-colors hover:bg-blush/40">
+                      <LogOut className="h-4 w-4" strokeWidth={2.5} />Sign Out
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <Link href="/login" className="hidden items-center rounded-full bg-white/15 px-4 py-2 font-sans text-sm font-semibold text-maroon backdrop-blur-sm transition-all duration-200 hover:scale-[1.03] hover:bg-white/25 md:inline-flex">
+              <User className="mr-1.5 h-4 w-4" strokeWidth={2.5} />Login
+            </Link>
+          )}
+
           <Link href="/gift-cards" className="hidden items-center rounded-full bg-[#4E0030] px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#3a0023] active:scale-95 md:inline-flex">Send a Gift</Link>
+
           <button type="button" aria-label="Open menu" aria-expanded={open} onClick={() => setOpen(true)} className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-maroon/10 text-maroon transition-colors hover:bg-maroon/20 md:hidden">
             <Menu className="h-5 w-5" strokeWidth={2.5} />
           </button>
         </div>
       </nav>
+
+      {/* Mobile drawer */}
       <AnimatePresence>
         {open && (
           <motion.div key="mobile-menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="fixed inset-0 z-50 bg-brand-gradient backdrop-blur-md md:hidden">
@@ -84,7 +154,27 @@ export default function Navbar() {
                 </motion.li>
               ); })}
             </motion.ul>
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="px-5 pt-6 sm:px-8">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="px-5 pt-6 space-y-3 sm:px-8">
+              {user ? (
+                <>
+                  <div className="flex items-center gap-3 rounded-2xl bg-white/15 px-4 py-3 backdrop-blur-sm">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#4E0030] font-sans text-sm font-bold text-white">{user.name.charAt(0).toUpperCase()}</span>
+                    <div>
+                      <p className="font-sans text-sm font-bold text-maroon">{user.name}</p>
+                      {redemption.redeemed && redemption.creditBalance > 0 && (
+                        <p className="font-sans text-xs text-maroon/60">Balance: ₦{redemption.creditBalance.toLocaleString()}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button onClick={() => { handleLogout(); setOpen(false); }} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/15 px-6 py-3 font-sans text-sm font-semibold text-maroon backdrop-blur-sm transition-all hover:bg-white/25">
+                    <LogOut className="h-4 w-4" strokeWidth={2.5} />Sign Out
+                  </button>
+                </>
+              ) : (
+                <Link href="/login" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/15 px-6 py-4 font-sans text-base font-semibold text-maroon backdrop-blur-sm transition-all hover:bg-white/25">
+                  <User className="h-5 w-5" strokeWidth={2.5} />Login / Sign Up
+                </Link>
+              )}
               <Link href="/gift-cards" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center rounded-full bg-[#4E0030] px-6 py-4 font-sans text-base font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95">Send a Gift</Link>
             </motion.div>
           </motion.div>
