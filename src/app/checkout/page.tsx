@@ -162,17 +162,74 @@ function CheckoutContent() {
     return q.toString();
   }, [cartItems, recipientRows, total, paymentMethod]);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
     toast({
       title: "Processing payment",
       description: "Securing your gift — this won't take a moment.",
     });
-    setTimeout(() => {
+
+    try {
+      // Build recipients payload from store data
+      const storeRecipients = useStore.getState().recipients;
+      const recipientsPayload = (storeRecipients.length > 0 ? storeRecipients : recipientRows.map((r: { name: string; email: string; occasion: string; note: string }) => ({
+        cardSlug: cartItems[0]?.id ?? "three",
+        recipientName: r.name || "Recipient",
+        recipientEmail: r.email || "recipient@email.com",
+        occasion: r.occasion || "Just Because",
+        deliveryMode: "now",
+        scheduledFor: null,
+        personalNote: r.note || "",
+      }))).map((r) => ({
+        cardSlug: r.cardId ?? cartItems[0]?.id ?? "three",
+        recipientName: r.name,
+        recipientEmail: r.email,
+        occasion: r.occasion || "Just Because",
+        deliveryMode: r.deliveryMode ?? "now",
+        scheduledFor: null,
+        personalNote: r.note || "",
+      }));
+
+      // POST to /api/orders
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          buyerName: "Alex Smith",
+          buyerEmail: "alex@bewelltare.com",
+          paymentMethod,
+          recipients: recipientsPayload,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to create order");
+      }
+
+      const order = await res.json();
+
+      // Clear cart + recipients from store
+      useStore.getState().clearCart();
+      useStore.getState().clearRecipients();
+
+      toast({
+        title: "Payment successful!",
+        description: `Order ${order.orderNumber} confirmed.`,
+      });
+
+      // Navigate to order confirmation with the real order ID
+      router.push(`/order-confirmation?id=${order.id}&orderNumber=${order.orderNumber}`);
+    } catch (error) {
+      toast({
+        title: "Payment failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setSubmitting(false);
-      router.push(`/order-confirmation?${forwardQuery}`);
-    }, 900);
+    }
   };
 
   const formatPrice = (n: number) => `₦${n.toLocaleString()}`;

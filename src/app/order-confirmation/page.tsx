@@ -119,6 +119,20 @@ function OrderConfirmationContent() {
   const { recipients } = useStore();
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
+  const [apiOrder, setApiOrder] = useState<null | {
+    orderNumber: string;
+    totalAmount: number;
+    orderItems: {
+      id: string;
+      cardTitle: string;
+      cardPrice: number;
+      cardSessions: number;
+      cardGradient: string;
+      recipientName: string;
+      recipientEmail: string;
+      redemption: { code: string; creditAmount: number; status: string } | null;
+    }[];
+  }>(null);
 
   // Set gradient — render + useEffect
   useMemo(() => {
@@ -129,18 +143,42 @@ function OrderConfirmationContent() {
   useEffect(() => {
     document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
     document.body.style.setProperty("--page-gradient-to", "#F10897");
-    return () => {
-      document.body.style.removeProperty("--page-gradient-from");
-      document.body.style.removeProperty("--page-gradient-to");
-    };
-  }, []);
+  });
+
+  // Fetch real order data from API if we have an order ID
+  const orderId = searchParams.get("id");
+  useEffect(() => {
+    if (orderId) {
+      fetch(`/api/orders/${orderId}`)
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => { if (data) setApiOrder(data); })
+        .catch(() => {});
+    }
+  }, [orderId]);
 
   useEffect(() => {
     setHasMounted(true);
   }, []);
 
-  // Expand cart into individual receipt cards (one per gift card instance)
+  // If we have API order data, use it; otherwise fall back to URL params + store
   const receipts = useMemo(() => {
+    // API data path
+    if (apiOrder) {
+      return apiOrder.orderItems.map((item, i) => ({
+        uid: item.id,
+        cardId: item.cardTitle.toLowerCase().includes("three") ? "three" : item.cardTitle.toLowerCase().includes("two") ? "two" : "one",
+        name: item.recipientName,
+        email: item.recipientEmail,
+        code: item.redemption?.code ?? "PENDING",
+        index: i,
+        total: apiOrder.orderItems.length,
+        price: item.cardPrice,
+        sessions: item.cardSessions,
+        gradient: item.cardGradient,
+      }));
+    }
+
+    // Fallback: URL params + store (existing logic)
     const cartParam = searchParams.get("cart") ?? "";
     const rParam = searchParams.get("recipients") ?? "";
 
@@ -215,10 +253,9 @@ function OrderConfirmationContent() {
     return expanded.map((e) => ({ ...e, total }));
   }, [searchParams, recipients]);
 
-  const orderTotal = receipts.reduce(
-    (sum, r) => sum + (CARD_LOOKUP[r.cardId]?.price ?? 0),
-    0,
-  );
+  const orderTotal = apiOrder
+    ? apiOrder.totalAmount
+    : receipts.reduce((sum, r) => sum + (r.price ?? CARD_LOOKUP[r.cardId]?.price ?? 0), 0);
 
   const today = hasMounted
     ? new Date().toLocaleDateString("en-NG", {
@@ -302,6 +339,18 @@ function OrderConfirmationContent() {
             We&apos;ve emailed each recipient their gift card. Keep these
             receipts for your records.
           </motion.p>
+
+          {/* Order number from API */}
+          {apiOrder && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="mt-3 font-sans text-sm font-bold text-[#F10897]"
+            >
+              Order #{apiOrder.orderNumber}
+            </motion.p>
+          )}
 
           {/* Hero image */}
           <motion.div

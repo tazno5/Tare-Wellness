@@ -132,7 +132,7 @@ export default function RedeemPage() {
   const rawCode = code.replace(/-/g, "");
   const isValid = rawCode.length === 16;
 
-  const handleRedeem = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleRedeem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isValid) {
       toast({
@@ -142,18 +142,39 @@ export default function RedeemPage() {
       return;
     }
     setSubmitting(true);
-    setTimeout(() => {
-      setSubmitting(false);
+
+    try {
+      const res = await fetch("/api/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: rawCode }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to validate code");
+      }
+
       setRedemption({
-        code: rawCode,
-        creditBalance: 25000,
+        code: data.code,
+        creditBalance: data.creditAmount,
         redeemed: true,
       });
+
       toast({
-        title: "Gift redeemed",
-        description: "Your credit is ready — let's find your moment.",
+        title: "Gift redeemed!",
+        description: data.message || `₦${data.creditAmount.toLocaleString()} credit applied.`,
       });
-    }, 800);
+    } catch (error) {
+      toast({
+        title: "Redemption failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

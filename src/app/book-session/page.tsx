@@ -263,7 +263,7 @@ export default function BookSessionPage() {
 
   const canConfirm = !!selectedDate && !!selectedTime;
 
-  const handleConfirmClick = (e: React.MouseEvent) => {
+  const handleConfirmClick = async (e: React.MouseEvent) => {
     if (!canConfirm) {
       e.preventDefault();
       toast({
@@ -278,9 +278,52 @@ export default function BookSessionPage() {
       title: "Booking your session...",
       description: "Securing your appointment — this won't take a moment.",
     });
-    setTimeout(() => {
+
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionType,
+          sessionTitle: session.title,
+          sessionPrice: session.price,
+          scheduledDate: selectedDate.toISOString(),
+          scheduledTime,
+          therapistName: "Dr. Sarah Thompson",
+          redemptionCode: redemption.redeemed ? redemption.code : undefined,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create booking");
+      }
+
+      // Store the booking details for the confirmation page
+      setBooking({
+        sessionType,
+        sessionTitle: session.title,
+        sessionPrice: session.price,
+        selectedDate: selectedDate.toISOString(),
+        selectedTime,
+        therapist: "Dr. Sarah Thompson",
+      });
+
+      toast({
+        title: "Booking confirmed!",
+        description: `Your session is booked for ${selectedDate.toLocaleDateString()}.`,
+      });
+
       router.push("/booking-confirmation");
-    }, 1000);
+    } catch (error) {
+      toast({
+        title: "Booking failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      setConfirming(false);
+    }
   };
 
   return (

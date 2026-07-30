@@ -5,8 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Minus, Plus, ArrowRight } from "lucide-react";
+import { Sparkles, Minus, Plus, ArrowRight, Loader2 } from "lucide-react";
 import { useStore, type CartItem } from "@/lib/store";
+import { useToast } from "@/hooks/use-toast";
 
 type GiftCard = {
   id: string;
@@ -19,40 +20,11 @@ type GiftCard = {
   gradient: string;
 };
 
-const CARDS: GiftCard[] = [
-  {
-    id: "one",
-    title: "One Session",
-    sessionCount: 1,
-    price: "₦25,000",
-    priceValue: 25000,
-    tag: "Flexible",
-    description:
-      "A single, unhurried session. Perfect for a first step or a moment of release when life gets loud.",
-    gradient: "from-[#E8D5F2] via-[#F5E3F0] to-[#FBD7E3]",
-  },
-  {
-    id: "two",
-    title: "Two Sessions",
-    sessionCount: 2,
-    price: "₦40,000",
-    priceValue: 40000,
-    tag: "Momentum",
-    description:
-      "Two sessions to settle in, go deeper, and start building the rhythm of care that actually sticks.",
-    gradient: "from-[#FFE0C2] via-[#FFD1DC] to-[#FDC4D6]",
-  },
-  {
-    id: "three",
-    title: "Three Sessions",
-    sessionCount: 3,
-    price: "₦75,000",
-    priceValue: 75000,
-    tag: "Ongoing Care",
-    description:
-      "Three sessions for a real arc — name it, sit with it, and leave with something you can actually carry.",
-    gradient: "from-[#D6C7F2] via-[#E0CBF0] to-[#F0CFE6]",
-  },
+// Fallback cards used while fetching from API / if fetch fails
+const FALLBACK_CARDS: GiftCard[] = [
+  { id: "one", title: "One Session", sessionCount: 1, price: "₦25,000", priceValue: 25000, tag: "Flexible", description: "A single, unhurried session. Perfect for a first step or a moment of release when life gets loud.", gradient: "from-[#E8D5F2] via-[#F5E3F0] to-[#FBD7E3]" },
+  { id: "two", title: "Two Sessions", sessionCount: 2, price: "₦40,000", priceValue: 40000, tag: "Momentum", description: "Two sessions to settle in, go deeper, and start building the rhythm of care that actually sticks.", gradient: "from-[#FFE0C2] via-[#FFD1DC] to-[#FDC4D6]" },
+  { id: "three", title: "Three Sessions", sessionCount: 3, price: "₦75,000", priceValue: 75000, tag: "Ongoing Care", description: "Three sessions for a real arc — name it, sit with it, and leave with something you can actually carry.", gradient: "from-[#D6C7F2] via-[#E0CBF0] to-[#F0CFE6]" },
 ];
 
 const FILTERS = ["1 Session", "2 Sessions", "3 Sessions"] as const;
@@ -77,8 +49,36 @@ const itemUp = {
 
 export default function GiftCardPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const { cart, totalQty, totalPrice, setCart, clearRecipients } = useStore();
   const [activeFilter, setActiveFilter] = useState<FilterLabel | null>(null);
+  const [cards, setCards] = useState<GiftCard[]>(FALLBACK_CARDS);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch gift card types from the API
+  useEffect(() => {
+    fetch("/api/gift-cards")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const mapped: GiftCard[] = data.map((c: { slug: string; title: string; sessions: number; price: number; gradient: string; description: string; tag: string }) => ({
+            id: c.slug,
+            title: c.title,
+            sessionCount: c.sessions,
+            price: `₦${c.price.toLocaleString()}`,
+            priceValue: c.price,
+            tag: c.tag,
+            description: c.description,
+            gradient: c.gradient,
+          }));
+          setCards(mapped);
+        }
+      })
+      .catch(() => {
+        // Use fallback cards if API fails
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   useEffect(() => {
     document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
@@ -91,7 +91,7 @@ export default function GiftCardPage() {
 
   const getQty = (cardId: string) => cart.find((c) => c.cardId === cardId)?.qty ?? 0;
 
-  const increment = (card: typeof CARDS[0]) => {
+  const increment = (card: GiftCard) => {
     const newCart = [...cart];
     const existing = newCart.find((c) => c.cardId === card.id);
     if (existing) existing.qty += 1;
@@ -102,11 +102,11 @@ export default function GiftCardPage() {
     setCart(cart.map((c) => c.cardId === cardId ? { ...c, qty: Math.max(0, c.qty - 1) } : c).filter((c) => c.qty > 0));
   };
 
-  const filteredCards = activeFilter ? CARDS.filter((c) => `${c.sessionCount} Session${c.sessionCount === 1 ? "" : "s"}` === activeFilter) : CARDS;
+  const filteredCards = activeFilter ? cards.filter((c) => `${c.sessionCount} Session${c.sessionCount === 1 ? "" : "s"}` === activeFilter) : cards;
 
   const handleProceed = () => {
     if (totalQty === 0) return;
-    const cartItems: CartItem[] = CARDS.filter((c) => getQty(c.id) > 0).map((c) => ({ cardId: c.id, title: c.title, price: c.priceValue, sessions: c.sessionCount, gradient: c.gradient, qty: getQty(c.id) }));
+    const cartItems: CartItem[] = cards.filter((c) => getQty(c.id) > 0).map((c) => ({ cardId: c.id, title: c.title, price: c.priceValue, sessions: c.sessionCount, gradient: c.gradient, qty: getQty(c.id) }));
     setCart(cartItems);
     const recipients = cartItems.flatMap((item) => Array.from({ length: item.qty }, (_, i) => ({ uid: `${item.cardId}-${i}-${Math.random().toString(36).slice(2, 7)}`, cardId: item.cardId, name: "", email: "", occasion: "Just Because", deliveryMode: "now" as const, note: "", confirmed: false })));
     clearRecipients();
