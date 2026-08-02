@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -116,8 +116,9 @@ function seededRedemptionCode(seed: string): string {
 
 function OrderConfirmationContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { toast } = useToast();
-  const { recipients } = useStore();
+  const { recipients, clearCart, clearRecipients } = useStore();
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
   const [apiOrder, setApiOrder] = useState<null | {
@@ -284,6 +285,14 @@ function OrderConfirmationContent() {
   };
 
   const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
+
+  // "Send Another Gift" — reset the buyer's cart + recipients so they start fresh.
+  // Demo codes and redemption state are intentionally preserved (recipient's redeem flow).
+  const handleSendAnother = () => {
+    clearCart();
+    clearRecipients();
+    router.push("/gift-cards?fresh=1");
+  };
 
   return (
     <main className="relative flex flex-1 flex-col">
@@ -660,13 +669,14 @@ function OrderConfirmationContent() {
       {/* ============ BOTTOM NAV ============ */}
       <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <Link
-            href="/gift-cards"
+          <button
+            type="button"
+            onClick={handleSendAnother}
             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 sm:w-auto"
           >
             <Gift className="h-4 w-4" strokeWidth={2.5} />
             Send Another Gift
-          </Link>
+          </button>
           <Link
             href="/redeem"
             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"

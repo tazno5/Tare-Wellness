@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Minus, Plus, ArrowRight, Loader2 } from "lucide-react";
 import { useStore, type CartItem } from "@/lib/store";
@@ -49,11 +49,23 @@ const itemUp = {
 
 export default function GiftCardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { cart, totalQty, totalPrice, setCart, clearRecipients } = useStore();
+  const { cart, totalQty, totalPrice, setCart, clearCart, clearRecipients } = useStore();
   const [activeFilter, setActiveFilter] = useState<FilterLabel | null>(null);
   const [cards, setCards] = useState<GiftCard[]>(FALLBACK_CARDS);
   const [loading, setLoading] = useState(true);
+
+  // If arriving via "Send Another Gift" (?fresh=1), reset the buyer's cart + recipients
+  // so they start a clean transaction. Demo codes and redemption state are preserved.
+  useEffect(() => {
+    if (searchParams.get("fresh") === "1") {
+      clearCart();
+      clearRecipients();
+      // Clean the URL so a refresh doesn't re-trigger the clear
+      router.replace("/gift-cards");
+    }
+  }, [searchParams, clearCart, clearRecipients, router]);
 
   // Fetch gift card types from the API
   useEffect(() => {
