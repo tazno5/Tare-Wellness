@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -27,22 +27,22 @@ const CARD_LOOKUP: Record<
   { title: string; price: number; sessions: number; gradient: string; tag: string }
 > = {
   one: {
-    title: "One Session",
-    price: 25000,
+    title: "Seed — One Session",
+    price: 20000,
     sessions: 1,
     gradient: "from-[#E8D5F2] via-[#F5E3F0] to-[#FBD7E3]",
     tag: "Flexible",
   },
   two: {
-    title: "Two Sessions",
-    price: 40000,
+    title: "Root — Two Sessions",
+    price: 39000,
     sessions: 2,
     gradient: "from-[#FFE0C2] via-[#FFD1DC] to-[#FDC4D6]",
     tag: "Momentum",
   },
   three: {
-    title: "Three Sessions",
-    price: 75000,
+    title: "Grove — Three Sessions",
+    price: 57000,
     sessions: 3,
     gradient: "from-[#D6C7F2] via-[#E0CBF0] to-[#F0CFE6]",
     tag: "Ongoing Care",
@@ -144,6 +144,36 @@ function CartReviewContent() {
   const primaryCard = cartItems[0];
   const primaryRecipient = recipientRows[0];
 
+  // Build merged gift rows — one per recipient, enriched with note/occasion/deliveryMode from the store.
+  // This is the data source for the MergedPreviewCard carousel.
+  const giftRows = useMemo(() => {
+    return recipientRows.map((r) => {
+      const storeR = recipients.find((s) => s.uid === r.uid);
+      const card = CARD_LOOKUP[r.cardId];
+      return {
+        uid: r.uid,
+        cardId: r.cardId,
+        name: r.name,
+        email: r.email,
+        note: storeR?.note ?? "",
+        occasion: storeR?.occasion ?? "Just Because",
+        deliveryMode: storeR?.deliveryMode ?? ("now" as const),
+        cardTitle: card?.title ?? "Gift",
+        cardPrice: card?.price ?? 0,
+        cardSessions: card?.sessions ?? 1,
+        cardGradient: card?.gradient ?? "from-[#FCE4EC] to-[#F8BBD0]",
+        cardTag: card?.tag ?? "",
+      };
+    });
+  }, [recipientRows, recipients]);
+
+  // Carousel state for merged preview cards
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const safePreviewIndex = Math.min(
+    previewIndex,
+    Math.max(0, giftRows.length - 1),
+  );
+
   const giftCardValue = cartItems.reduce(
     (sum, c) => sum + (CARD_LOOKUP[c.id]?.price ?? 0) * c.qty,
     0,
@@ -218,7 +248,7 @@ function CartReviewContent() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]"
+            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61, 0, 46, 0.08)]"
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -288,139 +318,123 @@ function CartReviewContent() {
             animate="show"
             className="flex flex-col gap-6"
           >
-            {/* Selected Package */}
-            <motion.article
-              variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
-            >
-              <div className="flex items-center justify-between">
+            {/* ============ MERGED PREVIEW CARD (carousel if multiple) ============ */}
+            <motion.article variants={itemUp} className="relative">
+              {/* Header with edit link */}
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
-                  Selected Package
+                  What your recipient will receive
                 </h2>
-                <Link
-                  href="/gift-cards"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon transition-all hover:bg-blush-dark active:scale-95"
-                >
-                  <Pencil className="h-3 w-3" strokeWidth={2.5} />
-                  Edit Choice
-                </Link>
-              </div>
-              <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
-                {/* Thumbnail */}
-                <div
-                  className={`relative flex h-24 w-full shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${
-                    primaryCard ? CARD_LOOKUP[primaryCard.id]?.gradient : "from-[#FCE4EC] to-[#F8BBD0]"
-                  } sm:w-32`}
-                >
-                  <Gift className="h-8 w-8 text-maroon" strokeWidth={2} />
-                  <span className="absolute bottom-1.5 right-2 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-maroon/70">
-                    Tare
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-fraunces text-xl font-bold text-maroon">
-                    {primaryCard ? CARD_LOOKUP[primaryCard.id]?.title : "No package"}
-                  </h3>
-                  <p className="mt-1 font-sans text-sm text-maroon/70">
-                    {primaryCard
-                      ? `${primaryCard.qty} × ${CARD_LOOKUP[primaryCard.id]?.sessions} session${
-                          CARD_LOOKUP[primaryCard.id]?.sessions === 1 ? "" : "s"
-                        }`
-                      : "Choose a gift card to begin."}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {cartItems.map((c) => (
-                      <span
-                        key={c.id}
-                        className="inline-flex items-center rounded-full bg-blush px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-maroon"
-                      >
-                        {CARD_LOOKUP[c.id]?.title} × {c.qty}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.article>
-
-            {/* Recipient Details 2x2 grid */}
-            <motion.article
-              variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
-                  Recipient Details
-                </h2>
-                <Link
-                  href="/recipient-details"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon transition-all hover:bg-blush-dark active:scale-95"
-                >
-                  <Pencil className="h-3 w-3" strokeWidth={2.5} />
-                  Edit
-                </Link>
-              </div>
-
-              {recipientRows.length === 0 ? (
-                <p className="mt-4 font-sans text-sm text-maroon/60">
-                  No recipients yet.{" "}
-                  <Link href="/recipient-details" className="underline">
-                    Add one →
+                <div className="flex items-center gap-2">
+                  {giftRows.length > 1 && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon">
+                      <Gift className="h-3 w-3" strokeWidth={2.5} />
+                      {safePreviewIndex + 1} / {giftRows.length}
+                    </span>
+                  )}
+                  <Link
+                    href="/recipient-details"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon transition-all hover:bg-blush-dark active:scale-95"
+                  >
+                    <Pencil className="h-3 w-3" strokeWidth={2.5} />
+                    Edit
                   </Link>
-                </p>
-              ) : (
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  <DetailCell
-                    label="Name"
-                    value={primaryRecipient?.name || "—"}
-                    icon={<Heart className="h-3.5 w-3.5" strokeWidth={2.5} />}
-                  />
-                  <DetailCell
-                    label="Email"
-                    value={primaryRecipient?.email || "—"}
-                    icon={<Mail className="h-3.5 w-3.5" strokeWidth={2.5} />}
-                  />
-                  <DetailCell
-                    label="Delivery Date"
-                    value={today}
-                    icon={<CalendarHeart className="h-3.5 w-3.5" strokeWidth={2.5} />}
-                  />
-                  <DetailCell
-                    label="Recipients"
-                    value={`${recipientRows.length} total`}
-                    icon={<Gift className="h-3.5 w-3.5" strokeWidth={2.5} />}
-                  />
                 </div>
-              )}
-            </motion.article>
+              </div>
 
-            {/* Personal Message */}
-            <motion.article
-              variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
-            >
-              <div className="flex items-center justify-between">
-                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
-                  Personal Message
-                </h2>
-                <Link
-                  href="/recipient-details"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon transition-all hover:bg-blush-dark active:scale-95"
-                >
-                  <Pencil className="h-3 w-3" strokeWidth={2.5} />
-                  Edit
-                </Link>
-              </div>
-              <div className="mt-4 rounded-2xl border-l-4 border-[#F10897] bg-blush/40 p-4">
-                <p className="font-fraunces text-base italic leading-relaxed text-maroon">
-                  &ldquo;
-                  {firstNote ||
-                    "Sending you a moment of peace. Take your time — this is for you."}
-                  &rdquo;
-                </p>
-                <p className="mt-2 font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/60">
-                  — From you
-                </p>
-              </div>
+              {/* Carousel window */}
+              {giftRows.length === 0 ? (
+                <div className="rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm">
+                  <p className="font-sans text-sm text-maroon/60">
+                    No recipients yet.{" "}
+                    <Link href="/recipient-details" className="underline">
+                      Add one →
+                    </Link>
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Slide track — CSS transform, no mount/unmount */}
+                  <div className="relative overflow-hidden rounded-3xl">
+                    <div
+                      className="flex transition-transform duration-[400ms] ease-in-out"
+                      style={{
+                        transform: `translateX(-${safePreviewIndex * 100}%)`,
+                      }}
+                    >
+                      {giftRows.map((g) => (
+                        <div
+                          key={g.uid}
+                          className="w-full shrink-0"
+                          aria-hidden={
+                            giftRows[safePreviewIndex]?.uid !== g.uid
+                          }
+                        >
+                          <MergedPreviewCard
+                            cardTitle={g.cardTitle}
+                            cardPrice={g.cardPrice}
+                            cardSessions={g.cardSessions}
+                            cardGradient={g.cardGradient}
+                            cardTag={g.cardTag}
+                            recipientName={g.name}
+                            recipientEmail={g.email}
+                            occasion={g.occasion}
+                            deliveryMode={g.deliveryMode}
+                            note={g.note}
+                            today={today}
+                            formatPrice={formatPrice}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Navigation indicators */}
+                  {giftRows.length > 1 && (
+                    <div className="mt-4 flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPreviewIndex(Math.max(0, safePreviewIndex - 1))
+                        }
+                        disabled={safePreviewIndex === 0}
+                        aria-label="Previous gift"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+                      </button>
+                      <div className="flex items-center gap-1.5">
+                        {giftRows.map((g, i) => (
+                          <button
+                            key={g.uid}
+                            type="button"
+                            onClick={() => setPreviewIndex(i)}
+                            aria-label={`Go to gift ${i + 1}`}
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              i === safePreviewIndex
+                                ? "w-7 bg-[#F10897]"
+                                : "w-2 bg-maroon/25 hover:bg-maroon/40"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPreviewIndex(
+                            Math.min(giftRows.length - 1, safePreviewIndex + 1),
+                          )
+                        }
+                        disabled={safePreviewIndex === giftRows.length - 1}
+                        aria-label="Next gift"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </motion.article>
           </motion.div>
 
@@ -434,7 +448,7 @@ function CartReviewContent() {
             {/* Order Summary */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
                 Order Summary
@@ -466,7 +480,7 @@ function CartReviewContent() {
               <button
                 type="button"
                 onClick={handleCheckout}
-                className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95"
+                className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95"
               >
                 Continue to Checkout
                 <ArrowRight
@@ -489,7 +503,7 @@ function CartReviewContent() {
                 },
                 {
                   icon: <ShieldCheck className="h-4 w-4" strokeWidth={2.5} />,
-                  title: "Verified Therapists",
+                  title: "Verified Professionals",
                   body: "Licensed & vetted",
                 },
                 {
@@ -500,7 +514,7 @@ function CartReviewContent() {
               ].map((b) => (
                 <div
                   key={b.title}
-                  className="rounded-2xl bg-white/80 p-3 text-center shadow-[0_6px_20px_rgba(61,0,46,0.08)] backdrop-blur-sm"
+                  className="rounded-2xl bg-white/80 p-3 text-center shadow-[0_6px_20px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm"
                 >
                   <div className="mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon">
                     {b.icon}
@@ -518,7 +532,7 @@ function CartReviewContent() {
             {/* How It Reaches Them — dark card */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(61,0,46,0.30)] sm:p-6"
+              className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(61, 0, 46, 0.30)] sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
                 How It Reaches Them
@@ -586,7 +600,7 @@ function CartReviewContent() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mx-auto mt-6 w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-[0_18px_60px_rgba(61,0,46,0.18)]"
+            className="mx-auto mt-6 w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-[0_18px_60px_rgba(61, 0, 46, 0.18)]"
           >
             {/* Email header */}
             <div className="flex items-center justify-between border-b border-maroon/10 bg-blush/40 px-5 py-3 sm:px-6">
@@ -625,7 +639,7 @@ function CartReviewContent() {
               <div
                 className={`relative mt-5 flex aspect-[5/3] flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br ${
                   primaryCard ? CARD_LOOKUP[primaryCard.id]?.gradient : "from-[#FCE4EC] to-[#F8BBD0]"
-                } p-5 shadow-[0_10px_30px_rgba(61,0,46,0.18)]`}
+                } p-5 shadow-[0_10px_30px_rgba(61, 0, 46, 0.18)]`}
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -656,7 +670,7 @@ function CartReviewContent() {
 
               <Link
                 href="/redeem"
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all hover:scale-[1.01] hover:bg-[#3a0023] active:scale-95"
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all hover:scale-[1.01] hover:bg-[#3a0023] active:scale-95"
               >
                 Redeem My Gift
                 <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
@@ -676,7 +690,7 @@ function CartReviewContent() {
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <Link
             href="/recipient-details"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61, 0, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
             Recipient&apos;s Details
@@ -684,7 +698,7 @@ function CartReviewContent() {
           <button
             type="button"
             onClick={handleCheckout}
-            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 sm:w-auto"
+            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 sm:w-auto"
           >
             Continue to Checkout
             <ArrowRight
@@ -727,6 +741,148 @@ function DetailCell({
   );
 }
 
+/* ============ Merged Preview Card ============ */
+function MergedPreviewCard({
+  cardTitle,
+  cardPrice,
+  cardSessions,
+  cardGradient,
+  cardTag,
+  recipientName,
+  recipientEmail,
+  occasion,
+  deliveryMode,
+  note,
+  today,
+  formatPrice,
+}: {
+  cardTitle: string;
+  cardPrice: number;
+  cardSessions: number;
+  cardGradient: string;
+  cardTag: string;
+  recipientName: string;
+  recipientEmail: string;
+  occasion: string;
+  deliveryMode: "now" | "schedule";
+  note: string;
+  today: string;
+  formatPrice: (n: number) => string;
+}) {
+  const hasNote = note && note.trim().length > 0;
+
+  return (
+    <div className="overflow-hidden rounded-3xl bg-white/85 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm">
+      {/* Card header — logo + package value */}
+      <div
+        className={`relative flex items-center justify-between bg-gradient-to-br ${cardGradient} px-5 py-4 sm:px-6`}
+      >
+        {/* Small Tare logo */}
+        <div className="flex items-center gap-2">
+          <Image
+            src="/logo.png"
+            alt="Tare logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain drop-shadow-[0_2px_6px_rgba(61,0,46,0.2)]"
+          />
+          <div>
+            <p className="font-fraunces text-sm font-bold text-maroon">
+              Tare Gift Card
+            </p>
+            {cardTag && (
+              <p className="font-sans text-[9px] font-bold uppercase tracking-[0.18em] text-maroon/70">
+                {cardTag}
+              </p>
+            )}
+          </div>
+        </div>
+        {/* Dynamic package value */}
+        <div className="text-right">
+          <p className="font-fraunces text-lg font-extrabold text-maroon sm:text-xl">
+            {formatPrice(cardPrice)}
+          </p>
+          <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon/70">
+            {cardSessions} session{cardSessions === 1 ? "" : "s"}
+          </p>
+        </div>
+      </div>
+
+      {/* Card body — recipient details + message */}
+      <div className="p-5 sm:p-6">
+        {/* Package title */}
+        <h3 className="font-fraunces text-xl font-bold text-maroon">
+          {cardTitle}
+        </h3>
+
+        {/* Recipient details */}
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-blush/40 p-3">
+            <div className="flex items-center gap-1.5 text-maroon/60">
+              <Heart className="h-3 w-3" strokeWidth={2.5} />
+              <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em]">
+                Recipient
+              </span>
+            </div>
+            <p className="mt-1.5 truncate font-sans text-sm font-bold text-maroon">
+              {recipientName || "—"}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-blush/40 p-3">
+            <div className="flex items-center gap-1.5 text-maroon/60">
+              <Mail className="h-3 w-3" strokeWidth={2.5} />
+              <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em]">
+                Email
+              </span>
+            </div>
+            <p className="mt-1.5 truncate font-sans text-sm font-bold text-maroon">
+              {recipientEmail || "—"}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-blush/40 p-3">
+            <div className="flex items-center gap-1.5 text-maroon/60">
+              <CalendarHeart className="h-3 w-3" strokeWidth={2.5} />
+              <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em]">
+                Occasion
+              </span>
+            </div>
+            <p className="mt-1.5 truncate font-sans text-sm font-bold text-maroon">
+              {occasion}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-blush/40 p-3">
+            <div className="flex items-center gap-1.5 text-maroon/60">
+              {deliveryMode === "now" ? (
+                <Sparkles className="h-3 w-3" strokeWidth={2.5} />
+              ) : (
+                <CalendarHeart className="h-3 w-3" strokeWidth={2.5} />
+              )}
+              <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em]">
+                Delivery
+              </span>
+            </div>
+            <p className="mt-1.5 truncate font-sans text-sm font-bold text-maroon">
+              {deliveryMode === "now" ? "Send immediately" : today}
+            </p>
+          </div>
+        </div>
+
+        {/* Personal message — CONDITIONAL: only render if note exists */}
+        {hasNote && (
+          <div className="mt-4 rounded-2xl border-l-4 border-[#F10897] bg-blush/40 p-4">
+            <p className="font-fraunces text-base italic leading-relaxed text-maroon">
+              &ldquo;{note}&rdquo;
+            </p>
+            <p className="mt-2 font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/60">
+              — From you
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Stepper({
   steps,
   active,
@@ -735,7 +891,7 @@ function Stepper({
   active: number;
 }) {
   return (
-    <ol className="flex items-center justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61,0,46,0.08)] backdrop-blur-sm">
+    <ol className="flex items-center justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm">
       {steps.map((step, i) => {
         const isDone = i < active;
         const isActive = i === active;

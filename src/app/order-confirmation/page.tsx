@@ -18,6 +18,7 @@ import {
   Heart,
   ShieldCheck,
   Clock,
+  ArrowLeft,
   ArrowRight,
 } from "lucide-react";
 import {
@@ -34,20 +35,20 @@ const CARD_LOOKUP: Record<
   { title: string; price: number; sessions: number; gradient: string }
 > = {
   one: {
-    title: "One Session",
-    price: 25000,
+    title: "Seed — One Session",
+    price: 20000,
     sessions: 1,
     gradient: "from-[#E8D5F2] via-[#F5E3F0] to-[#FBD7E3]",
   },
   two: {
-    title: "Two Sessions",
-    price: 40000,
+    title: "Root — Two Sessions",
+    price: 39000,
     sessions: 2,
     gradient: "from-[#FFE0C2] via-[#FFD1DC] to-[#FDC4D6]",
   },
   three: {
-    title: "Three Sessions",
-    price: 75000,
+    title: "Grove — Three Sessions",
+    price: 57000,
     sessions: 3,
     gradient: "from-[#D6C7F2] via-[#E0CBF0] to-[#F0CFE6]",
   },
@@ -118,9 +119,10 @@ function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { recipients, clearCart, clearRecipients } = useStore();
+  const { recipients, addDemoCode, clearDemoCodes, clearCart, clearRecipients } = useStore();
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
+  const [confirmIndex, setConfirmIndex] = useState(0);
   const [apiOrder, setApiOrder] = useState<null | {
     orderNumber: string;
     totalAmount: number;
@@ -255,6 +257,25 @@ function OrderConfirmationContent() {
     return expanded.map((e) => ({ ...e, total }));
   }, [searchParams, recipients]);
 
+  // Store demo codes in Zustand so the Redeem page can validate them
+  useEffect(() => {
+    if (!apiOrder && receipts.length > 0) {
+      clearDemoCodes();
+      receipts.forEach((r) => {
+        const card = CARD_LOOKUP[r.cardId];
+        if (card && r.code && r.code !== "PENDING") {
+          addDemoCode({
+            code: r.code,
+            cardId: r.cardId,
+            cardTitle: card.title,
+            creditAmount: r.price ?? card.price,
+            sessions: card.sessions,
+          });
+        }
+      });
+    }
+  }, [receipts, apiOrder, addDemoCode, clearDemoCodes]);
+
   const orderTotal = apiOrder
     ? apiOrder.totalAmount
     : receipts.reduce((sum, r) => sum + (r.price ?? CARD_LOOKUP[r.cardId]?.price ?? 0), 0);
@@ -324,7 +345,7 @@ function OrderConfirmationContent() {
             initial={{ opacity: 0, y: -10, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.6, type: "spring", bounce: 0.4 }}
-            className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(61,0,46,0.15)]"
+            className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(61, 0, 46, 0.15)]"
           >
             <PartyPopper className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />
           </motion.div>
@@ -333,7 +354,7 @@ function OrderConfirmationContent() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]"
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61, 0, 46, 0.08)]"
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -412,7 +433,7 @@ function OrderConfirmationContent() {
                 <motion.article
                   key={r.uid}
                   variants={itemUp}
-                  className="overflow-hidden rounded-3xl bg-white/85 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm"
+                  className="overflow-hidden rounded-3xl bg-white/85 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm"
                 >
                   {/* Receipt header */}
                   <div className="flex items-center justify-between border-b border-maroon/10 bg-blush/40 px-5 py-3 sm:px-6">
@@ -515,7 +536,7 @@ function OrderConfirmationContent() {
             {/* Order Total — dark */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(61,0,46,0.30)] sm:p-6"
+              className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(61, 0, 46, 0.30)] sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
                 Order Total
@@ -555,7 +576,7 @@ function OrderConfirmationContent() {
             {/* Gift Journey */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
                 Gift Journey
@@ -618,7 +639,7 @@ function OrderConfirmationContent() {
             {/* Trust pill */}
             <motion.div
               variants={itemUp}
-              className="rounded-3xl bg-blush/60 p-4 text-center shadow-[0_6px_20px_rgba(61,0,46,0.08)]"
+              className="rounded-3xl bg-blush/60 p-4 text-center shadow-[0_6px_20px_rgba(61, 0, 46, 0.08)]"
             >
               <ShieldCheck className="mx-auto h-6 w-6 text-maroon" strokeWidth={2} />
               <p className="mt-2 font-sans text-[11px] font-bold uppercase tracking-[0.14em] text-maroon">
@@ -632,6 +653,113 @@ function OrderConfirmationContent() {
         </motion.div>
       </section>
 
+      {/* ============ WHAT YOUR RECIPIENT WILL RECEIVE (Merged Preview + Carousel) ============ */}
+      <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.6 }}
+          className="mx-auto w-full max-w-3xl"
+        >
+          {/* Section header */}
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-fraunces text-2xl font-bold text-maroon sm:text-3xl">
+              What your recipient will receive
+            </h2>
+            {receipts.length > 1 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon">
+                <Gift className="h-3 w-3" strokeWidth={2.5} />
+                {confirmIndex + 1} / {receipts.length}
+              </span>
+            )}
+          </div>
+
+          {/* Carousel window */}
+          {receipts.length > 0 && (
+            <>
+              <div className="relative overflow-hidden rounded-3xl">
+                <div
+                  className="flex transition-transform duration-[400ms] ease-in-out"
+                  style={{
+                    transform: `translateX(-${confirmIndex * 100}%)`,
+                  }}
+                >
+                  {receipts.map((r) => {
+                    const card = CARD_LOOKUP[r.cardId];
+                    const storeR = recipients.find((s) => s.uid === r.uid);
+                    return (
+                      <div
+                        key={r.uid}
+                        className="w-full shrink-0"
+                        aria-hidden={
+                          receipts[confirmIndex]?.uid !== r.uid
+                        }
+                      >
+                        <OrderMergedCard
+                          cardTitle={card?.title ?? "Gift"}
+                          cardPrice={r.price ?? card?.price ?? 0}
+                          cardSessions={card?.sessions ?? 1}
+                          cardGradient={card?.gradient ?? "from-[#FCE4EC] to-[#F8BBD0]"}
+                          cardTag={card?.tag ?? (card ? "Gift" : "")}
+                          recipientName={r.name}
+                          recipientEmail={r.email}
+                          occasion={storeR?.occasion ?? "Just Because"}
+                          deliveryMode={storeR?.deliveryMode ?? ("now" as const)}
+                          note={storeR?.note ?? ""}
+                          today={today}
+                          code={r.code}
+                          formatPrice={formatPrice}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Navigation indicators */}
+              {receipts.length > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmIndex(Math.max(0, confirmIndex - 1))}
+                    disabled={confirmIndex === 0}
+                    aria-label="Previous gift"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {receipts.map((r, i) => (
+                      <button
+                        key={r.uid}
+                        type="button"
+                        onClick={() => setConfirmIndex(i)}
+                        aria-label={`Go to gift ${i + 1}`}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          i === confirmIndex
+                            ? "w-7 bg-[#F10897]"
+                            : "w-2 bg-maroon/25 hover:bg-maroon/40"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmIndex(Math.min(receipts.length - 1, confirmIndex + 1))}
+                    disabled={confirmIndex === receipts.length - 1}
+                    aria-label="Next gift"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </motion.div>
+      </section>
+
       {/* ============ COMMON QUESTIONS ============ */}
       <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
         <motion.div
@@ -639,7 +767,7 @@ function OrderConfirmationContent() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6 }}
-          className="mx-auto w-full max-w-3xl rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-8"
+          className="mx-auto w-full max-w-3xl rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-8"
         >
           <div className="flex items-center gap-2">
             <HelpCircle className="h-5 w-5 text-maroon" strokeWidth={2.5} />
@@ -672,14 +800,14 @@ function OrderConfirmationContent() {
           <button
             type="button"
             onClick={handleSendAnother}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 sm:w-auto"
           >
             <Gift className="h-4 w-4" strokeWidth={2.5} />
             Send Another Gift
           </button>
           <Link
             href="/redeem"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61, 0, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
           >
             <Sparkles className="h-4 w-4" strokeWidth={2.5} />
             Redeem a Card
@@ -718,6 +846,169 @@ function InfoCell({
       <p className="mt-1 truncate font-sans text-sm font-bold text-maroon">
         {value}
       </p>
+    </div>
+  );
+}
+
+/* ============ Order Merged Card — with dynamic gift code + Redeem button ============ */
+function OrderMergedCard({
+  cardTitle,
+  cardPrice,
+  cardSessions,
+  cardGradient,
+  cardTag,
+  recipientName,
+  recipientEmail,
+  occasion,
+  deliveryMode,
+  note,
+  today,
+  code,
+  formatPrice,
+}: {
+  cardTitle: string;
+  cardPrice: number;
+  cardSessions: number;
+  cardGradient: string;
+  cardTag: string;
+  recipientName: string;
+  recipientEmail: string;
+  occasion: string;
+  deliveryMode: "now" | "schedule";
+  note: string;
+  today: string;
+  code: string;
+  formatPrice: (n: number) => string;
+}) {
+  const hasNote = note && note.trim().length > 0;
+
+  return (
+    <div className="overflow-hidden rounded-3xl bg-white/85 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm">
+      {/* Card header — logo + package value */}
+      <div
+        className={`relative flex items-center justify-between bg-gradient-to-br ${cardGradient} px-5 py-4 sm:px-6`}
+      >
+        {/* Small Tare logo */}
+        <div className="flex items-center gap-2">
+          <Image
+            src="/logo.png"
+            alt="Tare logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 object-contain drop-shadow-[0_2px_6px_rgba(61,0,46,0.2)]"
+          />
+          <div>
+            <p className="font-fraunces text-sm font-bold text-maroon">
+              Tare Gift Card
+            </p>
+            {cardTag && (
+              <p className="font-sans text-[9px] font-bold uppercase tracking-[0.18em] text-maroon/70">
+                {cardTag}
+              </p>
+            )}
+          </div>
+        </div>
+        {/* Dynamic package value */}
+        <div className="text-right">
+          <p className="font-fraunces text-lg font-extrabold text-maroon sm:text-xl">
+            {formatPrice(cardPrice)}
+          </p>
+          <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon/70">
+            {cardSessions} session{cardSessions === 1 ? "" : "s"}
+          </p>
+        </div>
+      </div>
+
+      {/* Card body */}
+      <div className="p-5 sm:p-6">
+        {/* Package title */}
+        <h3 className="font-fraunces text-xl font-bold text-maroon">
+          {cardTitle}
+        </h3>
+
+        {/* Recipient details */}
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-blush/40 p-3">
+            <div className="flex items-center gap-1.5 text-maroon/60">
+              <Heart className="h-3 w-3" strokeWidth={2.5} />
+              <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em]">
+                Recipient
+              </span>
+            </div>
+            <p className="mt-1.5 truncate font-sans text-sm font-bold text-maroon">
+              {recipientName || "—"}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-blush/40 p-3">
+            <div className="flex items-center gap-1.5 text-maroon/60">
+              <Mail className="h-3 w-3" strokeWidth={2.5} />
+              <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em]">
+                Email
+              </span>
+            </div>
+            <p className="mt-1.5 truncate font-sans text-sm font-bold text-maroon">
+              {recipientEmail || "—"}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-blush/40 p-3">
+            <div className="flex items-center gap-1.5 text-maroon/60">
+              <CalendarHeart className="h-3 w-3" strokeWidth={2.5} />
+              <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em]">
+                Occasion
+              </span>
+            </div>
+            <p className="mt-1.5 truncate font-sans text-sm font-bold text-maroon">
+              {occasion}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-blush/40 p-3">
+            <div className="flex items-center gap-1.5 text-maroon/60">
+              <Clock className="h-3 w-3" strokeWidth={2.5} />
+              <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em]">
+                Delivery
+              </span>
+            </div>
+            <p className="mt-1.5 truncate font-sans text-sm font-bold text-maroon">
+              {deliveryMode === "now" ? "Sent" : today}
+            </p>
+          </div>
+        </div>
+
+        {/* Dynamic gift code */}
+        <div className="mt-4 rounded-2xl border-2 border-dashed border-[#F10897]/50 bg-blush/30 p-4">
+          <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon/60">
+            Your Gift Code
+          </p>
+          <code className="mt-1 block font-mono text-lg font-bold tracking-wider text-maroon sm:text-xl">
+            {code}
+          </code>
+        </div>
+
+        {/* Personal message — CONDITIONAL */}
+        {hasNote && (
+          <div className="mt-4 rounded-2xl border-l-4 border-[#F10897] bg-blush/40 p-4">
+            <p className="font-fraunces text-base italic leading-relaxed text-maroon">
+              &ldquo;{note}&rdquo;
+            </p>
+            <p className="mt-2 font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/60">
+              — From you
+            </p>
+          </div>
+        )}
+
+        {/* Redeem button — links to /redeem */}
+        <Link
+          href="/redeem"
+          className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(241,8,151,0.35)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#d4007d] active:scale-95"
+        >
+          <Gift className="h-4 w-4" strokeWidth={2.5} />
+          Open My Gift
+          <ArrowRight
+            className="h-4 w-4 transition-transform group-hover:translate-x-1"
+            strokeWidth={2.5}
+          />
+        </Link>
+      </div>
     </div>
   );
 }

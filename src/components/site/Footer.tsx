@@ -12,6 +12,7 @@ const SHOP_LINKS = [
 
 const RESOURCE_LINKS = [
   { label: "How It Works", href: "/how-it-works" },
+  { label: "About", href: "/faq" },
   { label: "Privacy Policy", href: "/privacy-policy" },
   { label: "Terms & Conditions", href: "/terms-and-conditions" },
   { label: "FAQ", href: "/faq" },
@@ -20,13 +21,12 @@ const RESOURCE_LINKS = [
 const SOCIALS = [
   { label: "Instagram", href: "https://instagram.com", Icon: Instagram },
   { label: "X (Twitter)", href: "https://x.com", Icon: Twitter },
-  { label: "Email", href: "mailto:hello@bewelltare.com", Icon: AtSign },
+  { label: "Email", href: "mailto:tarebewell@gmail.com", Icon: AtSign },
 ];
 
 export default function Footer() {
   return (
-    <footer className="relative z-10 w-full bg-[#F10897] px-5 pb-10 sm:px-8 lg:px-12">
-      <div className="mx-auto mb-14 h-px w-[1250px] max-w-full bg-[#F10897]/20 lg:mb-20" />
+    <footer className="relative z-10 w-full bg-transparent px-5 pb-10 pt-14 sm:px-8 lg:px-12 lg:pt-20">
       <div className="mx-auto w-full max-w-7xl">
         {/* Four-column grid */}
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
@@ -41,14 +41,14 @@ export default function Footer() {
             <Link
               href="/"
               className="inline-flex items-center"
-              aria-label="BE WELL TARE home"
+              aria-label="Tare home"
             >
               <Image
                 src="/logo.png"
-                alt="BE WELL TARE logo"
+                alt="Tare logo"
                 width={80}
                 height={80}
-                className="h-20 w-20 object-contain drop-shadow-[0_6px_16px_rgba(61,0,46,0.3)]"
+                className="h-20 w-20 object-contain drop-shadow-[0_6px_16px_rgba(61, 0, 46, 0.3)]"
               />
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-relaxed text-maroon/85">

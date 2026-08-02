@@ -4,7 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
@@ -17,7 +17,6 @@ import {
   Clock,
   Sparkles,
   User,
-  CalendarHeart,
   Send,
 } from "lucide-react";
 import { useStore, type RecipientData } from "@/lib/store";
@@ -108,7 +107,16 @@ function RecipientDetailsContent() {
     useStore();
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(1);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Wait for the persisted store to hydrate from localStorage before rendering.
+  // This prevents a flash of the empty state (recipients: []) on hard refresh.
+  useEffect(() => {
+    // useStore.persist.hasHydrated() is true once the persisted state is loaded.
+    const unsub = useStore.persist.onFinishHydration(() => setHydrated(true));
+    if (useStore.persist.hasHydrated()) setHydrated(true);
+    return () => unsub();
+  }, []);
 
   // Set the locked-in page gradient — both in render (useMemo) and useEffect for hydration safety
   useMemo(() => {
@@ -124,6 +132,14 @@ function RecipientDetailsContent() {
       document.body.style.removeProperty("--page-gradient-to");
     };
   }, []);
+
+  // Safety: reset activeIndex to 0 if recipients list changes identity
+  // (e.g., user went back to gift-cards and re-proceeded with a different cart).
+  // This ensures we never point at a stale index.
+  const recipientsKey = recipients.map((r) => r.uid).join(",");
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [recipientsKey]);
 
   // Cart string for forward navigation (preserve across flow)
   const cartParam = searchParams.get("cart") ?? "";
@@ -152,30 +168,63 @@ function RecipientDetailsContent() {
 
   const goToSlide = (next: number) => {
     if (next < 0 || next > recipients.length - 1) return;
-    setDirection(next > activeIndex ? 1 : -1);
     setActiveIndex(next);
   };
 
   const handleConfirm = (uid: string) => {
-    const r = recipients.find((x) => x.uid === uid);
+    // Read the LATEST state from the store to avoid stale closure issues.
+    const currentRecipients = useStore.getState().recipients;
+    const r = currentRecipients.find((x) => x.uid === uid);
     if (!r) return;
     if (!r.name.trim() || !r.email.trim()) {
       toast({
         title: "Almost there",
         description: "Please add a name and email before confirming.",
       });
-      return;
+      return false;
     }
     confirmRecipient(uid);
     toast({
       title: "Details confirmed",
       description: `${r.name}'s gift is ready to send.`,
     });
-    // Auto-advance to next unconfirmed recipient
-    const nextIdx = recipients.findIndex((x, i) => i > activeIndex && !x.confirmed);
-    if (nextIdx !== -1) {
+    return true;
+  };
+
+  // "Next Recipient" — validates + confirms current, then advances to next slide.
+  // Accepts fromIndex so each slide's button uses its own index.
+  const handleNextRecipient = (fromIndex: number) => {
+    const currentRecipients = useStore.getState().recipients;
+    const r = currentRecipients[fromIndex];
+    if (!r) return;
+    const ok = handleConfirm(r.uid);
+    if (!ok) return;
+    const nextIdx = fromIndex + 1;
+    if (nextIdx <= currentRecipients.length - 1) {
       setTimeout(() => goToSlide(nextIdx), 250);
     }
+  };
+
+  // "Confirm & Proceed" — validates + confirms the LAST recipient, then navigates to cart review.
+  const handleConfirmAndProceed = (fromIndex: number) => {
+    const currentRecipients = useStore.getState().recipients;
+    const r = currentRecipients[fromIndex];
+    if (!r) return;
+    const ok = handleConfirm(r.uid);
+    if (!ok) return;
+    // After confirming the last recipient, all should be confirmed.
+    // Use a tiny delay so the store update flushes before navigating.
+    setTimeout(() => {
+      const latest = useStore.getState().recipients;
+      if (latest.length > 0 && latest.every((r) => r.confirmed)) {
+        router.push(`/cart-review?${forwardQuery}`);
+      } else {
+        toast({
+          title: "Almost there",
+          description: "Some recipients still need confirmed details.",
+        });
+      }
+    }, 100);
   };
 
   const handleDelete = (uid: string) => {
@@ -218,7 +267,7 @@ function RecipientDetailsContent() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]"
+            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61, 0, 46, 0.08)]"
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -278,10 +327,24 @@ function RecipientDetailsContent() {
         </div>
       </section>
 
-      {/* ============ EMPTY STATE ============ */}
-      {recipients.length === 0 ? (
+      {/* ============ HYDRATION GUARD / EMPTY STATE ============ */}
+      {!hydrated ? (
         <section className="relative w-full px-5 pb-32 pt-6 sm:px-8 lg:px-12">
-          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-12">
+          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-12">
+            <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blush text-maroon">
+              <span className="h-6 w-6 animate-spin rounded-full border-2 border-maroon/30 border-t-maroon" />
+            </div>
+            <h2 className="mt-4 font-fraunces text-2xl font-bold text-maroon">
+              Loading your gifts…
+            </h2>
+            <p className="mt-2 font-sans text-sm text-maroon/70">
+              One moment while we gather your recipient details.
+            </p>
+          </div>
+        </section>
+      ) : recipients.length === 0 ? (
+        <section className="relative w-full px-5 pb-32 pt-6 sm:px-8 lg:px-12">
+          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-12">
             <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blush text-maroon">
               <Gift className="h-6 w-6" strokeWidth={2.5} />
             </div>
@@ -294,7 +357,7 @@ function RecipientDetailsContent() {
             </p>
             <Link
               href="/gift-cards"
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95"
+              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95"
             >
               <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
               Back to Gift Cards
@@ -316,7 +379,7 @@ function RecipientDetailsContent() {
                 {/* Slide nav header */}
                 <motion.div
                   variants={itemUp}
-                  className="flex items-center justify-between rounded-2xl bg-white/80 p-3 shadow-[0_8px_30px_rgba(61,0,46,0.08)] backdrop-blur-sm"
+                  className="flex items-center justify-between rounded-2xl bg-white/80 p-3 shadow-[0_8px_30px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm"
                 >
                   <button
                     type="button"
@@ -366,28 +429,34 @@ function RecipientDetailsContent() {
                   ))}
                 </div>
 
-                {/* Slide content */}
-                <div className="relative overflow-hidden">
-                  <AnimatePresence mode="wait" custom={direction}>
-                    {current && (
-                      <motion.div
-                        key={current.uid}
-                        custom={direction}
-                        initial={{ opacity: 0, x: direction * 40 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: direction * -40 }}
-                        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                {/* Slide content — CSS transform carousel track */}
+                <div className="relative overflow-hidden rounded-3xl">
+                  <div
+                    className="flex transition-transform duration-[400ms] ease-in-out"
+                    style={{
+                      transform: `translateX(-${safeActiveIndex * 100}%)`,
+                    }}
+                  >
+                    {recipients.map((r, i) => (
+                      <div
+                        key={r.uid}
+                        className="w-full shrink-0"
+                        aria-hidden={i !== safeActiveIndex}
                       >
                         <RecipientSlide
-                          recipient={current}
-                          onUpdate={(patch) =>
-                            updateRecipient(current.uid, patch)
-                          }
-                          onConfirm={() => handleConfirm(current.uid)}
+                          recipient={r}
+                          recipientNumber={i + 1}
+                          totalRecipients={recipients.length}
+                          isFirst={i === 0}
+                          isLast={i === recipients.length - 1}
+                          onBack={() => goToSlide(i - 1)}
+                          onNextRecipient={() => handleNextRecipient(i)}
+                          onConfirmAndProceed={() => handleConfirmAndProceed(i)}
+                          onUpdate={(patch) => updateRecipient(r.uid, patch)}
                         />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
 
@@ -401,7 +470,7 @@ function RecipientDetailsContent() {
                 {/* Live Card Preview */}
                 <motion.div
                   variants={itemUp}
-                  className="rounded-3xl bg-white/80 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+                  className="rounded-3xl bg-white/80 p-5 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-6"
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
@@ -419,7 +488,7 @@ function RecipientDetailsContent() {
                         className={`relative flex aspect-[5/3] flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br ${
                           CARD_LOOKUP[current.cardId]?.gradient ??
                           "from-[#FCE4EC] to-[#F8BBD0]"
-                        } p-5 shadow-[0_10px_30px_rgba(61,0,46,0.18)]`}
+                        } p-5 shadow-[0_10px_30px_rgba(61, 0, 46, 0.18)]`}
                       >
                         <div className="flex items-start justify-between">
                           <div>
@@ -470,7 +539,7 @@ function RecipientDetailsContent() {
                 {/* Dark Gift Summary */}
                 <motion.div
                   variants={itemUp}
-                  className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(61,0,46,0.30)] sm:p-6"
+                  className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(61, 0, 46, 0.30)] sm:p-6"
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
@@ -555,7 +624,7 @@ function RecipientDetailsContent() {
             <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
               <Link
                 href="/gift-cards"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61, 0, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
               >
                 <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
                 Gift Card
@@ -564,7 +633,7 @@ function RecipientDetailsContent() {
                 type="button"
                 onClick={handleContinue}
                 disabled={!allConfirmed}
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 Continue to Review
                 <ArrowRight
@@ -583,32 +652,57 @@ function RecipientDetailsContent() {
 /* ============ Recipient Slide Form ============ */
 function RecipientSlide({
   recipient,
+  recipientNumber,
+  totalRecipients,
+  isFirst,
+  isLast,
+  onBack,
+  onNextRecipient,
+  onConfirmAndProceed,
   onUpdate,
-  onConfirm,
 }: {
   recipient: RecipientData;
+  recipientNumber: number;
+  totalRecipients: number;
+  isFirst: boolean;
+  isLast: boolean;
+  onBack: () => void;
+  onNextRecipient: () => void;
+  onConfirmAndProceed: () => void;
   onUpdate: (patch: Partial<RecipientData>) => void;
-  onConfirm: () => void;
 }) {
   const isConfirmed = recipient.confirmed;
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    // Form submit (Enter key) → same as the primary action button.
+    // If last recipient → Confirm & Proceed, else → Next Recipient.
+    if (isLast) {
+      onConfirmAndProceed();
+    } else {
+      onNextRecipient();
+    }
+  };
+
   return (
-    <motion.form
-      variants={itemUp}
-      onSubmit={(e) => {
-        e.preventDefault();
-        onConfirm();
-      }}
-      className="space-y-4 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-4 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-6"
     >
-      {/* Recipient header */}
+      {/* Recipient header — "Recipient X of Y" */}
       <div className="flex items-center justify-between">
         <div className="inline-flex items-center gap-2">
           <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blush text-maroon">
             <User className="h-4 w-4" strokeWidth={2.5} />
           </div>
-          <span className="font-fraunces text-lg font-bold text-maroon">
-            {recipient.name || "New Recipient"}
-          </span>
+          <div className="flex flex-col">
+            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon/60">
+              Recipient {recipientNumber} of {totalRecipients}
+            </span>
+            <span className="font-fraunces text-lg font-bold text-maroon">
+              {recipient.name || "New Recipient"}
+            </span>
+          </div>
         </div>
         {isConfirmed && (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#4E0030] px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white">
@@ -747,24 +841,68 @@ function RecipientSlide({
         </div>
       </div>
 
-      {/* Confirm button */}
-      <button
-        type="submit"
-        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#3a0023] active:scale-95"
-      >
-        {isConfirmed ? (
-          <>
+      {/* Smart action buttons */}
+      <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
+        {/* Back button — secondary, only shown if not the first recipient */}
+        {!isFirst ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-blush px-5 py-3.5 font-sans text-sm font-semibold text-maroon transition-all duration-200 hover:bg-blush-dark active:scale-95 sm:w-auto"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+            Back
+          </button>
+        ) : null}
+
+        {/* Primary action: "Next Recipient" or "Confirm & Proceed" */}
+        {isLast ? (
+          <button
+            type="submit"
+            className="group inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#F10897] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(241,8,151,0.35)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#d4007d] active:scale-95"
+          >
             <Check className="h-4 w-4" strokeWidth={2.5} />
-            Update Details
-          </>
+            Confirm &amp; Proceed
+            <ArrowRight
+              className="h-4 w-4 transition-transform group-hover:translate-x-1"
+              strokeWidth={2.5}
+            />
+          </button>
         ) : (
-          <>
-            <CalendarHeart className="h-4 w-4" strokeWidth={2.5} />
-            Confirm Details
-          </>
+          <button
+            type="submit"
+            className="group inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#3a0023] active:scale-95"
+          >
+            {isConfirmed ? (
+              <>
+                <Check className="h-4 w-4" strokeWidth={2.5} />
+                Next Recipient
+              </>
+            ) : (
+              <>
+                Next Recipient
+                <ArrowRight
+                  className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                  strokeWidth={2.5}
+                />
+              </>
+            )}
+          </button>
         )}
-      </button>
-    </motion.form>
+      </div>
+
+      {/* Hint text — explains the flow */}
+      {!isLast && (
+        <p className="text-center font-sans text-[11px] text-maroon/55">
+          We&rsquo;ll save this recipient and move to the next one.
+        </p>
+      )}
+      {isLast && (
+        <p className="text-center font-sans text-[11px] text-maroon/55">
+          This is the last recipient — confirm to review your order.
+        </p>
+      )}
+    </form>
   );
 }
 
@@ -777,7 +915,7 @@ function Stepper({
   active: number;
 }) {
   return (
-    <ol className="flex items-center justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61,0,46,0.08)] backdrop-blur-sm">
+    <ol className="flex items-center justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm">
       {steps.map((step, i) => {
         const isDone = i < active;
         const isActive = i === active;
