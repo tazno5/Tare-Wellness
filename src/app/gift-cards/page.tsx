@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -16,18 +16,19 @@ type GiftCard = {
   price: string;
   priceValue: number;
   tag: string;
+  badge: string;
   description: string;
   gradient: string;
 };
 
 // Fallback cards used while fetching from API / if fetch fails
 const FALLBACK_CARDS: GiftCard[] = [
-  { id: "one", title: "One Session", sessionCount: 1, price: "₦25,000", priceValue: 25000, tag: "Flexible", description: "A single, unhurried session. Perfect for a first step or a moment of release when life gets loud.", gradient: "from-[#E8D5F2] via-[#F5E3F0] to-[#FBD7E3]" },
-  { id: "two", title: "Two Sessions", sessionCount: 2, price: "₦40,000", priceValue: 40000, tag: "Momentum", description: "Two sessions to settle in, go deeper, and start building the rhythm of care that actually sticks.", gradient: "from-[#FFE0C2] via-[#FFD1DC] to-[#FDC4D6]" },
-  { id: "three", title: "Three Sessions", sessionCount: 3, price: "₦75,000", priceValue: 75000, tag: "Ongoing Care", description: "Three sessions for a real arc — name it, sit with it, and leave with something you can actually carry.", gradient: "from-[#D6C7F2] via-[#E0CBF0] to-[#F0CFE6]" },
+  { id: "one", title: "Seed — One Session", sessionCount: 1, price: "₦20,000", priceValue: 20000, tag: "Flexible", badge: "START HERE", description: "One session. All theirs.", gradient: "from-[#E8D5F2] via-[#F5E3F0] to-[#FBD7E3]" },
+  { id: "two", title: "Root — Two Sessions", sessionCount: 2, price: "₦39,000", priceValue: 39000, tag: "Momentum", badge: "MOST LOVED", description: "Two sessions. Or split it — give one away.", gradient: "from-[#FFE0C2] via-[#FFD1DC] to-[#FDC4D6]" },
+  { id: "three", title: "Grove — Three Sessions", sessionCount: 3, price: "₦57,000", priceValue: 57000, tag: "Ongoing Care", badge: "FULLY THEIRS", description: "Three sessions of steady care.", gradient: "from-[#D6C7F2] via-[#E0CBF0] to-[#F0CFE6]" },
 ];
 
-const FILTERS = ["1 Session", "2 Sessions", "3 Sessions"] as const;
+const FILTERS = ["All Cards", "Seed", "Root", "Grove"] as const;
 type FilterLabel = (typeof FILTERS)[number];
 
 const container = {
@@ -48,6 +49,20 @@ const itemUp = {
 };
 
 export default function GiftCardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-1 items-center justify-center font-sans text-maroon">
+          Loading…
+        </div>
+      }
+    >
+      <GiftCardPageContent />
+    </Suspense>
+  );
+}
+
+function GiftCardPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -80,6 +95,7 @@ export default function GiftCardPage() {
             price: `₦${c.price.toLocaleString()}`,
             priceValue: c.price,
             tag: c.tag,
+            badge: c.slug === "one" ? "START HERE" : c.slug === "two" ? "MOST LOVED" : "FULLY THEIRS",
             description: c.description,
             gradient: c.gradient,
           }));
@@ -114,7 +130,16 @@ export default function GiftCardPage() {
     setCart(cart.map((c) => c.cardId === cardId ? { ...c, qty: Math.max(0, c.qty - 1) } : c).filter((c) => c.qty > 0));
   };
 
-  const filteredCards = activeFilter ? cards.filter((c) => `${c.sessionCount} Session${c.sessionCount === 1 ? "" : "s"}` === activeFilter) : cards;
+  const filteredCards =
+    !activeFilter || activeFilter === "All Cards"
+      ? cards
+      : activeFilter === "Seed"
+        ? cards.filter((c) => c.id === "one")
+        : activeFilter === "Root"
+          ? cards.filter((c) => c.id === "two")
+          : activeFilter === "Grove"
+            ? cards.filter((c) => c.id === "three")
+            : cards;
 
   const handleProceed = () => {
     if (totalQty === 0) return;
@@ -204,12 +229,12 @@ export default function GiftCardPage() {
       <section className="relative w-full px-5 sm:px-8 lg:px-12">
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-center gap-2 sm:gap-3">
           {FILTERS.map((label) => {
-            const active = activeFilter === label;
+            const active = (activeFilter ?? "All Cards") === label;
             return (
               <button
                 key={label}
                 type="button"
-                onClick={() => setActiveFilter(active ? null : label)}
+                onClick={() => setActiveFilter(active && label === "All Cards" ? null : label)}
                 className={`rounded-full px-4 py-2 font-sans text-xs font-semibold transition-all duration-200 sm:text-sm ${
                   active
                     ? "bg-[#4E0030] text-white shadow-md"
@@ -245,6 +270,12 @@ export default function GiftCardPage() {
                   <div
                     className={`relative flex h-36 flex-col items-center justify-center bg-gradient-to-br ${card.gradient} px-6 py-6 sm:h-40`}
                   >
+                    {/* Badge pill — top-right corner */}
+                    {card.badge && (
+                      <span className="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#4E0030] px-2.5 py-1 font-sans text-[9px] font-bold uppercase tracking-[0.14em] text-white shadow-sm sm:text-[10px]">
+                        {card.badge}
+                      </span>
+                    )}
                     <span className="font-fraunces text-lg font-bold text-maroon sm:text-xl">
                       Tare Gift Card
                     </span>
