@@ -1,0 +1,805 @@
+     1→"use client";
+     2→
+     3→import { Suspense, useEffect, useMemo } from "react";
+     4→import { useSearchParams, useRouter } from "next/navigation";
+     5→import Link from "next/link";
+     6→import Image from "next/image";
+     7→import { motion } from "framer-motion";
+     8→import {
+     9→  ArrowLeft,
+    10→  ArrowRight,
+    11→  Pencil,
+    12→  ShieldCheck,
+    13→  Lock,
+    14→  Heart,
+    15→  Mail,
+    16→  Gift,
+    17→  CalendarHeart,
+    18→  Sparkles,
+    19→  Check,
+    20→  Moon,
+    21→} from "lucide-react";
+    22→import { useStore } from "@/lib/store";
+    23→import { useToast } from "@/hooks/use-toast";
+    24→
+    25→const CARD_LOOKUP: Record<
+    26→  string,
+    27→  { title: string; price: number; sessions: number; gradient: string; tag: string }
+    28→> = {
+    29→  one: {
+    30→    title: "One Session",
+    31→    price: 25000,
+    32→    sessions: 1,
+    33→    gradient: "from-[#E8D5F2] via-[#F5E3F0] to-[#FBD7E3]",
+    34→    tag: "Flexible",
+    35→  },
+    36→  two: {
+    37→    title: "Two Sessions",
+    38→    price: 40000,
+    39→    sessions: 2,
+    40→    gradient: "from-[#FFE0C2] via-[#FFD1DC] to-[#FDC4D6]",
+    41→    tag: "Momentum",
+    42→  },
+    43→  three: {
+    44→    title: "Three Sessions",
+    45→    price: 75000,
+    46→    sessions: 3,
+    47→    gradient: "from-[#D6C7F2] via-[#E0CBF0] to-[#F0CFE6]",
+    48→    tag: "Ongoing Care",
+    49→  },
+    50→};
+    51→
+    52→const STEPS = [
+    53→  { label: "Gift Card", href: "/gift-cards" },
+    54→  { label: "Details", href: "/recipient-details" },
+    55→  { label: "Recipient", href: "/recipient-details" },
+    56→  { label: "Review", href: "/cart-review" },
+    57→  { label: "Checkout", href: "/checkout" },
+    58→];
+    59→
+    60→const container = {
+    61→  hidden: { opacity: 0 },
+    62→  show: {
+    63→    opacity: 1,
+    64→    transition: { staggerChildren: 0.1, delayChildren: 0.05 },
+    65→  },
+    66→};
+    67→
+    68→const itemUp = {
+    69→  hidden: { opacity: 0, y: 18 },
+    70→  show: {
+    71→    opacity: 1,
+    72→    y: 0,
+    73→    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+    74→  },
+    75→};
+    76→
+    77→function CartReviewContent() {
+    78→  const searchParams = useSearchParams();
+    79→  const router = useRouter();
+    80→  const { toast } = useToast();
+    81→  const { recipients, cart } = useStore();
+    82→  const firstNote = recipients[0]?.note;
+    83→
+    84→  // Set gradient — render + useEffect
+    85→  useMemo(() => {
+    86→    if (typeof document === "undefined") return;
+    87→    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
+    88→    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    89→  }, []);
+    90→  useEffect(() => {
+    91→    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
+    92→    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    93→    return () => {
+    94→      document.body.style.removeProperty("--page-gradient-from");
+    95→      document.body.style.removeProperty("--page-gradient-to");
+    96→    };
+    97→  }, []);
+    98→
+    99→  // Parse cart + recipients from search params (fallback to store)
+   100→  const { cartItems, recipientRows } = useMemo(() => {
+   101→    const cartParam = searchParams.get("cart") ?? "";
+   102→    const rParam = searchParams.get("recipients") ?? "";
+   103→
+   104→    const parsedCart = cartParam
+   105→      .split(",")
+   106→      .filter(Boolean)
+   107→      .map((s) => s.split(":"))
+   108→      .map(([id, qty]) => ({
+   109→        id,
+   110→        qty: parseInt(qty, 10) || 0,
+   111→      }))
+   112→      .filter((c) => CARD_LOOKUP[c.id] && c.qty > 0);
+   113→
+   114→    const parsedRecipients = rParam
+   115→      .split(",")
+   116→      .filter(Boolean)
+   117→      .map((s) => {
+   118→        const [uid, cardId, name, email] = s.split(":");
+   119→        return {
+   120→          uid,
+   121→          cardId,
+   122→          name: name && name !== "_" ? name : "",
+   123→          email: email && email !== "_" ? email : "",
+   124→        };
+   125→      });
+   126→
+   127→    return {
+   128→      cartItems:
+   129→        parsedCart.length > 0
+   130→          ? parsedCart
+   131→          : cart.map((c) => ({ id: c.cardId, qty: c.qty })),
+   132→      recipientRows:
+   133→        parsedRecipients.length > 0
+   134→          ? parsedRecipients
+   135→          : recipients.map((r) => ({
+   136→              uid: r.uid,
+   137→              cardId: r.cardId,
+   138→              name: r.name,
+   139→              email: r.email,
+   140→            })),
+   141→    };
+   142→  }, [searchParams, cart, recipients]);
+   143→
+   144→  const primaryCard = cartItems[0];
+   145→  const primaryRecipient = recipientRows[0];
+   146→
+   147→  const giftCardValue = cartItems.reduce(
+   148→    (sum, c) => sum + (CARD_LOOKUP[c.id]?.price ?? 0) * c.qty,
+   149→    0,
+   150→  );
+   151→  const processingFee = 0;
+   152→  const total = giftCardValue + processingFee;
+   153→
+   154→  const forwardQuery = useMemo(() => {
+   155→    const q = new URLSearchParams();
+   156→    const cartStr = cartItems.map((c) => `${c.id}:${c.qty}`).join(",");
+   157→    if (cartStr) q.set("cart", cartStr);
+   158→    q.set("total", String(total));
+   159→    const rStr = recipientRows
+   160→      .map((r) => `${r.uid}:${r.cardId}:${r.name || "_"}:${r.email || "_"}`)
+   161→      .join(",");
+   162→    if (rStr) q.set("recipients", rStr);
+   163→    return q.toString();
+   164→  }, [cartItems, recipientRows, total]);
+   165→
+   166→  const handleCheckout = () => {
+   167→    if (recipientRows.length === 0) {
+   168→      toast({
+   169→        title: "Add a recipient first",
+   170→        description: "You need at least one recipient before checkout.",
+   171→      });
+   172→      return;
+   173→    }
+   174→    router.push(`/checkout?${forwardQuery}`);
+   175→  };
+   176→
+   177→  const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
+   178→  const today = new Date().toLocaleDateString("en-NG", {
+   179→    weekday: "long",
+   180→    day: "numeric",
+   181→    month: "long",
+   182→    year: "numeric",
+   183→  });
+   184→
+   185→  return (
+   186→    <main className="relative flex flex-1 flex-col">
+   187→      {/* Decorative blooms */}
+   188→      <div
+   189→        aria-hidden
+   190→        className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-white/40 blur-3xl"
+   191→      />
+   192→      <div
+   193→        aria-hidden
+   194→        className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl"
+   195→      />
+   196→
+   197→      {/* Empty state: no cart data */}
+   198→      {cartItems.length === 0 ? (
+   199→        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
+   200→          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
+   201→            <Gift className="h-10 w-10 text-white" strokeWidth={2} />
+   202→          </div>
+   203→          <h2 className="font-fraunces text-3xl font-bold text-[#4E0030]">Your cart is empty</h2>
+   204→          <p className="mt-3 max-w-sm font-sans text-sm text-[#4E0030]/70">
+   205→            Choose a gift card to start sending care to someone you love.
+   206→          </p>
+   207→          <Link href="/gift-cards" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.03] hover:bg-[#3a0023]">
+   208→            Browse Gift Cards <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+   209→          </Link>
+   210→        </section>
+   211→      ) : (
+   212→      <>
+   213→
+   214→      {/* ============ HERO ============ */}
+   215→      <section className="relative w-full overflow-hidden px-5 pb-6 pt-6 sm:px-8 sm:pb-10 lg:px-12">
+   216→        <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center text-center">
+   217→          <motion.div
+   218→            initial={{ opacity: 0, y: -10 }}
+   219→            animate={{ opacity: 1, y: 0 }}
+   220→            transition={{ duration: 0.5 }}
+   221→            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]"
+   222→          >
+   223→            <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
+   224→            <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
+   225→              Step 4 · Review
+   226→            </span>
+   227→          </motion.div>
+   228→
+   229→          <motion.h1
+   230→            initial={{ opacity: 0, y: 20 }}
+   231→            animate={{ opacity: 1, y: 0 }}
+   232→            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+   233→            className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-maroon sm:text-5xl lg:text-6xl"
+   234→          >
+   235→            Everything looks beautiful.
+   236→          </motion.h1>
+   237→
+   238→          <motion.p
+   239→            initial={{ opacity: 0, y: 20 }}
+   240→            animate={{ opacity: 1, y: 0 }}
+   241→            transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+   242→            className="mt-4 max-w-xl font-sans text-[15px] leading-relaxed text-maroon/85 sm:text-[17px]"
+   243→          >
+   244→            One last look before you send care. Edit anything below, then
+   245→            continue to checkout.
+   246→          </motion.p>
+   247→
+   248→          {/* Hero image */}
+   249→          <motion.div
+   250→            initial={{ opacity: 0, scale: 0.94, y: 24 }}
+   251→            animate={{ opacity: 1, scale: 1, y: 0 }}
+   252→            transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+   253→            className="relative mt-6 aspect-[534/500] w-full max-w-[260px] sm:max-w-[300px] lg:max-w-[340px]"
+   254→          >
+   255→            <div
+   256→              aria-hidden
+   257→              className="absolute inset-6 rounded-full bg-white/30 blur-2xl"
+   258→            />
+   259→            <Image
+   260→              src="/hero-cart-review.png"
+   261→              alt="Whimsical creatures admiring a beautifully wrapped gift together"
+   262→              fill
+   263→              priority
+   264→              sizes="(max-width: 640px) 65vw, (max-width: 1024px) 300px, 340px"
+   265→              className="hero-shadow relative animate-float-slow object-contain"
+   266→            />
+   267→          </motion.div>
+   268→
+   269→          {/* Stepper */}
+   270→          <motion.div
+   271→            initial={{ opacity: 0, y: 16 }}
+   272→            animate={{ opacity: 1, y: 0 }}
+   273→            transition={{ duration: 0.6, delay: 0.3 }}
+   274→            className="mt-6 w-full max-w-3xl"
+   275→          >
+   276→            <Stepper steps={STEPS} active={3} />
+   277→          </motion.div>
+   278→        </div>
+   279→      </section>
+   280→
+   281→      {/* ============ TWO COLUMN REVIEW ============ */}
+   282→      <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
+   283→        <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
+   284→          {/* LEFT column */}
+   285→          <motion.div
+   286→            variants={container}
+   287→            initial="hidden"
+   288→            animate="show"
+   289→            className="flex flex-col gap-6"
+   290→          >
+   291→            {/* Selected Package */}
+   292→            <motion.article
+   293→              variants={itemUp}
+   294→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+   295→            >
+   296→              <div className="flex items-center justify-between">
+   297→                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   298→                  Selected Package
+   299→                </h2>
+   300→                <Link
+   301→                  href="/gift-cards"
+   302→                  className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon transition-all hover:bg-blush-dark active:scale-95"
+   303→                >
+   304→                  <Pencil className="h-3 w-3" strokeWidth={2.5} />
+   305→                  Edit Choice
+   306→                </Link>
+   307→              </div>
+   308→              <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+   309→                {/* Thumbnail */}
+   310→                <div
+   311→                  className={`relative flex h-24 w-full shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br ${
+   312→                    primaryCard ? CARD_LOOKUP[primaryCard.id]?.gradient : "from-[#FCE4EC] to-[#F8BBD0]"
+   313→                  } sm:w-32`}
+   314→                >
+   315→                  <Gift className="h-8 w-8 text-maroon" strokeWidth={2} />
+   316→                  <span className="absolute bottom-1.5 right-2 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-maroon/70">
+   317→                    Tare
+   318→                  </span>
+   319→                </div>
+   320→                <div className="flex-1">
+   321→                  <h3 className="font-fraunces text-xl font-bold text-maroon">
+   322→                    {primaryCard ? CARD_LOOKUP[primaryCard.id]?.title : "No package"}
+   323→                  </h3>
+   324→                  <p className="mt-1 font-sans text-sm text-maroon/70">
+   325→                    {primaryCard
+   326→                      ? `${primaryCard.qty} × ${CARD_LOOKUP[primaryCard.id]?.sessions} session${
+   327→                          CARD_LOOKUP[primaryCard.id]?.sessions === 1 ? "" : "s"
+   328→                        }`
+   329→                      : "Choose a gift card to begin."}
+   330→                  </p>
+   331→                  <div className="mt-2 flex flex-wrap gap-2">
+   332→                    {cartItems.map((c) => (
+   333→                      <span
+   334→                        key={c.id}
+   335→                        className="inline-flex items-center rounded-full bg-blush px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-maroon"
+   336→                      >
+   337→                        {CARD_LOOKUP[c.id]?.title} × {c.qty}
+   338→                      </span>
+   339→                    ))}
+   340→                  </div>
+   341→                </div>
+   342→              </div>
+   343→            </motion.article>
+   344→
+   345→            {/* Recipient Details 2x2 grid */}
+   346→            <motion.article
+   347→              variants={itemUp}
+   348→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+   349→            >
+   350→              <div className="flex items-center justify-between">
+   351→                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   352→                  Recipient Details
+   353→                </h2>
+   354→                <Link
+   355→                  href="/recipient-details"
+   356→                  className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon transition-all hover:bg-blush-dark active:scale-95"
+   357→                >
+   358→                  <Pencil className="h-3 w-3" strokeWidth={2.5} />
+   359→                  Edit
+   360→                </Link>
+   361→              </div>
+   362→
+   363→              {recipientRows.length === 0 ? (
+   364→                <p className="mt-4 font-sans text-sm text-maroon/60">
+   365→                  No recipients yet.{" "}
+   366→                  <Link href="/recipient-details" className="underline">
+   367→                    Add one →
+   368→                  </Link>
+   369→                </p>
+   370→              ) : (
+   371→                <div className="mt-4 grid grid-cols-2 gap-3">
+   372→                  <DetailCell
+   373→                    label="Name"
+   374→                    value={primaryRecipient?.name || "—"}
+   375→                    icon={<Heart className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   376→                  />
+   377→                  <DetailCell
+   378→                    label="Email"
+   379→                    value={primaryRecipient?.email || "—"}
+   380→                    icon={<Mail className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   381→                  />
+   382→                  <DetailCell
+   383→                    label="Delivery Date"
+   384→                    value={today}
+   385→                    icon={<CalendarHeart className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   386→                  />
+   387→                  <DetailCell
+   388→                    label="Recipients"
+   389→                    value={`${recipientRows.length} total`}
+   390→                    icon={<Gift className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   391→                  />
+   392→                </div>
+   393→              )}
+   394→            </motion.article>
+   395→
+   396→            {/* Personal Message */}
+   397→            <motion.article
+   398→              variants={itemUp}
+   399→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+   400→            >
+   401→              <div className="flex items-center justify-between">
+   402→                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   403→                  Personal Message
+   404→                </h2>
+   405→                <Link
+   406→                  href="/recipient-details"
+   407→                  className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon transition-all hover:bg-blush-dark active:scale-95"
+   408→                >
+   409→                  <Pencil className="h-3 w-3" strokeWidth={2.5} />
+   410→                  Edit
+   411→                </Link>
+   412→              </div>
+   413→              <div className="mt-4 rounded-2xl border-l-4 border-[#F10897] bg-blush/40 p-4">
+   414→                <p className="font-fraunces text-base italic leading-relaxed text-maroon">
+   415→                  &ldquo;
+   416→                  {firstNote ||
+   417→                    "Sending you a moment of peace. Take your time — this is for you."}
+   418→                  &rdquo;
+   419→                </p>
+   420→                <p className="mt-2 font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/60">
+   421→                  — From you
+   422→                </p>
+   423→              </div>
+   424→            </motion.article>
+   425→          </motion.div>
+   426→
+   427→          {/* RIGHT column */}
+   428→          <motion.div
+   429→            variants={container}
+   430→            initial="hidden"
+   431→            animate="show"
+   432→            className="flex flex-col gap-6"
+   433→          >
+   434→            {/* Order Summary */}
+   435→            <motion.article
+   436→              variants={itemUp}
+   437→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+   438→            >
+   439→              <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   440→                Order Summary
+   441→              </h2>
+   442→              <ul className="mt-4 space-y-3 font-sans text-sm">
+   443→                <li className="flex items-center justify-between">
+   444→                  <span className="text-maroon/80">Gift Card Value</span>
+   445→                  <span className="font-bold tabular-nums text-maroon">
+   446→                    {formatPrice(giftCardValue)}
+   447→                  </span>
+   448→                </li>
+   449→                <li className="flex items-center justify-between">
+   450→                  <span className="text-maroon/80">Processing Fee</span>
+   451→                  <span className="inline-flex items-center gap-1 font-bold text-[#F10897]">
+   452→                    <span className="rounded-full bg-[#F10897]/10 px-2 py-0.5 text-xs uppercase tracking-wider">
+   453→                      Free
+   454→                    </span>
+   455→                  </span>
+   456→                </li>
+   457→              </ul>
+   458→              <div className="mt-4 flex items-center justify-between border-t border-maroon/15 pt-4">
+   459→                <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70">
+   460→                  Total
+   461→                </span>
+   462→                <span className="font-fraunces text-2xl font-extrabold tabular-nums text-maroon">
+   463→                  {formatPrice(total)}
+   464→                </span>
+   465→              </div>
+   466→              <button
+   467→                type="button"
+   468→                onClick={handleCheckout}
+   469→                className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95"
+   470→              >
+   471→                Continue to Checkout
+   472→                <ArrowRight
+   473→                  className="h-4 w-4 transition-transform group-hover:translate-x-1"
+   474→                  strokeWidth={2.5}
+   475→                />
+   476→              </button>
+   477→            </motion.article>
+   478→
+   479→            {/* Trust Badges */}
+   480→            <motion.div
+   481→              variants={itemUp}
+   482→              className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+   483→            >
+   484→              {[
+   485→                {
+   486→                  icon: <Lock className="h-4 w-4" strokeWidth={2.5} />,
+   487→                  title: "Secure Payment",
+   488→                  body: "256-bit encryption",
+   489→                },
+   490→                {
+   491→                  icon: <ShieldCheck className="h-4 w-4" strokeWidth={2.5} />,
+   492→                  title: "Verified Therapists",
+   493→                  body: "Licensed & vetted",
+   494→                },
+   495→                {
+   496→                  icon: <Heart className="h-4 w-4" strokeWidth={2.5} />,
+   497→                  title: "Care First",
+   498→                  body: "No expiry, ever",
+   499→                },
+   500→              ].map((b) => (
+   501→                <div
+   502→                  key={b.title}
+   503→                  className="rounded-2xl bg-white/80 p-3 text-center shadow-[0_6px_20px_rgba(61,0,46,0.08)] backdrop-blur-sm"
+   504→                >
+   505→                  <div className="mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon">
+   506→                    {b.icon}
+   507→                  </div>
+   508→                  <p className="mt-2 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon">
+   509→                    {b.title}
+   510→                  </p>
+   511→                  <p className="mt-0.5 font-sans text-[10px] text-maroon/60">
+   512→                    {b.body}
+   513→                  </p>
+   514→                </div>
+   515→              ))}
+   516→            </motion.div>
+   517→
+   518→            {/* How It Reaches Them — dark card */}
+   519→            <motion.article
+   520→              variants={itemUp}
+   521→              className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(61,0,46,0.30)] sm:p-6"
+   522→            >
+   523→              <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
+   524→                How It Reaches Them
+   525→              </h2>
+   526→              <ol className="mt-4 space-y-3">
+   527→                {[
+   528→                  {
+   529→                    icon: <Gift className="h-4 w-4" strokeWidth={2.5} />,
+   530→                    title: "Order placed",
+   531→                    body: "We process your payment securely.",
+   532→                  },
+   533→                  {
+   534→                    icon: <Mail className="h-4 w-4" strokeWidth={2.5} />,
+   535→                    title: "Email delivered",
+   536→                    body: "Their gift card lands in their inbox.",
+   537→                  },
+   538→                  {
+   539→                    icon: <Moon className="h-4 w-4" strokeWidth={2.5} />,
+   540→                    title: "They rest",
+   541→                    body: "Pick a session, at their own pace.",
+   542→                  },
+   543→                ].map((s, i) => (
+   544→                  <li key={s.title} className="flex items-start gap-3">
+   545→                    <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+   546→                      {s.icon}
+   547→                      {i < 2 && (
+   548→                        <span className="absolute -bottom-3 left-1/2 h-3 w-px -translate-x-1/2 bg-white/25" />
+   549→                      )}
+   550→                    </div>
+   551→                    <div>
+   552→                      <p className="font-sans text-sm font-bold text-white">
+   553→                        {s.title}
+   554→                      </p>
+   555→                      <p className="font-sans text-xs text-blush/80">{s.body}</p>
+   556→                    </div>
+   557→                  </li>
+   558→                ))}
+   559→              </ol>
+   560→            </motion.article>
+   561→          </motion.div>
+   562→        </div>
+   563→      </section>
+   564→
+   565→      {/* ============ EMAIL PREVIEW ============ */}
+   566→      <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
+   567→        <div className="mx-auto w-full max-w-6xl">
+   568→          <motion.div
+   569→            initial={{ opacity: 0, y: 18 }}
+   570→            whileInView={{ opacity: 1, y: 0 }}
+   571→            viewport={{ once: true, amount: 0.3 }}
+   572→            transition={{ duration: 0.6 }}
+   573→            className="flex flex-col items-center gap-2 text-center"
+   574→          >
+   575→            <h2 className="font-fraunces text-3xl font-extrabold text-maroon sm:text-4xl">
+   576→              What Your Recipient Will Receive
+   577→            </h2>
+   578→            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.14em] text-maroon shadow-sm">
+   579→              <span className="h-1.5 w-1.5 rounded-full bg-[#F10897] animate-pulse" />
+   580→              Live Preview Mode
+   581→            </span>
+   582→          </motion.div>
+   583→
+   584→          <motion.div
+   585→            initial={{ opacity: 0, y: 24 }}
+   586→            whileInView={{ opacity: 1, y: 0 }}
+   587→            viewport={{ once: true, amount: 0.2 }}
+   588→            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+   589→            className="mx-auto mt-6 w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-[0_18px_60px_rgba(61,0,46,0.18)]"
+   590→          >
+   591→            {/* Email header */}
+   592→            <div className="flex items-center justify-between border-b border-maroon/10 bg-blush/40 px-5 py-3 sm:px-6">
+   593→              <div className="flex items-center gap-2">
+   594→                <Image
+   595→                  src="/logo.png"
+   596→                  alt="Tare logo"
+   597→                  width={32}
+   598→                  height={32}
+   599→                  className="h-8 w-8 object-contain"
+   600→                />
+   601→                <span className="font-fraunces text-sm font-bold text-maroon">
+   602→                  Tare Wellness
+   603→                </span>
+   604→              </div>
+   605→              <span className="font-sans text-[11px] text-maroon/60" suppressHydrationWarning>
+   606→                {today}
+   607→              </span>
+   608→            </div>
+   609→
+   610→            {/* Email body */}
+   611→            <div className="p-5 sm:p-8">
+   612→              <p className="font-sans text-sm text-maroon/80">
+   613→                Dear{" "}
+   614→                <span className="font-bold text-maroon">
+   615→                  {primaryRecipient?.name || "Friend"}
+   616→                </span>
+   617→                ,
+   618→              </p>
+   619→              <p className="mt-3 font-sans text-sm leading-relaxed text-maroon/80">
+   620→                Someone who cares about you has sent a Tare gift card. Take a
+   621→                breath — your moment of rest is ready whenever you are.
+   622→              </p>
+   623→
+   624→              {/* Embedded gift card */}
+   625→              <div
+   626→                className={`relative mt-5 flex aspect-[5/3] flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br ${
+   627→                  primaryCard ? CARD_LOOKUP[primaryCard.id]?.gradient : "from-[#FCE4EC] to-[#F8BBD0]"
+   628→                } p-5 shadow-[0_10px_30px_rgba(61,0,46,0.18)]`}
+   629→              >
+   630→                <div className="flex items-start justify-between">
+   631→                  <div>
+   632→                    <p className="font-fraunces text-lg font-bold text-maroon">
+   633→                      Tare Gift Card
+   634→                    </p>
+   635→                    <p className="mt-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-maroon/70">
+   636→                      {primaryCard ? CARD_LOOKUP[primaryCard.id]?.title : "Gift"}
+   637→                    </p>
+   638→                  </div>
+   639→                  <Gift className="h-6 w-6 text-maroon/70" strokeWidth={2} />
+   640→                </div>
+   641→                <div>
+   642→                  <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon/60">
+   643→                    Value
+   644→                  </p>
+   645→                  <p className="font-fraunces text-2xl font-extrabold text-maroon">
+   646→                    {formatPrice(primaryCard ? CARD_LOOKUP[primaryCard.id]?.price ?? 0 : 0)}
+   647→                  </p>
+   648→                </div>
+   649→              </div>
+   650→
+   651→              <div className="mt-5 rounded-2xl bg-blush/40 p-4">
+   652→                <p className="font-fraunces text-sm italic text-maroon">
+   653→                  &ldquo;{firstNote || "Sending you a moment of peace."}&rdquo;
+   654→                </p>
+   655→              </div>
+   656→
+   657→              <Link
+   658→                href="/redeem"
+   659→                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all hover:scale-[1.01] hover:bg-[#3a0023] active:scale-95"
+   660→              >
+   661→                Redeem My Gift
+   662→                <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+   663→              </Link>
+   664→
+   665→              <p className="mt-4 font-sans text-[11px] leading-relaxed text-maroon/50">
+   666→                This gift card never expires. Questions? Reply to this email and
+   667→                we&apos;ll take care of you.
+   668→              </p>
+   669→            </div>
+   670→          </motion.div>
+   671→        </div>
+   672→      </section>
+   673→
+   674→      {/* ============ BOTTOM NAV ============ */}
+   675→      <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
+   676→        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
+   677→          <Link
+   678→            href="/recipient-details"
+   679→            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+   680→          >
+   681→            <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+   682→            Recipient&apos;s Details
+   683→          </Link>
+   684→          <button
+   685→            type="button"
+   686→            onClick={handleCheckout}
+   687→            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 sm:w-auto"
+   688→          >
+   689→            Continue to Checkout
+   690→            <ArrowRight
+   691→              className="h-4 w-4 transition-transform group-hover:translate-x-1"
+   692→              strokeWidth={2.5}
+   693→            />
+   694→          </button>
+   695→        </div>
+   696→      </section>
+   697→      </>
+   698→      )}
+   699→    </main>
+   700→  );
+   701→}
+   702→
+   703→function DetailCell({
+   704→  label,
+   705→  value,
+   706→  icon,
+   707→}: {
+   708→  label: string;
+   709→  value: string;
+   710→  icon: React.ReactNode;
+   711→}) {
+   712→  return (
+   713→    <div className="rounded-2xl bg-blush/40 p-3">
+   714→      <div className="flex items-center gap-1.5 text-maroon/60">
+   715→        {icon}
+   716→        <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em]">
+   717→          {label}
+   718→        </span>
+   719→      </div>
+   720→      <p
+   721→        className="mt-1.5 truncate font-sans text-sm font-bold text-maroon"
+   722→        suppressHydrationWarning
+   723→      >
+   724→        {value}
+   725→      </p>
+   726→    </div>
+   727→  );
+   728→}
+   729→
+   730→function Stepper({
+   731→  steps,
+   732→  active,
+   733→}: {
+   734→  steps: { label: string; href: string }[];
+   735→  active: number;
+   736→}) {
+   737→  return (
+   738→    <ol className="flex items-center justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61,0,46,0.08)] backdrop-blur-sm">
+   739→      {steps.map((step, i) => {
+   740→        const isDone = i < active;
+   741→        const isActive = i === active;
+   742→        return (
+   743→          <li
+   744→            key={step.label}
+   745→            className="flex flex-1 flex-col items-center gap-1.5 text-center"
+   746→          >
+   747→            <div className="flex w-full items-center">
+   748→              {i > 0 && (
+   749→                <span
+   750→                  className={`h-0.5 flex-1 ${
+   751→                    isDone || isActive ? "bg-[#F10897]" : "bg-maroon/15"
+   752→                  }`}
+   753→                />
+   754→              )}
+   755→              <span
+   756→                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-sans text-[11px] font-bold transition-colors ${
+   757→                  isActive
+   758→                    ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
+   759→                    : isDone
+   760→                      ? "bg-[#4E0030] text-white"
+   761→                      : "bg-maroon/10 text-maroon/60"
+   762→                }`}
+   763→              >
+   764→                {isDone ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : i + 1}
+   765→              </span>
+   766→              {i < steps.length - 1 && (
+   767→                <span
+   768→                  className={`h-0.5 flex-1 ${
+   769→                    i < active ? "bg-[#F10897]" : "bg-maroon/15"
+   770→                  }`}
+   771→                />
+   772→              )}
+   773→            </div>
+   774→            <span
+   775→              className={`font-sans text-[10px] font-bold uppercase tracking-[0.1em] ${
+   776→                isActive
+   777→                  ? "text-[#F10897]"
+   778→                  : isDone
+   779→                    ? "text-maroon"
+   780→                    : "text-maroon/50"
+   781→              }`}
+   782→            >
+   783→              {step.label}
+   784→            </span>
+   785→          </li>
+   786→        );
+   787→      })}
+   788→    </ol>
+   789→  );
+   790→}
+   791→
+   792→export default function CartReviewPage() {
+   793→  return (
+   794→    <Suspense
+   795→      fallback={
+   796→        <div className="flex flex-1 items-center justify-center font-sans text-maroon">
+   797→          Loading…
+   798→        </div>
+   799→      }
+   800→    >
+   801→      <CartReviewContent />
+   802→    </Suspense>
+   803→  );
+   804→}
+   805→

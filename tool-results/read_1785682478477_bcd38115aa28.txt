@@ -1,0 +1,773 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useMemo, useState } from "react";
+     4→import Link from "next/link";
+     5→import Image from "next/image";
+     6→import { motion, AnimatePresence } from "framer-motion";
+     7→import {
+     8→  Sparkles,
+     9→  ChevronLeft,
+    10→  ChevronRight,
+    11→  User,
+    12→  Users,
+    13→  Users2,
+    14→  HeartHandshake,
+    15→  Clock,
+    16→  Sun,
+    17→  Sunset,
+    18→  Moon,
+    19→  Check,
+    20→  ArrowRight,
+    21→  CalendarCheck,
+    22→  Stethoscope,
+    23→  Gift,
+    24→  HelpCircle,
+    25→  Loader2,
+    26→} from "lucide-react";
+    27→import {
+    28→  Accordion,
+    29→  AccordionContent,
+    30→  AccordionItem,
+    31→  AccordionTrigger,
+    32→} from "@/components/ui/accordion";
+    33→import { useStore, type BookingDetails } from "@/lib/store";
+    34→import { useToast } from "@/hooks/use-toast";
+    35→
+    36→const SESSION_TYPES: {
+    37→  id: BookingDetails["sessionType"];
+    38→  title: string;
+    39→  duration: string;
+    40→  price: number;
+    41→  coverage: string;
+    42→  icon: React.ReactNode;
+    43→  description: string;
+    44→}[] = [
+    45→  {
+    46→    id: "individual",
+    47→    title: "Individual",
+    48→    duration: "50 min",
+    49→    price: 25000,
+    50→    coverage: "1 person",
+    51→    icon: <User className="h-5 w-5" strokeWidth={2.5} />,
+    52→    description: "One-on-one space with a licensed therapist.",
+    53→  },
+    54→  {
+    55→    id: "couples",
+    56→    title: "Couples",
+    57→    duration: "60 min",
+    58→    price: 30000,
+    59→    coverage: "2 people",
+    60→    icon: <Users className="h-5 w-5" strokeWidth={2.5} />,
+    61→    description: "A guided conversation for two.",
+    62→  },
+    63→  {
+    64→    id: "family",
+    65→    title: "Family",
+    66→    duration: "75 min",
+    67→    price: 40000,
+    68→    coverage: "Up to 4",
+    69→    icon: <Users2 className="h-5 w-5" strokeWidth={2.5} />,
+    70→    description: "For families reshaping how they connect.",
+    71→  },
+    72→  {
+    73→    id: "wellness",
+    74→    title: "Wellness",
+    75→    duration: "30 min",
+    76→    price: 15000,
+    77→    coverage: "1 person",
+    78→    icon: <HeartHandshake className="h-5 w-5" strokeWidth={2.5} />,
+    79→    description: "A shorter reset — breath, mindfulness, or check-in.",
+    80→  },
+    81→];
+    82→
+    83→const TIME_SLOTS: {
+    84→  id: string;
+    85→  label: string;
+    86→  range: string;
+    87→  icon: React.ReactNode;
+    88→  times: string[];
+    89→}[] = [
+    90→  {
+    91→    id: "morning",
+    92→    label: "Morning",
+    93→    range: "9:00 AM – 11:30 AM",
+    94→    icon: <Sun className="h-4 w-4" strokeWidth={2.5} />,
+    95→    times: ["9:00 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM"],
+    96→  },
+    97→  {
+    98→    id: "afternoon",
+    99→    label: "Afternoon",
+   100→    range: "12:00 PM – 4:30 PM",
+   101→    icon: <Sunset className="h-4 w-4" strokeWidth={2.5} />,
+   102→    times: ["12:00 PM", "1:00 PM", "2:30 PM", "3:00 PM", "4:00 PM"],
+   103→  },
+   104→  {
+   105→    id: "evening",
+   106→    label: "Evening",
+   107→    range: "5:00 PM – 8:30 PM",
+   108→    icon: <Moon className="h-4 w-4" strokeWidth={2.5} />,
+   109→    times: ["5:00 PM", "6:00 PM", "6:30 PM", "7:00 PM", "8:00 PM"],
+   110→  },
+   111→];
+   112→
+   113→const FAQS = [
+   114→  {
+   115→    q: "Can I reschedule my session?",
+   116→    a: "Yes — up to 24 hours before your appointment, with no penalty. Just visit your booking confirmation page or reply to your confirmation email.",
+   117→  },
+   118→  {
+   119→    q: "What if I need to cancel?",
+   120→    a: "Life happens. You can cancel up to 24 hours in advance and your gift credit returns to your balance, ready to rebook whenever suits you.",
+   121→  },
+   122→  {
+   123→    q: "Are sessions online or in person?",
+   124→    a: "Both options are available. After confirming your booking, your therapist will reach out with details and a secure video link if you choose online.",
+   125→  },
+   126→];
+   127→
+   128→const container = {
+   129→  hidden: { opacity: 0 },
+   130→  show: {
+   131→    opacity: 1,
+   132→    transition: { staggerChildren: 0.1, delayChildren: 0.05 },
+   133→  },
+   134→};
+   135→
+   136→const itemUp = {
+   137→  hidden: { opacity: 0, y: 18 },
+   138→  show: {
+   139→    opacity: 1,
+   140→    y: 0,
+   141→    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+   142→  },
+   143→};
+   144→
+   145→const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+   146→const MONTH_NAMES = [
+   147→  "January", "February", "March", "April", "May", "June",
+   148→  "July", "August", "September", "October", "November", "December",
+   149→];
+   150→
+   151→export default function BookSessionPage() {
+   152→  const { toast } = useToast();
+   153→  const { booking, setBooking, redemption } = useStore();
+   154→
+   155→  const [viewMonth, setViewMonth] = useState(() => {
+   156→    const now = new Date();
+   157→    return new Date(now.getFullYear(), now.getMonth(), 1);
+   158→  });
+   159→  const [selectedDate, setSelectedDate] = useState<Date | null>(
+   160→    booking.selectedDate ? new Date(booking.selectedDate) : null,
+   161→  );
+   162→  const [sessionType, setSessionType] = useState<BookingDetails["sessionType"]>(
+   163→    booking.sessionType,
+   164→  );
+   165→  const [selectedTime, setSelectedTime] = useState<string>(booking.selectedTime);
+   166→
+   167→  // Set gradient — render + useEffect
+   168→  useMemo(() => {
+   169→    if (typeof document === "undefined") return;
+   170→    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
+   171→    document.body.style.setProperty("--page-gradient-to", "#F10897");
+   172→  }, []);
+   173→  useEffect(() => {
+   174→    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
+   175→    document.body.style.setProperty("--page-gradient-to", "#F10897");
+   176→    return () => {
+   177→      document.body.style.removeProperty("--page-gradient-from");
+   178→      document.body.style.removeProperty("--page-gradient-to");
+   179→    };
+   180→  }, []);
+   181→
+   182→  // On any selection change, write booking details to the store
+   183→  useEffect(() => {
+   184→    const session = SESSION_TYPES.find((s) => s.id === sessionType)!;
+   185→    setBooking({
+   186→      sessionType,
+   187→      sessionTitle: session.title === "Individual" ? "Individual Therapy" : `${session.title} Session`,
+   188→      sessionPrice: session.price,
+   189→      selectedDate: selectedDate ? selectedDate.toISOString() : null,
+   190→      selectedTime,
+   191→      therapist: booking.therapist,
+   192→    });
+   193→  }, [sessionType, selectedDate, selectedTime, setBooking, booking.therapist]);
+   194→
+   195→  // Calendar grid for current view month
+   196→  const today = useMemo(() => {
+   197→    const d = new Date();
+   198→    d.setHours(0, 0, 0, 0);
+   199→    return d;
+   200→  }, []);
+   201→
+   202→  const calendarDays = useMemo(() => {
+   203→    const year = viewMonth.getFullYear();
+   204→    const month = viewMonth.getMonth();
+   205→    const firstOfMonth = new Date(year, month, 1);
+   206→    const startDay = firstOfMonth.getDay();
+   207→    const daysInMonth = new Date(year, month + 1, 0).getDate();
+   208→
+   209→    const cells: (Date | null)[] = [];
+   210→    for (let i = 0; i < startDay; i++) cells.push(null);
+   211→    for (let d = 1; d <= daysInMonth; d++) {
+   212→      cells.push(new Date(year, month, d));
+   213→    }
+   214→    // Pad trailing to fill a 6-row grid (42 cells)
+   215→    while (cells.length % 7 !== 0) cells.push(null);
+   216→    return cells;
+   217→  }, [viewMonth]);
+   218→
+   219→  const isSameDay = (a: Date, b: Date) =>
+   220→    a.getFullYear() === b.getFullYear() &&
+   221→    a.getMonth() === b.getMonth() &&
+   222→    a.getDate() === b.getDate();
+   223→
+   224→  const isPast = (d: Date) => {
+   225→    const cmp = new Date(d);
+   226→    cmp.setHours(0, 0, 0, 0);
+   227→    return cmp < today;
+   228→  };
+   229→
+   230→  const handlePrevMonth = () => {
+   231→    // Don't navigate before the current month
+   232→    const now = new Date();
+   233→    if (
+   234→      viewMonth.getFullYear() === now.getFullYear() &&
+   235→      viewMonth.getMonth() === now.getMonth()
+   236→    ) {
+   237→      return;
+   238→    }
+   239→    setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1));
+   240→  };
+   241→  const handleNextMonth = () => {
+   242→    setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1));
+   243→  };
+   244→
+   245→  const formattedDate = selectedDate
+   246→    ? selectedDate.toLocaleDateString("en-NG", {
+   247→        weekday: "long",
+   248→        day: "numeric",
+   249→        month: "long",
+   250→        year: "numeric",
+   251→      })
+   252→    : "Select a date";
+   253→
+   254→  // Time range from selected slot
+   255→  const selectedSlot = TIME_SLOTS.find((s) => s.times.includes(selectedTime));
+   256→  const timeRange = selectedSlot?.range ?? selectedTime;
+   257→
+   258→  const session = SESSION_TYPES.find((s) => s.id === sessionType)!;
+   259→  const giftCardApplied = redemption.redeemed ? redemption.creditBalance : 0;
+   260→  const total = Math.max(0, session.price - giftCardApplied);
+   261→
+   262→  const [confirming, setConfirming] = useState(false);
+   263→
+   264→  const canConfirm = !!selectedDate && !!selectedTime;
+   265→
+   266→  const handleConfirmClick = async (e: React.MouseEvent) => {
+   267→    if (!canConfirm) {
+   268→      e.preventDefault();
+   269→      toast({
+   270→        title: "Almost there",
+   271→        description: "Pick a date and time before confirming.",
+   272→      });
+   273→      return;
+   274→    }
+   275→    e.preventDefault();
+   276→    setConfirming(true);
+   277→    toast({
+   278→      title: "Booking your session...",
+   279→      description: "Securing your appointment — this won't take a moment.",
+   280→    });
+   281→
+   282→    try {
+   283→      const res = await fetch("/api/bookings", {
+   284→        method: "POST",
+   285→        headers: { "Content-Type": "application/json" },
+   286→        body: JSON.stringify({
+   287→          sessionType,
+   288→          sessionTitle: session.title,
+   289→          sessionPrice: session.price,
+   290→          scheduledDate: selectedDate.toISOString(),
+   291→          scheduledTime,
+   292→          therapistName: "Dr. Sarah Thompson",
+   293→          redemptionCode: redemption.redeemed ? redemption.code : undefined,
+   294→        }),
+   295→      });
+   296→
+   297→      const data = await res.json();
+   298→
+   299→      if (!res.ok) {
+   300→        throw new Error(data.error || "Failed to create booking");
+   301→      }
+   302→
+   303→      // Store the booking details for the confirmation page
+   304→      setBooking({
+   305→        sessionType,
+   306→        sessionTitle: session.title,
+   307→        sessionPrice: session.price,
+   308→        selectedDate: selectedDate.toISOString(),
+   309→        selectedTime,
+   310→        therapist: "Dr. Sarah Thompson",
+   311→      });
+   312→
+   313→      toast({
+   314→        title: "Booking confirmed!",
+   315→        description: `Your session is booked for ${selectedDate.toLocaleDateString()}.`,
+   316→      });
+   317→
+   318→      router.push("/booking-confirmation");
+   319→    } catch (error) {
+   320→      toast({
+   321→        title: "Booking failed",
+   322→        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+   323→        variant: "destructive",
+   324→      });
+   325→      setConfirming(false);
+   326→    }
+   327→  };
+   328→
+   329→  return (
+   330→    <main className="relative flex flex-1 flex-col">
+   331→      {/* Decorative blooms */}
+   332→      <div
+   333→        aria-hidden
+   334→        className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-white/50 blur-3xl"
+   335→      />
+   336→      <div
+   337→        aria-hidden
+   338→        className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl"
+   339→      />
+   340→
+   341→      {/* ============ HERO ============ */}
+   342→      <section className="relative w-full overflow-hidden px-5 pb-6 pt-6 sm:px-8 sm:pb-10 lg:px-12">
+   343→        <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center text-center">
+   344→          <motion.div
+   345→            initial={{ opacity: 0, y: -10 }}
+   346→            animate={{ opacity: 1, y: 0 }}
+   347→            transition={{ duration: 0.5 }}
+   348→            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]"
+   349→          >
+   350→            <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
+   351→            <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
+   352→              Book Your Session
+   353→            </span>
+   354→          </motion.div>
+   355→
+   356→          <motion.h1
+   357→            initial={{ opacity: 0, y: 20 }}
+   358→            animate={{ opacity: 1, y: 0 }}
+   359→            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+   360→            className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-maroon sm:text-5xl lg:text-6xl"
+   361→          >
+   362→            Let&apos;s find the right session for you!
+   363→          </motion.h1>
+   364→
+   365→          <motion.p
+   366→            initial={{ opacity: 0, y: 20 }}
+   367→            animate={{ opacity: 1, y: 0 }}
+   368→            transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+   369→            className="mt-4 max-w-xl font-sans text-[15px] leading-relaxed text-maroon/85 sm:text-[17px]"
+   370→          >
+   371→            Pick a type, choose a time, and we&apos;ll match you with a
+   372→            therapist who fits.
+   373→          </motion.p>
+   374→
+   375→          {/* Hero image */}
+   376→          <motion.div
+   377→            initial={{ opacity: 0, scale: 0.94, y: 24 }}
+   378→            animate={{ opacity: 1, scale: 1, y: 0 }}
+   379→            transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+   380→            className="relative mt-6 aspect-[534/500] w-full max-w-[240px] sm:max-w-[280px] lg:max-w-[320px]"
+   381→          >
+   382→            <div
+   383→              aria-hidden
+   384→              className="absolute inset-6 rounded-full bg-white/30 blur-2xl"
+   385→            />
+   386→            <Image
+   387→              src="/hero-book-session.png"
+   388→              alt="A whimsical creature sitting peacefully with a calendar and a glowing star overhead"
+   389→              fill
+   390→              priority
+   391→              sizes="(max-width: 640px) 60vw, (max-width: 1024px) 280px, 320px"
+   392→              className="hero-shadow relative animate-float-slow object-contain"
+   393→            />
+   394→          </motion.div>
+   395→        </div>
+   396→      </section>
+   397→
+   398→      {/* ============ BOOKING GRID ============ */}
+   399→      <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
+   400→        <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:gap-8">
+   401→          {/* LEFT: selections */}
+   402→          <motion.div
+   403→            variants={container}
+   404→            initial="hidden"
+   405→            animate="show"
+   406→            className="flex flex-col gap-6"
+   407→          >
+   408→            {/* Session type */}
+   409→            <motion.article
+   410→              variants={itemUp}
+   411→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+   412→            >
+   413→              <div className="flex items-center gap-2">
+   414→                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   415→                  Session Type
+   416→                </h2>
+   417→              </div>
+   418→              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+   419→                {SESSION_TYPES.map((s) => {
+   420→                  const active = sessionType === s.id;
+   421→                  return (
+   422→                    <button
+   423→                      key={s.id}
+   424→                      type="button"
+   425→                      onClick={() => setSessionType(s.id)}
+   426→                      aria-pressed={active}
+   427→                      className={`group flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all duration-200 ${
+   428→                        active
+   429→                          ? "border-[#F10897] bg-blush/40 shadow-[0_8px_24px_rgba(241,8,151,0.15)]"
+   430→                          : "border-maroon/10 bg-white hover:border-maroon/25"
+   431→                      }`}
+   432→                    >
+   433→                      <div
+   434→                        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+   435→                          active
+   436→                            ? "bg-[#F10897] text-white"
+   437→                            : "bg-blush text-maroon"
+   438→                        }`}
+   439→                      >
+   440→                        {s.icon}
+   441→                      </div>
+   442→                      <div className="min-w-0 flex-1">
+   443→                        <div className="flex items-center justify-between gap-2">
+   444→                          <h3 className="font-fraunces text-base font-bold text-maroon">
+   445→                            {s.title}
+   446→                          </h3>
+   447→                          {active && (
+   448→                            <Check className="h-4 w-4 text-[#F10897]" strokeWidth={2.5} />
+   449→                          )}
+   450→                        </div>
+   451→                        <p className="mt-0.5 font-sans text-[11px] text-maroon/70">
+   452→                          {s.description}
+   453→                        </p>
+   454→                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+   455→                          <span className="inline-flex items-center gap-1 rounded-full bg-blush px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-maroon">
+   456→                            <Clock className="h-2.5 w-2.5" strokeWidth={2.5} />
+   457→                            {s.duration}
+   458→                          </span>
+   459→                          <span className="inline-flex items-center rounded-full bg-[#4E0030]/10 px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-maroon">
+   460→                            {s.coverage}
+   461→                          </span>
+   462→                        </div>
+   463→                      </div>
+   464→                    </button>
+   465→                  );
+   466→                })}
+   467→              </div>
+   468→            </motion.article>
+   469→
+   470→            {/* Calendar */}
+   471→            <motion.article
+   472→              variants={itemUp}
+   473→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+   474→            >
+   475→              <div className="flex items-center justify-between">
+   476→                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   477→                  Pick a Date
+   478→                </h2>
+   479→                <div className="flex items-center gap-2">
+   480→                  <button
+   481→                    type="button"
+   482→                    onClick={handlePrevMonth}
+   483→                    aria-label="Previous month"
+   484→                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+   485→                    disabled={
+   486→                      viewMonth.getFullYear() === today.getFullYear() &&
+   487→                      viewMonth.getMonth() === today.getMonth()
+   488→                    }
+   489→                  >
+   490→                    <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
+   491→                  </button>
+   492→                  <span className="min-w-[130px] text-center font-fraunces text-sm font-bold text-maroon">
+   493→                    {MONTH_NAMES[viewMonth.getMonth()]} {viewMonth.getFullYear()}
+   494→                  </span>
+   495→                  <button
+   496→                    type="button"
+   497→                    onClick={handleNextMonth}
+   498→                    aria-label="Next month"
+   499→                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90"
+   500→                  >
+   501→                    <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+   502→                  </button>
+   503→                </div>
+   504→              </div>
+   505→
+   506→              {/* Calendar grid */}
+   507→              <div className="mt-4">
+   508→                <div className="grid grid-cols-7 gap-1">
+   509→                  {WEEKDAYS.map((d) => (
+   510→                    <div
+   511→                      key={d}
+   512→                      className="text-center font-sans text-[10px] font-bold uppercase tracking-[0.1em] text-maroon/50"
+   513→                    >
+   514→                      {d}
+   515→                    </div>
+   516→                  ))}
+   517→                </div>
+   518→                <div className="mt-2 grid grid-cols-7 gap-1">
+   519→                  {calendarDays.map((day, i) => {
+   520→                    if (!day) {
+   521→                      return <div key={`empty-${i}`} className="aspect-square" />;
+   522→                    }
+   523→                    const past = isPast(day);
+   524→                    const selected = selectedDate && isSameDay(day, selectedDate);
+   525→                    const isToday = isSameDay(day, today);
+   526→                    return (
+   527→                      <button
+   528→                        key={day.toISOString()}
+   529→                        type="button"
+   530→                        disabled={past}
+   531→                        onClick={() => setSelectedDate(day)}
+   532→                        aria-label={day.toDateString()}
+   533→                        aria-pressed={!!selected}
+   534→                        className={`relative flex aspect-square items-center justify-center rounded-xl font-sans text-sm font-semibold transition-all ${
+   535→                          selected
+   536→                            ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
+   537→                            : past
+   538→                              ? "cursor-not-allowed text-maroon/25"
+   539→                              : "text-maroon hover:bg-blush active:scale-95"
+   540→                        }`}
+   541→                      >
+   542→                        {day.getDate()}
+   543→                        {isToday && !selected && (
+   544→                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#F10897]" />
+   545→                        )}
+   546→                      </button>
+   547→                    );
+   548→                  })}
+   549→                </div>
+   550→              </div>
+   551→
+   552→              <p className="mt-4 inline-flex items-center gap-1.5 font-sans text-[11px] text-maroon/60">
+   553→                <CalendarCheck className="h-3.5 w-3.5" strokeWidth={2.5} />
+   554→                Selected: <span className="font-bold text-maroon">{formattedDate}</span>
+   555→              </p>
+   556→            </motion.article>
+   557→
+   558→            {/* Time slots */}
+   559→            <motion.article
+   560→              variants={itemUp}
+   561→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+   562→            >
+   563→              <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   564→                Pick a Time
+   565→              </h2>
+   566→
+   567→              <div className="mt-4 space-y-4">
+   568→                {TIME_SLOTS.map((slot) => (
+   569→                  <div key={slot.id}>
+   570→                    <div className="flex items-center gap-2">
+   571→                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blush text-maroon">
+   572→                        {slot.icon}
+   573→                      </span>
+   574→                      <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon">
+   575→                        {slot.label}
+   576→                      </span>
+   577→                      <span className="font-sans text-[11px] text-maroon/50">
+   578→                        {slot.range}
+   579→                      </span>
+   580→                    </div>
+   581→                    <div className="mt-2 flex flex-wrap gap-2">
+   582→                      {slot.times.map((t) => {
+   583→                        const active = selectedTime === t;
+   584→                        return (
+   585→                          <button
+   586→                            key={t}
+   587→                            type="button"
+   588→                            onClick={() => setSelectedTime(t)}
+   589→                            aria-pressed={active}
+   590→                            className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
+   591→                              active
+   592→                                ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(61,0,46,0.25)]"
+   593→                                : "bg-blush/60 text-maroon hover:bg-blush active:scale-95"
+   594→                            }`}
+   595→                          >
+   596→                            {t}
+   597→                          </button>
+   598→                        );
+   599→                      })}
+   600→                    </div>
+   601→                  </div>
+   602→                ))}
+   603→              </div>
+   604→            </motion.article>
+   605→
+   606→            {/* FAQ */}
+   607→            <motion.article
+   608→              variants={itemUp}
+   609→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+   610→            >
+   611→              <div className="flex items-center gap-2">
+   612→                <HelpCircle className="h-5 w-5 text-maroon" strokeWidth={2.5} />
+   613→                <h2 className="font-fraunces text-xl font-bold text-maroon sm:text-2xl">
+   614→                  Frequently Asked
+   615→                </h2>
+   616→              </div>
+   617→              <Accordion type="single" collapsible className="mt-3">
+   618→                {FAQS.map((faq, i) => (
+   619→                  <AccordionItem
+   620→                    key={faq.q}
+   621→                    value={`item-${i}`}
+   622→                    className="border-maroon/10"
+   623→                  >
+   624→                    <AccordionTrigger className="font-sans text-sm font-bold text-maroon hover:no-underline">
+   625→                      {faq.q}
+   626→                    </AccordionTrigger>
+   627→                    <AccordionContent className="font-sans text-sm leading-relaxed text-maroon/75">
+   628→                      {faq.a}
+   629→                    </AccordionContent>
+   630→                  </AccordionItem>
+   631→                ))}
+   632→              </Accordion>
+   633→            </motion.article>
+   634→          </motion.div>
+   635→
+   636→          {/* RIGHT: Booking Summary — sticky */}
+   637→          <motion.div variants={container} initial="hidden" animate="show">
+   638→            <motion.article
+   639→              variants={itemUp}
+   640→              className="sticky top-28 rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(61,0,46,0.30)] sm:p-6"
+   641→            >
+   642→              <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
+   643→                Booking Summary
+   644→              </h2>
+   645→
+   646→              <div className="mt-4 space-y-3 font-sans text-sm">
+   647→                <SummaryRow
+   648→                  icon={<Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   649→                  label="Service"
+   650→                  value={booking.sessionTitle}
+   651→                />
+   652→                <SummaryRow
+   653→                  icon={<CalendarCheck className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   654→                  label="Date"
+   655→                  value={formattedDate}
+   656→                />
+   657→                <SummaryRow
+   658→                  icon={<Clock className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   659→                  label="Time"
+   660→                  value={timeRange}
+   661→                />
+   662→                <SummaryRow
+   663→                  icon={<Stethoscope className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   664→                  label="Therapist"
+   665→                  value={booking.therapist}
+   666→                />
+   667→              </div>
+   668→
+   669→              <div className="mt-4 space-y-2 border-t border-white/15 pt-4 font-sans text-sm">
+   670→                <div className="flex items-center justify-between">
+   671→                  <span className="text-blush/80">Session Price</span>
+   672→                  <span className="font-bold tabular-nums text-white">
+   673→                    ₦{session.price.toLocaleString()}
+   674→                  </span>
+   675→                </div>
+   676→                {giftCardApplied > 0 ? (
+   677→                  <div className="flex items-center justify-between">
+   678→                    <span className="inline-flex items-center gap-1 text-blush/80">
+   679→                      <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
+   680→                      Gift card applied
+   681→                    </span>
+   682→                    <span className="font-bold tabular-nums text-[#F10897]">
+   683→                      -₦{giftCardApplied.toLocaleString()}
+   684→                    </span>
+   685→                  </div>
+   686→                ) : null}
+   687→              </div>
+   688→
+   689→              <div className="mt-4 flex items-center justify-between border-t border-white/15 pt-4">
+   690→                <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-blush/80">
+   691→                  Total
+   692→                </span>
+   693→                <span className="font-fraunces text-2xl font-extrabold text-white">
+   694→                  ₦{total.toLocaleString()}
+   695→                </span>
+   696→              </div>
+   697→
+   698→              {giftCardApplied > 0 ? (
+   699→                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white">
+   700→                  <Check className="h-3 w-3" strokeWidth={2.5} />
+   701→                  Gift card covers full session
+   702→                </p>
+   703→              ) : (
+   704→                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white">
+   705→                  <Gift className="h-3 w-3" strokeWidth={2.5} />
+   706→                  Redeem a gift card to cover the cost
+   707→                </p>
+   708→              )}
+   709→
+   710→              <Link
+   711→                href="/booking-confirmation"
+   712→                onClick={handleConfirmClick}
+   713→                aria-disabled={!canConfirm || confirming}
+   714→                className={`group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 font-sans text-sm font-semibold transition-all duration-200 ${
+   715→                  confirming ? "cursor-wait bg-white/15 text-white/50" : canConfirm
+   716→                    ? "bg-[#F10897] text-white shadow-[0_10px_30px_rgba(241,8,151,0.35)] hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
+   717→                    : "cursor-not-allowed bg-white/15 text-white/50"
+   718→                }`}
+   719→              >
+   720→                {confirming ? (<><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />Booking...</>) : (<>Confirm Booking<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={2.5} /></>)}
+   721→              </Link>
+   722→
+   723→              <p className="mt-3 text-center font-sans text-[11px] text-blush/70">
+   724→                No charge until your therapist confirms.
+   725→              </p>
+   726→            </motion.article>
+   727→          </motion.div>
+   728→        </div>
+   729→      </section>
+   730→
+   731→      {/* ============ BOTTOM CTA ============ */}
+   732→      <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
+   733→        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 text-center">
+   734→          <p className="font-sans text-sm text-maroon/70">
+   735→            Need to redeem a code first?
+   736→          </p>
+   737→          <Link
+   738→            href="/redeem"
+   739→            className="inline-flex items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95"
+   740→          >
+   741→            <Gift className="h-4 w-4" strokeWidth={2.5} />
+   742→            Redeem a Gift Card
+   743→          </Link>
+   744→        </div>
+   745→      </section>
+   746→    </main>
+   747→  );
+   748→}
+   749→
+   750→function SummaryRow({
+   751→  icon,
+   752→  label,
+   753→  value,
+   754→}: {
+   755→  icon: React.ReactNode;
+   756→  label: string;
+   757→  value: string;
+   758→}) {
+   759→  return (
+   760→    <div className="flex items-start justify-between gap-3">
+   761→      <span className="inline-flex items-center gap-1.5 text-blush/80">
+   762→        {icon}
+   763→        <span className="font-sans text-[11px] font-bold uppercase tracking-[0.12em]">
+   764→          {label}
+   765→        </span>
+   766→      </span>
+   767→      <span className="max-w-[60%] text-right font-bold text-white">
+   768→        {value}
+   769→      </span>
+   770→    </div>
+   771→  );
+   772→}
+   773→
