@@ -429,8 +429,8 @@ function RecipientDetailsContent() {
                   ))}
                 </div>
 
-                {/* Slide content — CSS transform carousel track */}
-                <div className="relative overflow-hidden rounded-3xl">
+                {/* Slide content — CSS transform carousel track (locked dimensions) */}
+                <div className="relative min-h-[580px] overflow-hidden rounded-3xl sm:min-h-[560px]">
                   <div
                     className="flex transition-transform duration-[400ms] ease-in-out"
                     style={{
@@ -696,10 +696,10 @@ function RecipientSlide({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-6"
+      className="flex min-h-[560px] flex-col space-y-4 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-6"
     >
-      {/* Recipient header — "Recipient X of Y" */}
-      <div className="flex items-center justify-between">
+      {/* Recipient header — "Recipient X of Y" (fixed height to prevent jitter) */}
+      <div className="flex h-12 items-center justify-between">
         <div className="inline-flex items-center gap-2">
           <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blush text-maroon">
             <User className="h-4 w-4" strokeWidth={2.5} />
@@ -900,14 +900,14 @@ function RecipientSlide({
         )}
       </div>
 
-      {/* Hint text — explains the flow */}
+      {/* Hint text — pinned to bottom with mt-auto so buttons stay aligned */}
       {!isLast && (
-        <p className="text-center font-sans text-[11px] text-maroon/55">
+        <p className="mt-auto pt-2 text-center font-sans text-[11px] text-maroon/55">
           We&rsquo;ll save this recipient and move to the next one.
         </p>
       )}
       {isLast && (
-        <p className="text-center font-sans text-[11px] text-maroon/55">
+        <p className="mt-auto pt-2 text-center font-sans text-[11px] text-maroon/55">
           This is the last recipient — confirm to review your order.
         </p>
       )}
