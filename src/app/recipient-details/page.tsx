@@ -35,20 +35,20 @@ const CARD_LOOKUP: Record<
   { title: string; price: number; sessions: number; gradient: string }
 > = {
   one: {
-    title: "One Session",
-    price: 25000,
+    title: "Seed — One Session",
+    price: 20000,
     sessions: 1,
     gradient: "from-[#E8D5F2] via-[#F5E3F0] to-[#FBD7E3]",
   },
   two: {
-    title: "Two Sessions",
-    price: 40000,
+    title: "Root — Two Sessions",
+    price: 39000,
     sessions: 2,
     gradient: "from-[#FFE0C2] via-[#FFD1DC] to-[#FDC4D6]",
   },
   three: {
-    title: "Three Sessions",
-    price: 75000,
+    title: "Grove — Three Sessions",
+    price: 57000,
     sessions: 3,
     gradient: "from-[#D6C7F2] via-[#E0CBF0] to-[#F0CFE6]",
   },

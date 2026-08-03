@@ -26,33 +26,33 @@ import { useToast } from "@/hooks/use-toast";
 const OPTIONS = [
   {
     id: "individual",
-    title: "Individual",
+    title: "One-on-One",
     description:
-      "One-on-one space with a therapist who listens deeply. Start where you are.",
+      "Just you, and someone who listens.",
     icon: <User className="h-5 w-5" strokeWidth={2.5} />,
     duration: "50 minutes",
   },
   {
     id: "couples",
-    title: "Couples",
+    title: "Together",
     description:
-      "For two. A guided conversation to soften edges and find your rhythm again.",
+      "For two. One honest conversation.",
     icon: <Users className="h-5 w-5" strokeWidth={2.5} />,
     duration: "60 minutes",
   },
   {
     id: "family",
-    title: "Family",
+    title: "Family Circle",
     description:
-      "Bring the whole constellation. For families reshaping how they hear each other.",
+      "The whole house. One guided talk.",
     icon: <Users2 className="h-5 w-5" strokeWidth={2.5} />,
     duration: "75 minutes",
   },
   {
     id: "wellness",
-    title: "Wellness",
+    title: "Wellness Coaching",
     description:
-      "A shorter reset — mindfulness, breath, or a grounding check-in.",
+      "Real help for everyday stress.",
     icon: <HeartHandshake className="h-5 w-5" strokeWidth={2.5} />,
     duration: "30 minutes",
   },
