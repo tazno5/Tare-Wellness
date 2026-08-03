@@ -382,15 +382,15 @@ function OrderConfirmationContent() {
             receipts for your records.
           </motion.p>
 
-          {/* Order number from API */}
-          {apiOrder && (
+          {/* Order number — from API or from query param (mock mode) */}
+          {(apiOrder || searchParams.get("orderNumber")) && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
               className="mt-3 font-sans text-sm font-bold text-[#F10897]"
             >
-              Order #{apiOrder.orderNumber}
+              Order #{apiOrder?.orderNumber ?? searchParams.get("orderNumber")}
             </motion.p>
           )}
 

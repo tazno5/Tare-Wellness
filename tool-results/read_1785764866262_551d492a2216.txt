@@ -1,0 +1,860 @@
+     1→"use client";
+     2→
+     3→import { Suspense, useEffect, useMemo, useState } from "react";
+     4→import { useSearchParams, useRouter } from "next/navigation";
+     5→import Link from "next/link";
+     6→import Image from "next/image";
+     7→import { motion } from "framer-motion";
+     8→import {
+     9→  ArrowLeft,
+    10→  ArrowRight,
+    11→  CreditCard,
+    12→  Building2,
+    13→  Lock,
+    14→  ShieldCheck,
+    15→  CheckCircle2,
+    16→  Sparkles,
+    17→  Gift,
+    18→  User,
+    19→  Mail,
+    20→  MapPin,
+    21→  Check,
+    22→  Heart,
+    23→} from "lucide-react";
+    24→import { useStore } from "@/lib/store";
+    25→import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+    26→import { useToast } from "@/hooks/use-toast";
+    27→import {
+    28→  isValidEmail, formatCardNumber, isValidCardNumber,
+    29→  formatExpiry, isValidExpiry, formatCVV, isValidCVV,
+    30→} from "@/lib/validation";
+    31→
+    32→const CARD_LOOKUP: Record<
+    33→  string,
+    34→  { title: string; price: number; sessions: number; gradient: string }
+    35→> = {
+    36→  one: {
+    37→    title: "One Session",
+    38→    price: 25000,
+    39→    sessions: 1,
+    40→    gradient: "from-[#E8D5F2] via-[#F5E3F0] to-[#FBD7E3]",
+    41→  },
+    42→  two: {
+    43→    title: "Two Sessions",
+    44→    price: 40000,
+    45→    sessions: 2,
+    46→    gradient: "from-[#FFE0C2] via-[#FFD1DC] to-[#FDC4D6]",
+    47→  },
+    48→  three: {
+    49→    title: "Three Sessions",
+    50→    price: 75000,
+    51→    sessions: 3,
+    52→    gradient: "from-[#D6C7F2] via-[#E0CBF0] to-[#F0CFE6]",
+    53→  },
+    54→};
+    55→
+    56→const STEPS = [
+    57→  { label: "Gift Card", href: "/gift-cards" },
+    58→  { label: "Details", href: "/recipient-details" },
+    59→  { label: "Recipient", href: "/recipient-details" },
+    60→  { label: "Review", href: "/cart-review" },
+    61→  { label: "Checkout", href: "/checkout" },
+    62→];
+    63→
+    64→const container = {
+    65→  hidden: { opacity: 0 },
+    66→  show: {
+    67→    opacity: 1,
+    68→    transition: { staggerChildren: 0.1, delayChildren: 0.05 },
+    69→  },
+    70→};
+    71→
+    72→const itemUp = {
+    73→  hidden: { opacity: 0, y: 18 },
+    74→  show: {
+    75→    opacity: 1,
+    76→    y: 0,
+    77→    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+    78→  },
+    79→};
+    80→
+    81→function CheckoutContent() {
+    82→  const searchParams = useSearchParams();
+    83→  const router = useRouter();
+    84→  const { toast } = useToast();
+    85→  const { recipients } = useStore();
+    86→  const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">("card");
+    87→  const [submitting, setSubmitting] = useState(false);
+    88→
+    89→  // Set gradient — render + useEffect
+    90→  useMemo(() => {
+    91→    if (typeof document === "undefined") return;
+    92→    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
+    93→    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    94→  }, []);
+    95→  useEffect(() => {
+    96→    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
+    97→    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    98→    return () => {
+    99→      document.body.style.removeProperty("--page-gradient-from");
+   100→      document.body.style.removeProperty("--page-gradient-to");
+   101→    };
+   102→  }, []);
+   103→
+   104→  // Parse cart + recipients
+   105→  const { cartItems, recipientRows } = useMemo(() => {
+   106→    const cartParam = searchParams.get("cart") ?? "";
+   107→    const rParam = searchParams.get("recipients") ?? "";
+   108→
+   109→    const parsedCart = cartParam
+   110→      .split(",")
+   111→      .filter(Boolean)
+   112→      .map((s) => s.split(":"))
+   113→      .map(([id, qty]) => ({ id, qty: parseInt(qty, 10) || 0 }))
+   114→      .filter((c) => CARD_LOOKUP[c.id] && c.qty > 0);
+   115→
+   116→    const parsedRecipients = rParam
+   117→      .split(",")
+   118→      .filter(Boolean)
+   119→      .map((s) => {
+   120→        const [uid, cardId, name, email] = s.split(":");
+   121→        return {
+   122→          uid,
+   123→          cardId,
+   124→          name: name && name !== "_" ? name : "",
+   125→          email: email && email !== "_" ? email : "",
+   126→        };
+   127→      });
+   128→
+   129→    return {
+   130→      cartItems:
+   131→        parsedCart.length > 0
+   132→          ? parsedCart
+   133→          : useStore.getState().cart.map((c) => ({ id: c.cardId, qty: c.qty })),
+   134→      recipientRows:
+   135→        parsedRecipients.length > 0
+   136→          ? parsedRecipients
+   137→          : recipients.map((r) => ({
+   138→              uid: r.uid,
+   139→              cardId: r.cardId,
+   140→              name: r.name,
+   141→              email: r.email,
+   142→            })),
+   143→    };
+   144→  }, [searchParams, recipients]);
+   145→
+   146→  const subtotal = cartItems.reduce(
+   147→    (sum, c) => sum + (CARD_LOOKUP[c.id]?.price ?? 0) * c.qty,
+   148→    0,
+   149→  );
+   150→  const fee = 0;
+   151→  const total = subtotal + fee;
+   152→
+   153→  const primaryCard = cartItems[0];
+   154→  const primaryRecipient = recipientRows[0];
+   155→
+   156→  const forwardQuery = useMemo(() => {
+   157→    const q = new URLSearchParams();
+   158→    const cartStr = cartItems.map((c) => `${c.id}:${c.qty}`).join(",");
+   159→    if (cartStr) q.set("cart", cartStr);
+   160→    q.set("total", String(total));
+   161→    const rStr = recipientRows
+   162→      .map((r) => `${r.uid}:${r.cardId}:${r.name || "_"}:${r.email || "_"}`)
+   163→      .join(",");
+   164→    if (rStr) q.set("recipients", rStr);
+   165→    q.set("method", paymentMethod);
+   166→    return q.toString();
+   167→  }, [cartItems, recipientRows, total, paymentMethod]);
+   168→
+   169→  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+   170→    e.preventDefault();
+   171→
+   172→    // Deep validation before submission
+   173→    if (paymentMethod === "card") {
+   174→      const cardNumberEl = document.getElementById("card-number") as HTMLInputElement;
+   175→      const expiryEl = document.getElementById("expiry") as HTMLInputElement;
+   176→      const cvvEl = document.getElementById("cvv") as HTMLInputElement;
+   177→      const emailEl = document.getElementById("billing-email") as HTMLInputElement;
+   178→
+   179→      if (cardNumberEl && !isValidCardNumber(cardNumberEl.value)) {
+   180→        toast({ title: "Invalid card number", description: "Please enter a valid 16-digit card number.", variant: "destructive" });
+   181→        cardNumberEl.focus();
+   182→        return;
+   183→      }
+   184→      if (expiryEl && !isValidExpiry(expiryEl.value)) {
+   185→        toast({ title: "Invalid expiry date", description: "Use MM/YY format with a valid future date.", variant: "destructive" });
+   186→        expiryEl.focus();
+   187→        return;
+   188→      }
+   189→      if (cvvEl && !isValidCVV(cvvEl.value)) {
+   190→        toast({ title: "Invalid CVV", description: "CVV must be 3 or 4 digits.", variant: "destructive" });
+   191→        cvvEl.focus();
+   192→        return;
+   193→      }
+   194→      if (emailEl && !isValidEmail(emailEl.value)) {
+   195→        toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
+   196→        emailEl.focus();
+   197→        return;
+   198→      }
+   199→    }
+   200→
+   201→    setSubmitting(true);
+   202→    toast({
+   203→      title: "Processing payment",
+   204→      description: "Securing your gift — this won't take a moment.",
+   205→    });
+   206→
+   207→    try {
+   208→      // Build recipients payload from store data
+   209→      const storeRecipients = useStore.getState().recipients;
+   210→      const recipientsPayload = (storeRecipients.length > 0 ? storeRecipients : recipientRows.map((r: { name: string; email: string; occasion: string; note: string }) => ({
+   211→        cardSlug: cartItems[0]?.id ?? "three",
+   212→        recipientName: r.name || "Recipient",
+   213→        recipientEmail: r.email || "recipient@email.com",
+   214→        occasion: r.occasion || "Just Because",
+   215→        deliveryMode: "now",
+   216→        scheduledFor: null,
+   217→        personalNote: r.note || "",
+   218→      }))).map((r) => ({
+   219→        cardSlug: r.cardId ?? cartItems[0]?.id ?? "three",
+   220→        recipientName: r.name,
+   221→        recipientEmail: r.email,
+   222→        occasion: r.occasion || "Just Because",
+   223→        deliveryMode: r.deliveryMode ?? "now",
+   224→        scheduledFor: null,
+   225→        personalNote: r.note || "",
+   226→      }));
+   227→
+   228→      // POST to /api/orders
+   229→      const res = await fetch("/api/orders", {
+   230→        method: "POST",
+   231→        headers: { "Content-Type": "application/json" },
+   232→        body: JSON.stringify({
+   233→          buyerName: "Alex Smith",
+   234→          buyerEmail: "alex@bewelltare.com",
+   235→          paymentMethod,
+   236→          recipients: recipientsPayload,
+   237→        }),
+   238→      });
+   239→
+   240→      if (!res.ok) {
+   241→        const err = await res.json();
+   242→        throw new Error(err.error || "Failed to create order");
+   243→      }
+   244→
+   245→      const order = await res.json();
+   246→
+   247→      // Clear cart + recipients from store
+   248→      useStore.getState().clearCart();
+   249→      useStore.getState().clearRecipients();
+   250→
+   251→      toast({
+   252→        title: "Payment successful!",
+   253→        description: `Order ${order.orderNumber} confirmed.`,
+   254→      });
+   255→
+   256→      // Navigate to order confirmation with the real order ID
+   257→      router.push(`/order-confirmation?id=${order.id}&orderNumber=${order.orderNumber}`);
+   258→    } catch (error) {
+   259→      toast({
+   260→        title: "Payment failed",
+   261→        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+   262→        variant: "destructive",
+   263→      });
+   264→    } finally {
+   265→      setSubmitting(false);
+   266→    }
+   267→  };
+   268→
+   269→  const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
+   270→
+   271→  return (
+   272→    <main className="relative flex flex-1 flex-col">
+   273→      {/* Decorative blooms */}
+   274→      <div
+   275→        aria-hidden
+   276→        className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-white/40 blur-3xl"
+   277→      />
+   278→      <div
+   279→        aria-hidden
+   280→        className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl"
+   281→      />
+   282→
+   283→      {/* ============ HERO ============ */}
+   284→      <section className="relative w-full overflow-hidden px-5 pb-6 pt-6 sm:px-8 sm:pb-10 lg:px-12">
+   285→        <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center text-center">
+   286→          <motion.div
+   287→            initial={{ opacity: 0, y: -10 }}
+   288→            animate={{ opacity: 1, y: 0 }}
+   289→            transition={{ duration: 0.5 }}
+   290→            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]"
+   291→          >
+   292→            <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
+   293→            <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
+   294→              Step 5 · Checkout
+   295→            </span>
+   296→          </motion.div>
+   297→
+   298→          <motion.h1
+   299→            initial={{ opacity: 0, y: 20 }}
+   300→            animate={{ opacity: 1, y: 0 }}
+   301→            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+   302→            className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-maroon sm:text-5xl lg:text-6xl"
+   303→          >
+   304→            One Last Step!
+   305→          </motion.h1>
+   306→
+   307→          <motion.p
+   308→            initial={{ opacity: 0, y: 20 }}
+   309→            animate={{ opacity: 1, y: 0 }}
+   310→            transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+   311→            className="mt-4 max-w-xl font-sans text-[15px] leading-relaxed text-maroon/85 sm:text-[17px]"
+   312→          >
+   313→            Secure your gift and we&apos;ll send it the moment payment is
+   314→            confirmed.
+   315→          </motion.p>
+   316→
+   317→          {/* Hero image */}
+   318→          <motion.div
+   319→            initial={{ opacity: 0, scale: 0.94, y: 24 }}
+   320→            animate={{ opacity: 1, scale: 1, y: 0 }}
+   321→            transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+   322→            className="relative mt-6 aspect-[534/500] w-full max-w-[260px] sm:max-w-[300px] lg:max-w-[340px]"
+   323→          >
+   324→            <div
+   325→              aria-hidden
+   326→              className="absolute inset-6 rounded-full bg-white/30 blur-2xl"
+   327→            />
+   328→            <Image
+   329→              src="/hero-checkout.png"
+   330→              alt="A whimsical creature carefully sealing an envelope with a glowing wax seal"
+   331→              fill
+   332→              priority
+   333→              sizes="(max-width: 640px) 65vw, (max-width: 1024px) 300px, 340px"
+   334→              className="hero-shadow relative animate-float-slow object-contain"
+   335→            />
+   336→          </motion.div>
+   337→
+   338→          {/* Stepper */}
+   339→          <motion.div
+   340→            initial={{ opacity: 0, y: 16 }}
+   341→            animate={{ opacity: 1, y: 0 }}
+   342→            transition={{ duration: 0.6, delay: 0.3 }}
+   343→            className="mt-6 w-full max-w-3xl"
+   344→          >
+   345→            <Stepper steps={STEPS} active={4} />
+   346→          </motion.div>
+   347→        </div>
+   348→      </section>
+   349→
+   350→      {/* ============ TWO COLUMN CHECKOUT ============ */}
+   351→      <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
+   352→        <form
+   353→          id="checkout-form"
+   354→          onSubmit={handleSubmit}
+   355→          className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8"
+   356→        >
+   357→          {/* LEFT column */}
+   358→          <motion.div
+   359→            variants={container}
+   360→            initial="hidden"
+   361→            animate="show"
+   362→            className="flex flex-col gap-6"
+   363→          >
+   364→            {/* Payment Information */}
+   365→            <motion.article
+   366→              variants={itemUp}
+   367→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+   368→            >
+   369→              <div className="flex items-center justify-between">
+   370→                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   371→                  Payment Information
+   372→                </h2>
+   373→                <span className="inline-flex items-center gap-1 rounded-full bg-blush px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-maroon">
+   374→                  <Lock className="h-3 w-3" strokeWidth={2.5} />
+   375→                  Secure
+   376→                </span>
+   377→              </div>
+   378→
+   379→              <Tabs
+   380→                value={paymentMethod}
+   381→                onValueChange={(v) => setPaymentMethod(v as "card" | "transfer")}
+   382→                className="mt-4"
+   383→              >
+   384→                <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-blush/60 p-1">
+   385→                  <TabsTrigger
+   386→                    value="card"
+   387→                    className="rounded-xl font-sans text-xs font-bold uppercase tracking-[0.12em] data-[state=active]:bg-[#4E0030] data-[state=active]:text-white"
+   388→                  >
+   389→                    <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} />
+   390→                    Card
+   391→                  </TabsTrigger>
+   392→                  <TabsTrigger
+   393→                    value="transfer"
+   394→                    className="rounded-xl font-sans text-xs font-bold uppercase tracking-[0.12em] data-[state=active]:bg-[#4E0030] data-[state=active]:text-white"
+   395→                  >
+   396→                    <Building2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+   397→                    Bank Transfer
+   398→                  </TabsTrigger>
+   399→                </TabsList>
+   400→
+   401→                <TabsContent value="card" className="mt-4 space-y-4">
+   402→                  <div>
+   403→                    <label
+   404→                      htmlFor="cardholder"
+   405→                      className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   406→                    >
+   407→                      Cardholder Name <span className="text-[#F10897]">*</span>
+   408→                    </label>
+   409→                    <div className="relative mt-2">
+   410→                      <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
+   411→                      <input
+   412→                        id="cardholder"
+   413→                        type="text"
+   414→                        required
+   415→                        placeholder="Name on card"
+   416→                        className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+   417→                      />
+   418→                    </div>
+   419→                  </div>
+   420→
+   421→                  <div>
+   422→                    <label
+   423→                      htmlFor="card-number"
+   424→                      className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   425→                    >
+   426→                      Card Number <span className="text-[#F10897]">*</span>
+   427→                    </label>
+   428→                    <div className="relative mt-2">
+   429→                      <CreditCard className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
+   430→                      <input
+   431→                        id="card-number"
+   432→                        type="text"
+   433→                        required
+   434→                        inputMode="numeric"
+   435→                        maxLength={19}
+   436→                        placeholder="0000 0000 0000 0000"
+   437→                        className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+   438→                      />
+   439→                    </div>
+   440→                  </div>
+   441→
+   442→                  <div className="grid grid-cols-2 gap-3">
+   443→                    <div>
+   444→                      <label
+   445→                        htmlFor="expiry"
+   446→                        className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   447→                      >
+   448→                        Expiry <span className="text-[#F10897]">*</span>
+   449→                      </label>
+   450→                      <input
+   451→                        id="expiry"
+   452→                        type="text"
+   453→                        required
+   454→                        maxLength={5}
+   455→                        placeholder="MM/YY"
+   456→                        className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+   457→                      />
+   458→                    </div>
+   459→                    <div>
+   460→                      <label
+   461→                        htmlFor="cvv"
+   462→                        className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   463→                      >
+   464→                        CVV <span className="text-[#F10897]">*</span>
+   465→                      </label>
+   466→                      <input
+   467→                        id="cvv"
+   468→                        type="text"
+   469→                        required
+   470→                        maxLength={4}
+   471→                        inputMode="numeric"
+   472→                        placeholder="123"
+   473→                        className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+   474→                      />
+   475→                    </div>
+   476→                  </div>
+   477→                </TabsContent>
+   478→
+   479→                <TabsContent value="transfer" className="mt-4">
+   480→                  <div className="rounded-2xl bg-blush/40 p-4">
+   481→                    <p className="font-sans text-sm text-maroon/80">
+   482→                      You&apos;ll receive an email with our bank details and a
+   483→                      unique reference. Your gift is delivered the moment your
+   484→                      transfer clears (usually within 1 business hour).
+   485→                    </p>
+   486→                    <div className="mt-3 space-y-2 rounded-xl bg-white/80 p-3 font-sans text-sm">
+   487→                      <div className="flex justify-between">
+   488→                        <span className="text-maroon/60">Bank</span>
+   489→                        <span className="font-bold text-maroon">Tare Bank</span>
+   490→                      </div>
+   491→                      <div className="flex justify-between">
+   492→                        <span className="text-maroon/60">Account Name</span>
+   493→                        <span className="font-bold text-maroon">Tare Wellness Ltd</span>
+   494→                      </div>
+   495→                      <div className="flex justify-between">
+   496→                        <span className="text-maroon/60">Account Number</span>
+   497→                        <span className="font-mono font-bold text-maroon">
+   498→                          0123456789
+   499→                        </span>
+   500→                      </div>
+   501→                    </div>
+   502→                    <p className="mt-3 inline-flex items-center gap-1.5 font-sans text-[11px] text-maroon/60">
+   503→                      <CheckCircle2 className="h-3.5 w-3.5 text-[#F10897]" strokeWidth={2.5} />
+   504→                      No transfer fee from your bank.
+   505→                    </p>
+   506→                  </div>
+   507→                </TabsContent>
+   508→              </Tabs>
+   509→            </motion.article>
+   510→
+   511→            {/* Billing Information */}
+   512→            <motion.article
+   513→              variants={itemUp}
+   514→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+   515→            >
+   516→              <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   517→                Billing Information
+   518→              </h2>
+   519→
+   520→              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+   521→                <div className="sm:col-span-2">
+   522→                  <label
+   523→                    htmlFor="billing-name"
+   524→                    className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   525→                  >
+   526→                    Full Name <span className="text-[#F10897]">*</span>
+   527→                  </label>
+   528→                  <div className="relative mt-2">
+   529→                    <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
+   530→                    <input
+   531→                      id="billing-name"
+   532→                      type="text"
+   533→                      required
+   534→                      placeholder="Your full name"
+   535→                      className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+   536→                    />
+   537→                  </div>
+   538→                </div>
+   539→
+   540→                <div className="sm:col-span-2">
+   541→                  <label
+   542→                    htmlFor="billing-email"
+   543→                    className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   544→                  >
+   545→                    Email Address <span className="text-[#F10897]">*</span>
+   546→                  </label>
+   547→                  <div className="relative mt-2">
+   548→                    <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
+   549→                    <input
+   550→                      id="billing-email"
+   551→                      type="email"
+   552→                      required
+   553→                      placeholder="you@example.com"
+   554→                      className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+   555→                    />
+   556→                  </div>
+   557→                </div>
+   558→
+   559→                <div className="sm:col-span-2">
+   560→                  <label
+   561→                    htmlFor="billing-street"
+   562→                    className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   563→                  >
+   564→                    Street Address <span className="text-[#F10897]">*</span>
+   565→                  </label>
+   566→                  <div className="relative mt-2">
+   567→                    <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
+   568→                    <input
+   569→                      id="billing-street"
+   570→                      type="text"
+   571→                      required
+   572→                      placeholder="123 Care Lane"
+   573→                      className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+   574→                    />
+   575→                  </div>
+   576→                </div>
+   577→
+   578→                <div>
+   579→                  <label
+   580→                    htmlFor="billing-city"
+   581→                    className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   582→                  >
+   583→                    City
+   584→                  </label>
+   585→                  <input
+   586→                    id="billing-city"
+   587→                    type="text"
+   588→                    placeholder="Lagos"
+   589→                    className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+   590→                  />
+   591→                </div>
+   592→
+   593→                <div>
+   594→                  <label
+   595→                    htmlFor="billing-zip"
+   596→                    className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   597→                  >
+   598→                    Postal Code
+   599→                  </label>
+   600→                  <input
+   601→                    id="billing-zip"
+   602→                    type="text"
+   603→                    placeholder="100001"
+   604→                    className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+   605→                  />
+   606→                </div>
+   607→              </div>
+   608→            </motion.article>
+   609→
+   610→            {/* Trust badges */}
+   611→            <motion.div
+   612→              variants={itemUp}
+   613→              className="grid grid-cols-1 gap-3 sm:grid-cols-3"
+   614→            >
+   615→              {[
+   616→                {
+   617→                  icon: <Lock className="h-4 w-4" strokeWidth={2.5} />,
+   618→                  title: "256-bit SSL",
+   619→                  body: "Bank-grade encryption",
+   620→                },
+   621→                {
+   622→                  icon: <ShieldCheck className="h-4 w-4" strokeWidth={2.5} />,
+   623→                  title: "PCI Compliant",
+   624→                  body: "Card data never stored",
+   625→                },
+   626→                {
+   627→                  icon: <Heart className="h-4 w-4" strokeWidth={2.5} />,
+   628→                  title: "No Hidden Fees",
+   629→                  body: "What you see is what you pay",
+   630→                },
+   631→              ].map((b) => (
+   632→                <div
+   633→                  key={b.title}
+   634→                  className="rounded-2xl bg-white/80 p-3 text-center shadow-[0_6px_20px_rgba(61,0,46,0.08)] backdrop-blur-sm"
+   635→                >
+   636→                  <div className="mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon">
+   637→                    {b.icon}
+   638→                  </div>
+   639→                  <p className="mt-2 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon">
+   640→                    {b.title}
+   641→                  </p>
+   642→                  <p className="mt-0.5 font-sans text-[10px] text-maroon/60">
+   643→                    {b.body}
+   644→                  </p>
+   645→                </div>
+   646→              ))}
+   647→            </motion.div>
+   648→          </motion.div>
+   649→
+   650→          {/* RIGHT column — Gift Summary */}
+   651→          <motion.div variants={container} initial="hidden" animate="show">
+   652→            <motion.article
+   653→              variants={itemUp}
+   654→              className="sticky top-28 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+   655→            >
+   656→              <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   657→                Gift Summary
+   658→              </h2>
+   659→
+   660→              {/* Thumbnail */}
+   661→              <div
+   662→                className={`relative mt-4 flex aspect-[5/3] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${
+   663→                  primaryCard ? CARD_LOOKUP[primaryCard.id]?.gradient : "from-[#FCE4EC] to-[#F8BBD0]"
+   664→                } p-5 shadow-[0_10px_30px_rgba(61,0,46,0.18)]`}
+   665→              >
+   666→                <div className="text-center">
+   667→                  <p className="font-fraunces text-xl font-bold text-maroon">
+   668→                    Tare Gift Card
+   669→                  </p>
+   670→                  <p className="mt-1 font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-maroon/70">
+   671→                    {primaryCard ? CARD_LOOKUP[primaryCard.id]?.title : "Gift"}
+   672→                  </p>
+   673→                  <p className="mt-2 font-fraunces text-2xl font-extrabold text-maroon">
+   674→                    {formatPrice(primaryCard ? CARD_LOOKUP[primaryCard.id]?.price ?? 0 : 0)}
+   675→                  </p>
+   676→                </div>
+   677→                <Gift
+   678→                  className="absolute right-4 top-4 h-6 w-6 text-maroon/40"
+   679→                  strokeWidth={2}
+   680→                />
+   681→              </div>
+   682→
+   683→              <div className="mt-4 space-y-2">
+   684→                <div className="flex items-center justify-between font-sans text-sm">
+   685→                  <span className="text-maroon/70">Package</span>
+   686→                  <span className="font-bold text-maroon">
+   687→                    {primaryCard ? CARD_LOOKUP[primaryCard.id]?.title : "—"}
+   688→                  </span>
+   689→                </div>
+   690→                <div className="flex items-center justify-between font-sans text-sm">
+   691→                  <span className="text-maroon/70">Recipient</span>
+   692→                  <span className="font-bold text-maroon">
+   693→                    {primaryRecipient?.name || "—"}
+   694→                  </span>
+   695→                </div>
+   696→                <div className="flex items-center justify-between font-sans text-sm">
+   697→                  <span className="text-maroon/70">Recipient Email</span>
+   698→                  <span className="max-w-[55%] truncate font-bold text-maroon">
+   699→                    {primaryRecipient?.email || "—"}
+   700→                  </span>
+   701→                </div>
+   702→              </div>
+   703→
+   704→              <ul className="mt-4 space-y-2 border-t border-maroon/10 pt-4 font-sans text-sm">
+   705→                <li className="flex items-center justify-between">
+   706→                  <span className="text-maroon/70">Subtotal</span>
+   707→                  <span className="font-bold tabular-nums text-maroon">
+   708→                    {formatPrice(subtotal)}
+   709→                  </span>
+   710→                </li>
+   711→                <li className="flex items-center justify-between">
+   712→                  <span className="text-maroon/70">Processing Fee</span>
+   713→                  <span className="inline-flex items-center gap-1 rounded-full bg-[#F10897]/10 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-[#F10897]">
+   714→                    Free
+   715→                  </span>
+   716→                </li>
+   717→              </ul>
+   718→
+   719→              <div className="mt-4 flex items-center justify-between border-t border-maroon/15 pt-4">
+   720→                <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70">
+   721→                  Total Due
+   722→                </span>
+   723→                <span className="font-fraunces text-2xl font-extrabold tabular-nums text-maroon">
+   724→                  {formatPrice(total)}
+   725→                </span>
+   726→              </div>
+   727→
+   728→              <button
+   729→                type="submit"
+   730→                disabled={submitting}
+   731→                className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+   732→              >
+   733→                {submitting ? (
+   734→                  <>
+   735→                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+   736→                    Processing…
+   737→                  </>
+   738→                ) : (
+   739→                  <>
+   740→                    <Check className="h-4 w-4" strokeWidth={2.5} />
+   741→                    Complete Purchase — {formatPrice(total)}
+   742→                  </>
+   743→                )}
+   744→              </button>
+   745→
+   746→              <p className="mt-3 inline-flex w-full items-center justify-center gap-1.5 font-sans text-[11px] text-maroon/60">
+   747→                <Lock className="h-3 w-3" strokeWidth={2.5} />
+   748→                Your payment is processed over a secure connection.
+   749→              </p>
+   750→            </motion.article>
+   751→          </motion.div>
+   752→        </form>
+   753→      </section>
+   754→
+   755→      {/* ============ BOTTOM NAV ============ */}
+   756→      <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
+   757→        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
+   758→          <Link
+   759→            href="/cart-review"
+   760→            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+   761→          >
+   762→            <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+   763→            Cart Review
+   764→          </Link>
+   765→          <button
+   766→            type="submit"
+   767→            form="checkout-form"
+   768→            disabled={submitting}
+   769→            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+   770→          >
+   771→            {submitting ? "Processing…" : "Complete Purchase"}
+   772→            {!submitting && (
+   773→              <ArrowRight
+   774→                className="h-4 w-4 transition-transform group-hover:translate-x-1"
+   775→                strokeWidth={2.5}
+   776→              />
+   777→            )}
+   778→          </button>
+   779→        </div>
+   780→      </section>
+   781→    </main>
+   782→  );
+   783→}
+   784→
+   785→function Stepper({
+   786→  steps,
+   787→  active,
+   788→}: {
+   789→  steps: { label: string; href: string }[];
+   790→  active: number;
+   791→}) {
+   792→  return (
+   793→    <ol className="flex items-center justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61,0,46,0.08)] backdrop-blur-sm">
+   794→      {steps.map((step, i) => {
+   795→        const isDone = i < active;
+   796→        const isActive = i === active;
+   797→        return (
+   798→          <li
+   799→            key={step.label}
+   800→            className="flex flex-1 flex-col items-center gap-1.5 text-center"
+   801→          >
+   802→            <div className="flex w-full items-center">
+   803→              {i > 0 && (
+   804→                <span
+   805→                  className={`h-0.5 flex-1 ${
+   806→                    isDone || isActive ? "bg-[#F10897]" : "bg-maroon/15"
+   807→                  }`}
+   808→                />
+   809→              )}
+   810→              <span
+   811→                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-sans text-[11px] font-bold transition-colors ${
+   812→                  isActive
+   813→                    ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
+   814→                    : isDone
+   815→                      ? "bg-[#4E0030] text-white"
+   816→                      : "bg-maroon/10 text-maroon/60"
+   817→                }`}
+   818→              >
+   819→                {isDone ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : i + 1}
+   820→              </span>
+   821→              {i < steps.length - 1 && (
+   822→                <span
+   823→                  className={`h-0.5 flex-1 ${
+   824→                    i < active ? "bg-[#F10897]" : "bg-maroon/15"
+   825→                  }`}
+   826→                />
+   827→              )}
+   828→            </div>
+   829→            <span
+   830→              className={`font-sans text-[10px] font-bold uppercase tracking-[0.1em] ${
+   831→                isActive
+   832→                  ? "text-[#F10897]"
+   833→                  : isDone
+   834→                    ? "text-maroon"
+   835→                    : "text-maroon/50"
+   836→              }`}
+   837→            >
+   838→              {step.label}
+   839→            </span>
+   840→          </li>
+   841→        );
+   842→      })}
+   843→    </ol>
+   844→  );
+   845→}
+   846→
+   847→export default function CheckoutPage() {
+   848→  return (
+   849→    <Suspense
+   850→      fallback={
+   851→        <div className="flex flex-1 items-center justify-center font-sans text-maroon">
+   852→          Loading…
+   853→        </div>
+   854→      }
+   855→    >
+   856→      <CheckoutContent />
+   857→    </Suspense>
+   858→  );
+   859→}
+   860→
