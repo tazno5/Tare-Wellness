@@ -71,16 +71,18 @@ function GiftCardPageContent() {
   const [cards, setCards] = useState<GiftCard[]>(FALLBACK_CARDS);
   const [loading, setLoading] = useState(true);
 
-  // If arriving via "Send Another Gift" (?fresh=1), reset the buyer's cart + recipients
-  // so they start a clean transaction. Demo codes and redemption state are preserved.
+  // Reset cart + recipients on every mount — the gift-cards page is always a fresh start.
+  // Demo codes and redemption state are intentionally preserved (recipient's redeem flow).
+  // Runs once on mount (empty dep array) so it doesn't loop when the store updates.
   useEffect(() => {
+    clearCart();
+    clearRecipients();
+    // If ?fresh=1 is in the URL (from "Send Another Gift"), clean it so refresh doesn't show stale query
     if (searchParams.get("fresh") === "1") {
-      clearCart();
-      clearRecipients();
-      // Clean the URL so a refresh doesn't re-trigger the clear
       router.replace("/gift-cards");
     }
-  }, [searchParams, clearCart, clearRecipients, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch gift card types from the API
   useEffect(() => {

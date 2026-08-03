@@ -63,7 +63,7 @@ export default function Hero() {
           variants={container}
           initial="hidden"
           animate="show"
-          className="order-2 flex flex-col items-start lg:order-1"
+          className="order-2 flex flex-col items-center text-center md:items-center md:text-center lg:order-1 lg:items-start lg:text-left"
         >
           {/* Headline — Fraunces serif */}
           <motion.h1
@@ -86,7 +86,7 @@ export default function Hero() {
           {/* Action buttons */}
           <motion.div
             variants={itemUp}
-            className="mt-9 flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap"
+            className="mt-9 flex w-full flex-col items-center gap-3 sm:flex-row sm:flex-wrap md:justify-center lg:justify-start"
           >
             <Link
               href="/gift-cards"
