@@ -152,6 +152,33 @@ function CheckoutContent() {
   const primaryCard = cartItems[0];
   const primaryRecipient = recipientRows[0];
 
+  // Build per-recipient gift rows for the carousel (enriched with note/occasion from the store)
+  const giftRows = useMemo(() => {
+    return recipientRows.map((r) => {
+      const storeR = recipients.find((s) => s.uid === r.uid);
+      const card = CARD_LOOKUP[r.cardId];
+      return {
+        uid: r.uid,
+        cardId: r.cardId,
+        name: r.name,
+        email: r.email,
+        note: storeR?.note ?? "",
+        occasion: storeR?.occasion ?? "Just Because",
+        cardTitle: card?.title ?? "Gift",
+        cardPrice: card?.price ?? 0,
+        cardSessions: card?.sessions ?? 1,
+        cardGradient: card?.gradient ?? "from-[#FCE4EC] to-[#F8BBD0]",
+      };
+    });
+  }, [recipientRows, recipients]);
+
+  // Carousel state for the Gift Summary (only used if giftRows.length > 1)
+  const [summaryIndex, setSummaryIndex] = useState(0);
+  const safeSummaryIndex = Math.min(
+    summaryIndex,
+    Math.max(0, giftRows.length - 1),
+  );
+
   const forwardQuery = useMemo(() => {
     const q = new URLSearchParams();
     const cartStr = cartItems.map((c) => `${c.id}:${c.qty}`).join(",");
@@ -636,51 +663,129 @@ function CheckoutContent() {
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
                 Gift Summary
+                {giftRows.length > 1 && (
+                  <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-blush px-2 py-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-maroon">
+                    <Gift className="h-2.5 w-2.5" strokeWidth={2.5} />
+                    {safeSummaryIndex + 1} / {giftRows.length}
+                  </span>
+                )}
               </h2>
 
-              {/* Thumbnail */}
-              <div
-                className={`relative mt-4 flex aspect-[5/3] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${
-                  primaryCard ? CARD_LOOKUP[primaryCard.id]?.gradient : "from-[#FCE4EC] to-[#F8BBD0]"
-                } p-5 shadow-[0_10px_30px_rgba(61,0,46,0.18)]`}
-              >
-                <div className="text-center">
-                  <p className="font-fraunces text-xl font-bold text-maroon">
-                    Tare Gift Card
-                  </p>
-                  <p className="mt-1 font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-maroon/70">
-                    {primaryCard ? CARD_LOOKUP[primaryCard.id]?.title : "Gift"}
-                  </p>
-                  <p className="mt-2 font-fraunces text-2xl font-extrabold text-maroon">
-                    {formatPrice(primaryCard ? CARD_LOOKUP[primaryCard.id]?.price ?? 0 : 0)}
-                  </p>
-                </div>
-                <Gift
-                  className="absolute right-4 top-4 h-6 w-6 text-maroon/40"
-                  strokeWidth={2}
-                />
-              </div>
+              {/* Carousel window — CSS transform, no mount/unmount */}
+              {giftRows.length > 0 && (
+                <div className="relative mt-4 overflow-hidden">
+                  <div
+                    className="flex transition-transform duration-[400ms] ease-in-out"
+                    style={{
+                      transform: `translateX(-${safeSummaryIndex * 100}%)`,
+                    }}
+                  >
+                    {giftRows.map((g) => (
+                      <div
+                        key={g.uid}
+                        className="w-full shrink-0"
+                        aria-hidden={giftRows[safeSummaryIndex]?.uid !== g.uid}
+                      >
+                        {/* Thumbnail */}
+                        <div
+                          className={`relative flex aspect-[5/3] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${g.cardGradient} p-5 shadow-[0_10px_30px_rgba(61,0,46,0.18)]`}
+                        >
+                          {/* Small Tare logo */}
+                          <Image
+                            src="/logo.png"
+                            alt="Tare logo"
+                            width={28}
+                            height={28}
+                            className="absolute left-3 top-3 h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(61,0,46,0.2)]"
+                          />
+                          <div className="text-center">
+                            <p className="font-fraunces text-xl font-bold text-maroon">
+                              Tare Gift Card
+                            </p>
+                            <p className="mt-1 font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-maroon/70">
+                              {g.cardTitle}
+                            </p>
+                            <p className="mt-2 font-fraunces text-2xl font-extrabold text-maroon">
+                              {formatPrice(g.cardPrice)}
+                            </p>
+                          </div>
+                          <Gift
+                            className="absolute right-4 top-4 h-6 w-6 text-maroon/40"
+                            strokeWidth={2}
+                          />
+                        </div>
 
-              <div className="mt-4 space-y-2">
-                <div className="flex items-center justify-between font-sans text-sm">
-                  <span className="text-maroon/70">Package</span>
-                  <span className="font-bold text-maroon">
-                    {primaryCard ? CARD_LOOKUP[primaryCard.id]?.title : "—"}
-                  </span>
+                        {/* Recipient details for this gift */}
+                        <div className="mt-4 space-y-2">
+                          <div className="flex items-center justify-between font-sans text-sm">
+                            <span className="text-maroon/70">Package</span>
+                            <span className="font-bold text-maroon">
+                              {g.cardTitle}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between font-sans text-sm">
+                            <span className="text-maroon/70">Recipient</span>
+                            <span className="font-bold text-maroon">
+                              {g.name || "—"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between font-sans text-sm">
+                            <span className="text-maroon/70">Email</span>
+                            <span className="max-w-[55%] truncate font-bold text-maroon">
+                              {g.email || "—"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between font-sans text-sm">
+                            <span className="text-maroon/70">Occasion</span>
+                            <span className="font-bold text-maroon">
+                              {g.occasion}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex items-center justify-between font-sans text-sm">
-                  <span className="text-maroon/70">Recipient</span>
-                  <span className="font-bold text-maroon">
-                    {primaryRecipient?.name || "—"}
-                  </span>
+              )}
+
+              {/* Navigation indicators — only if multiple gifts */}
+              {giftRows.length > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSummaryIndex(Math.max(0, safeSummaryIndex - 1))}
+                    disabled={safeSummaryIndex === 0}
+                    aria-label="Previous gift"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+                  </button>
+                  <div className="flex items-center gap-1.5">
+                    {giftRows.map((g, i) => (
+                      <button
+                        key={g.uid}
+                        type="button"
+                        onClick={() => setSummaryIndex(i)}
+                        aria-label={`Go to gift ${i + 1}`}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          i === safeSummaryIndex
+                            ? "w-6 bg-[#F10897]"
+                            : "w-2 bg-maroon/25 hover:bg-maroon/40"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSummaryIndex(Math.min(giftRows.length - 1, safeSummaryIndex + 1))}
+                    disabled={safeSummaryIndex === giftRows.length - 1}
+                    aria-label="Next gift"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                  </button>
                 </div>
-                <div className="flex items-center justify-between font-sans text-sm">
-                  <span className="text-maroon/70">Recipient Email</span>
-                  <span className="max-w-[55%] truncate font-bold text-maroon">
-                    {primaryRecipient?.email || "—"}
-                  </span>
-                </div>
-              </div>
+              )}
 
               <ul className="mt-4 space-y-2 border-t border-maroon/10 pt-4 font-sans text-sm">
                 <li className="flex items-center justify-between">
