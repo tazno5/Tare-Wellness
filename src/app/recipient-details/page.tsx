@@ -491,13 +491,22 @@ function RecipientDetailsContent() {
                         } p-5 shadow-[0_10px_30px_rgba(61, 0, 46, 0.18)]`}
                       >
                         <div className="flex items-start justify-between">
-                          <div>
-                            <p className="font-fraunces text-lg font-bold text-maroon sm:text-xl">
-                              Tare Gift Card
-                            </p>
-                            <p className="mt-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-maroon/70">
-                              {CARD_LOOKUP[current.cardId]?.title ?? "Gift"}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            <Image
+                              src="/logo.png"
+                              alt="Tare logo"
+                              width={28}
+                              height={28}
+                              className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(61,0,46,0.2)]"
+                            />
+                            <div>
+                              <p className="font-fraunces text-lg font-bold text-maroon sm:text-xl">
+                                Tare Gift Card
+                              </p>
+                              <p className="mt-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-maroon/70">
+                                {CARD_LOOKUP[current.cardId]?.title ?? "Gift"}
+                              </p>
+                            </div>
                           </div>
                           <span className="rounded-full bg-white/70 px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-maroon">
                             {current.occasion}

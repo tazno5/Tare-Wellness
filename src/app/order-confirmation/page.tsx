@@ -737,7 +737,7 @@ function InfoCell({
   );
 }
 
-/* ============ Order Merged Card — with dynamic gift code + Redeem button ============ */
+/* ============ Order Merged Card — with dynamic gift code + copy button + Redeem button ============ */
 function OrderMergedCard({
   cardTitle,
   cardPrice,
@@ -768,6 +768,17 @@ function OrderMergedCard({
   formatPrice: (n: number) => string;
 }) {
   const hasNote = note && note.trim().length > 0;
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // fallback: do nothing
+    }
+  };
 
   return (
     <div className="overflow-hidden rounded-3xl bg-white/85 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm">
@@ -861,14 +872,33 @@ function OrderMergedCard({
           </div>
         </div>
 
-        {/* Dynamic gift code */}
+        {/* Dynamic gift code + copy button */}
         <div className="mt-4 rounded-2xl border-2 border-dashed border-[#F10897]/50 bg-blush/30 p-4">
           <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon/60">
             Your Gift Code
           </p>
-          <code className="mt-1 block font-mono text-lg font-bold tracking-wider text-maroon sm:text-xl">
-            {code}
-          </code>
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <code className="font-mono text-base font-bold tracking-wider text-maroon sm:text-lg">
+              {code}
+            </code>
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              aria-label="Copy gift code"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-maroon shadow-sm transition-all hover:bg-[#F10897] hover:text-white active:scale-90"
+            >
+              {copied ? (
+                <Check className="h-4 w-4" strokeWidth={2.5} />
+              ) : (
+                <Copy className="h-4 w-4" strokeWidth={2.5} />
+              )}
+            </button>
+          </div>
+          {copied && (
+            <p className="mt-1.5 font-sans text-[11px] font-bold text-[#F10897]">
+              Copied!
+            </p>
+          )}
         </div>
 
         {/* Personal message — CONDITIONAL */}
