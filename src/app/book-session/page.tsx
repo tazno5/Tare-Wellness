@@ -307,7 +307,7 @@ export default function BookSessionPage() {
         sessionPrice: session.price,
         selectedDate: selectedDate.toISOString(),
         selectedTime,
-        therapist: "Dr. Sarah Thompson",
+        therapist: "Your Provider",
       });
 
       toast({

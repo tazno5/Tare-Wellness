@@ -72,7 +72,7 @@ export default function BookingConfirmationPage() {
     document.body.style.setProperty("--page-gradient-to", "#F10897");
   }, []);
 
-  const meetingUrl = "meet.mindful.com/v/sarah";
+  const meetingUrl = "meet.tarewell.com/v/session";
 
   const formattedDate = booking.selectedDate
     ? formatDate(booking.selectedDate)
@@ -81,7 +81,7 @@ export default function BookingConfirmationPage() {
   const sessionLabel =
     booking.sessionTitle && booking.sessionTitle.length > 0
       ? booking.sessionTitle
-      : "Individual Therapy";
+      : "One-on-One";
 
   const sessionTime = booking.selectedTime || "10:30 AM";
 
@@ -213,7 +213,7 @@ export default function BookingConfirmationPage() {
                   {sessionTime}
                 </p>
                 <p className="mt-0.5 font-sans text-[11px] text-maroon/60">
-                  Eastern Standard Time
+                  West Africa Time (WAT)
                 </p>
               </div>
 
@@ -233,7 +233,7 @@ export default function BookingConfirmationPage() {
                 </p>
                 <p className="mt-0.5 inline-flex items-center gap-1 font-sans text-[11px] text-maroon/60">
                   <Heart className="h-3 w-3" strokeWidth={2.5} />
-                  With {booking.therapist || "Dr. Sarah Thompson"}
+                  With {booking.therapist || "Your Provider"}
                 </p>
               </div>
             </div>

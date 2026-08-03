@@ -425,110 +425,103 @@ function OrderConfirmationContent() {
           animate="show"
           className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:gap-8"
         >
-          {/* Receipt list */}
+          {/* Receipt — merged card (replaces old receipt list) */}
           <div className="flex flex-col gap-6">
-            {receipts.map((r) => {
-              const card = CARD_LOOKUP[r.cardId];
-              return (
-                <motion.article
-                  key={r.uid}
-                  variants={itemUp}
-                  className="overflow-hidden rounded-3xl bg-white/85 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm"
-                >
-                  {/* Receipt header */}
-                  <div className="flex items-center justify-between border-b border-maroon/10 bg-blush/40 px-5 py-3 sm:px-6">
-                    <h2 className="font-fraunces text-lg font-bold text-maroon">
-                      Receipt
-                    </h2>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#4E0030] px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white">
-                      <Gift className="h-3 w-3" strokeWidth={2.5} />
-                      Card {r.index + 1} of {r.total}
-                    </span>
-                  </div>
+            {/* Section header */}
+            <div className="mb-1 flex items-center justify-between">
+              <h2 className="font-fraunces text-2xl font-bold text-maroon sm:text-3xl">
+                Receipt
+              </h2>
+              {receipts.length > 1 && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon">
+                  <Gift className="h-3 w-3" strokeWidth={2.5} />
+                  {confirmIndex + 1} / {receipts.length}
+                </span>
+              )}
+            </div>
 
-                  <div className="grid gap-5 p-5 sm:grid-cols-[auto_1fr] sm:p-6">
-                    {/* Thumbnail */}
-                    <div
-                      className={`relative flex h-28 w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${
-                        card?.gradient ?? "from-[#FCE4EC] to-[#F8BBD0]"
-                      } sm:w-36`}
-                    >
-                      <div className="text-center">
-                        <p className="font-fraunces text-base font-bold text-maroon">
-                          Tare
-                        </p>
-                        <p className="mt-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.22em] text-maroon/70">
-                          {card?.title ?? "Gift"}
-                        </p>
-                        <p className="mt-1 font-fraunces text-base font-extrabold text-maroon">
-                          {formatPrice(card?.price ?? 0)}
-                        </p>
-                      </div>
-                      <Gift
-                        className="absolute right-2 top-2 h-4 w-4 text-maroon/40"
-                        strokeWidth={2}
-                      />
-                    </div>
-
-                    {/* Recipient info + code */}
-                    <div className="flex flex-col gap-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <InfoCell
-                          label="Recipient"
-                          value={r.name || "—"}
-                          icon={<Heart className="h-3 w-3" strokeWidth={2.5} />}
-                        />
-                        <InfoCell
-                          label="Email"
-                          value={r.email || "—"}
-                          icon={<Mail className="h-3 w-3" strokeWidth={2.5} />}
-                        />
-                        <InfoCell
-                          label="Date"
-                          value={today}
-                          icon={<CalendarHeart className="h-3 w-3" strokeWidth={2.5} />}
-                        />
-                        <InfoCell
-                          label="Status"
-                          value="Delivered"
-                          icon={<CheckCircle2 className="h-3 w-3" strokeWidth={2.5} />}
-                          accent
-                        />
-                      </div>
-
-                      {/* Redemption code */}
-                      <div className="rounded-2xl border border-maroon/15 bg-blush/30 p-3">
-                        <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon/60">
-                          Redemption Code
-                        </p>
-                        <div className="mt-1.5 flex items-center justify-between gap-2">
-                          <code className="font-mono text-base font-bold tracking-wider text-maroon sm:text-lg">
-                            {r.code}
-                          </code>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(r.code, r.uid)}
-                            aria-label="Copy redemption code"
-                            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-maroon shadow-sm transition-all hover:bg-[#F10897] hover:text-white active:scale-90"
-                          >
-                            {copiedUid === r.uid ? (
-                              <Check className="h-4 w-4" strokeWidth={2.5} />
-                            ) : (
-                              <Copy className="h-4 w-4" strokeWidth={2.5} />
-                            )}
-                          </button>
+            {/* Carousel window */}
+            {receipts.length > 0 && (
+              <>
+                <div className="relative overflow-hidden rounded-3xl">
+                  <div
+                    className="flex transition-transform duration-[400ms] ease-in-out"
+                    style={{
+                      transform: `translateX(-${confirmIndex * 100}%)`,
+                    }}
+                  >
+                    {receipts.map((r) => {
+                      const card = CARD_LOOKUP[r.cardId];
+                      const storeR = recipients.find((s) => s.uid === r.uid);
+                      return (
+                        <div
+                          key={r.uid}
+                          className="w-full shrink-0"
+                          aria-hidden={
+                            receipts[confirmIndex]?.uid !== r.uid
+                          }
+                        >
+                          <OrderMergedCard
+                            cardTitle={card?.title ?? "Gift"}
+                            cardPrice={r.price ?? card?.price ?? 0}
+                            cardSessions={card?.sessions ?? 1}
+                            cardGradient={card?.gradient ?? "from-[#FCE4EC] to-[#F8BBD0]"}
+                            cardTag={card?.tag ?? (card ? "Gift" : "")}
+                            recipientName={r.name}
+                            recipientEmail={r.email}
+                            occasion={storeR?.occasion ?? "Just Because"}
+                            deliveryMode={storeR?.deliveryMode ?? ("now" as const)}
+                            note={storeR?.note ?? ""}
+                            today={today}
+                            code={r.code}
+                            formatPrice={formatPrice}
+                          />
                         </div>
-                      </div>
-
-                      <p className="inline-flex items-center gap-1.5 font-sans text-[11px] text-maroon/60">
-                        <Clock className="h-3 w-3" strokeWidth={2.5} />
-                        No expiration — they redeem when ready.
-                      </p>
-                    </div>
+                      );
+                    })}
                   </div>
-                </motion.article>
-              );
-            })}
+                </div>
+
+                {/* Navigation indicators */}
+                {receipts.length > 1 && (
+                  <div className="mt-4 flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmIndex(Math.max(0, confirmIndex - 1))}
+                      disabled={confirmIndex === 0}
+                      aria-label="Previous gift"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+                    </button>
+                    <div className="flex items-center gap-1.5">
+                      {receipts.map((r, i) => (
+                        <button
+                          key={r.uid}
+                          type="button"
+                          onClick={() => setConfirmIndex(i)}
+                          aria-label={`Go to gift ${i + 1}`}
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            i === confirmIndex
+                              ? "w-7 bg-[#F10897]"
+                              : "w-2 bg-maroon/25 hover:bg-maroon/40"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmIndex(Math.min(receipts.length - 1, confirmIndex + 1))}
+                      disabled={confirmIndex === receipts.length - 1}
+                      aria-label="Next gift"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* RIGHT: Order Total + Journey */}
@@ -653,112 +646,6 @@ function OrderConfirmationContent() {
         </motion.div>
       </section>
 
-      {/* ============ WHAT YOUR RECIPIENT WILL RECEIVE (Merged Preview + Carousel) ============ */}
-      <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.6 }}
-          className="mx-auto w-full max-w-3xl"
-        >
-          {/* Section header */}
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-fraunces text-2xl font-bold text-maroon sm:text-3xl">
-              What your recipient will receive
-            </h2>
-            {receipts.length > 1 && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon">
-                <Gift className="h-3 w-3" strokeWidth={2.5} />
-                {confirmIndex + 1} / {receipts.length}
-              </span>
-            )}
-          </div>
-
-          {/* Carousel window */}
-          {receipts.length > 0 && (
-            <>
-              <div className="relative overflow-hidden rounded-3xl">
-                <div
-                  className="flex transition-transform duration-[400ms] ease-in-out"
-                  style={{
-                    transform: `translateX(-${confirmIndex * 100}%)`,
-                  }}
-                >
-                  {receipts.map((r) => {
-                    const card = CARD_LOOKUP[r.cardId];
-                    const storeR = recipients.find((s) => s.uid === r.uid);
-                    return (
-                      <div
-                        key={r.uid}
-                        className="w-full shrink-0"
-                        aria-hidden={
-                          receipts[confirmIndex]?.uid !== r.uid
-                        }
-                      >
-                        <OrderMergedCard
-                          cardTitle={card?.title ?? "Gift"}
-                          cardPrice={r.price ?? card?.price ?? 0}
-                          cardSessions={card?.sessions ?? 1}
-                          cardGradient={card?.gradient ?? "from-[#FCE4EC] to-[#F8BBD0]"}
-                          cardTag={card?.tag ?? (card ? "Gift" : "")}
-                          recipientName={r.name}
-                          recipientEmail={r.email}
-                          occasion={storeR?.occasion ?? "Just Because"}
-                          deliveryMode={storeR?.deliveryMode ?? ("now" as const)}
-                          note={storeR?.note ?? ""}
-                          today={today}
-                          code={r.code}
-                          formatPrice={formatPrice}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Navigation indicators */}
-              {receipts.length > 1 && (
-                <div className="mt-4 flex items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setConfirmIndex(Math.max(0, confirmIndex - 1))}
-                    disabled={confirmIndex === 0}
-                    aria-label="Previous gift"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
-                  </button>
-                  <div className="flex items-center gap-1.5">
-                    {receipts.map((r, i) => (
-                      <button
-                        key={r.uid}
-                        type="button"
-                        onClick={() => setConfirmIndex(i)}
-                        aria-label={`Go to gift ${i + 1}`}
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          i === confirmIndex
-                            ? "w-7 bg-[#F10897]"
-                            : "w-2 bg-maroon/25 hover:bg-maroon/40"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setConfirmIndex(Math.min(receipts.length - 1, confirmIndex + 1))}
-                    disabled={confirmIndex === receipts.length - 1}
-                    aria-label="Next gift"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </motion.div>
-      </section>
 
       {/* ============ COMMON QUESTIONS ============ */}
       <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
