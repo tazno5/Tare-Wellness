@@ -100,7 +100,7 @@ const itemUp = {
 
 export default function RedeemPage() {
   const { toast } = useToast();
-  const { redemption, setRedemption } = useStore();
+  const { redemption, setRedemption, demoCodes } = useStore();
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -143,6 +143,28 @@ export default function RedeemPage() {
     }
     setSubmitting(true);
 
+    // 1. Check demo codes in Zustand/localStorage FIRST (for mock checkout codes)
+    const demoMatch = demoCodes.find(
+      (dc) => dc.code.replace(/-/g, "") === rawCode,
+    );
+
+    if (demoMatch) {
+      // Demo code found — validate locally without hitting the API
+      setRedemption({
+        code: demoMatch.code,
+        creditBalance: demoMatch.creditAmount,
+        redeemed: true,
+      });
+
+      toast({
+        title: "Gift redeemed!",
+        description: `₦${demoMatch.creditAmount.toLocaleString()} credit applied — ${demoMatch.cardTitle}.`,
+      });
+      setSubmitting(false);
+      return;
+    }
+
+    // 2. No demo match — try the real API (for real backend-issued codes)
     try {
       const res = await fetch("/api/redeem", {
         method: "POST",
@@ -153,7 +175,7 @@ export default function RedeemPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to validate code");
+        throw new Error(data.error || "Invalid code");
       }
 
       setRedemption({
@@ -168,8 +190,8 @@ export default function RedeemPage() {
       });
     } catch (error) {
       toast({
-        title: "Redemption failed",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        title: "Invalid code",
+        description: "This code wasn't found. Check the code from your gift email and try again.",
         variant: "destructive",
       });
     } finally {
