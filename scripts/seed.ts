@@ -35,13 +35,12 @@ async function seed() {
   ];
 
   for (const card of cardTypes) {
-    const existing = await db.giftCardType.findUnique({ where: { slug: card.slug } });
-    if (!existing) {
-      await db.giftCardType.create({ data: card });
-      console.log(`  ✅ Created gift card: ${card.title}`);
-    } else {
-      console.log(`  ⏭️  Already exists: ${card.title}`);
-    }
+    await db.giftCardType.upsert({
+      where: { slug: card.slug },
+      update: card,
+      create: card,
+    });
+    console.log(`  ✅ Upserted gift card: ${card.title}`);
   }
 
   console.log("✅ Seed complete!");
