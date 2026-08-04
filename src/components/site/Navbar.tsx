@@ -76,13 +76,13 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setProfileOpen(!profileOpen)}
-                className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-2 backdrop-blur-sm transition-colors hover:bg-white/25"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-white/15 px-3 py-2 backdrop-blur-sm transition-colors hover:bg-white/25"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#4E0030] font-sans text-xs font-bold text-white">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#4E0030] font-sans text-xs font-bold text-white">
                   {user.name.charAt(0).toUpperCase()}
                 </span>
                 <span className="font-sans text-sm font-medium text-maroon">{user.name.split(" ")[0]}</span>
-                <ChevronDown className={`h-4 w-4 text-maroon transition-transform ${profileOpen ? "rotate-180" : ""}`} strokeWidth={2.5} />
+                <ChevronDown className={`h-4 w-4 shrink-0 text-maroon transition-transform ${profileOpen ? "rotate-180" : ""}`} strokeWidth={2.5} />
               </button>
               <AnimatePresence>
                 {profileOpen && (
@@ -118,12 +118,12 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
           ) : (
-            <Link href="/login" className="hidden items-center rounded-full bg-white/15 px-4 py-2 font-sans text-sm font-semibold text-maroon backdrop-blur-sm transition-all duration-200 hover:scale-[1.03] hover:bg-white/25 md:inline-flex">
-              <User className="mr-1.5 h-4 w-4" strokeWidth={2.5} />Login
+            <Link href="/login" className="hidden items-center justify-center gap-1.5 rounded-full bg-white/15 px-4 py-2 font-sans text-sm font-semibold text-maroon backdrop-blur-sm transition-all duration-200 hover:scale-[1.03] hover:bg-white/25 md:inline-flex">
+              <User className="h-4 w-4 shrink-0" strokeWidth={2.5} /><span>Login</span>
             </Link>
           )}
 
-          <Link href="/gift-cards" className="hidden items-center rounded-full bg-[#4E0030] px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#4E0030] active:scale-95 md:inline-flex">Send a Gift</Link>
+          <Link href="/gift-cards" className="hidden items-center justify-center gap-2 rounded-full bg-[#4E0030] px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#4E0030] active:scale-95 md:inline-flex"><span>Send a Gift</span></Link>
 
           <button type="button" aria-label="Open menu" aria-expanded={open} onClick={() => setOpen(true)} className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-maroon/10 text-maroon transition-colors hover:bg-maroon/20 md:hidden">
             <Menu className="h-5 w-5" strokeWidth={2.5} />
@@ -165,12 +165,12 @@ export default function Navbar() {
                     </div>
                   </div>
                   <button onClick={() => { handleLogout(); setOpen(false); }} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/15 px-6 py-3 font-sans text-sm font-semibold text-maroon backdrop-blur-sm transition-all hover:bg-white/25">
-                    <LogOut className="h-4 w-4" strokeWidth={2.5} />Sign Out
+                    <LogOut className="h-4 w-4 shrink-0" strokeWidth={2.5} /><span>Sign Out</span>
                   </button>
                 </>
               ) : (
                 <Link href="/login" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/15 px-6 py-4 font-sans text-base font-semibold text-maroon backdrop-blur-sm transition-all hover:bg-white/25">
-                  <User className="h-5 w-5" strokeWidth={2.5} />Login / Sign Up
+                  <User className="h-5 w-5 shrink-0" strokeWidth={2.5} /><span>Login / Sign Up</span>
                 </Link>
               )}
               <Link href="/gift-cards" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center rounded-full bg-[#4E0030] px-6 py-4 font-sans text-base font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:bg-[#4E0030] active:scale-95">Send a Gift</Link>
