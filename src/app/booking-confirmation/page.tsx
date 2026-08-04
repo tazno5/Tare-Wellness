@@ -43,7 +43,7 @@ const NEXT_STEPS = [
   {
     icon: <MessageSquare className="h-5 w-5" strokeWidth={2.5} />,
     title: "Meeting",
-    body: "Click the video link 5 minutes early to settle in and test your connection.",
+    body: "Click the WhatsApp link 5 minutes early to settle in and say hello.",
   },
 ];
 
@@ -72,7 +72,7 @@ export default function BookingConfirmationPage() {
     document.body.style.setProperty("--page-gradient-to", "#F10897");
   }, []);
 
-  const meetingUrl = "meet.tarewell.com/v/session";
+  const meetingUrl = "https://wa.me/2349036530892";
 
   const formattedDate = booking.selectedDate
     ? formatDate(booking.selectedDate)
@@ -229,7 +229,7 @@ export default function BookingConfirmationPage() {
                   {sessionLabel}
                 </p>
                 <p className="mt-1 font-sans text-sm text-maroon/75">
-                  Video Call (45 Minutes)
+                  WhatsApp Session (45 Minutes)
                 </p>
                 <p className="mt-0.5 inline-flex items-center gap-1 font-sans text-[11px] text-maroon/60">
                   <Heart className="h-3 w-3" strokeWidth={2.5} />
@@ -238,26 +238,35 @@ export default function BookingConfirmationPage() {
               </div>
             </div>
 
-            {/* Right: Join Meeting */}
+            {/* Right: Join via WhatsApp */}
             <div className="rounded-2xl border border-[#F10897]/20 bg-blush/60 p-4 sm:p-5">
               <div className="flex items-center gap-2 text-maroon/70">
-                <Video className="h-4 w-4" strokeWidth={2.5} />
+                <MessageSquare className="h-4 w-4" strokeWidth={2.5} />
                 <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em]">
-                  Join Meeting
+                  Join via WhatsApp
                 </span>
               </div>
               <p className="mt-2 font-sans text-sm font-bold text-maroon">
-                Your video link
+                Your WhatsApp link
               </p>
 
               <div className="mt-3 flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 shadow-[0_4px_15px_rgba(61,0,46,0.08)]">
                 <code className="flex-1 truncate font-mono text-sm font-bold text-maroon">
                   {meetingUrl}
                 </code>
+                <a
+                  href={meetingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Open WhatsApp"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white transition-all hover:bg-[#1da851] active:scale-90"
+                >
+                  <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                </a>
                 <button
                   type="button"
                   onClick={handleCopy}
-                  aria-label="Copy meeting link"
+                  aria-label="Copy WhatsApp link"
                   className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4E0030] text-white transition-all hover:bg-[#3a0023] active:scale-90"
                 >
                   {copied ? (
@@ -270,7 +279,7 @@ export default function BookingConfirmationPage() {
 
               <p className="mt-3 inline-flex items-start gap-1.5 font-sans text-[11px] leading-relaxed text-maroon/70">
                 <Clock className="mt-0.5 h-3 w-3 shrink-0" strokeWidth={2.5} />
-                This link will become active 10 minutes before your session.
+                Tap the link 5 minutes before your session to join the chat.
               </p>
 
               <div className="mt-4 rounded-xl bg-white/70 p-3">
