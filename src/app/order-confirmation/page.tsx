@@ -916,6 +916,8 @@ function OrderMergedCard({
         {/* Redeem button — links to /redeem */}
         <Link
           href="/redeem"
+          target="_blank"
+          rel="noopener noreferrer"
           className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(241,8,151,0.35)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#d4007d] active:scale-95"
         >
           <Gift className="h-4 w-4" strokeWidth={2.5} />

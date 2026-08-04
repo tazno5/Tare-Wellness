@@ -40,6 +40,8 @@ export default function Footer() {
           >
             <Link
               href="/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center"
               aria-label="Tare home"
             >
@@ -90,6 +92,8 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-sm text-maroon/85 underline-offset-4 transition-colors hover:text-maroon hover:underline"
                   >
                     {link.label}
@@ -115,6 +119,8 @@ export default function Footer() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-sm text-maroon/85 underline-offset-4 transition-colors hover:text-maroon hover:underline"
                   >
                     {link.label}
@@ -139,6 +145,8 @@ export default function Footer() {
               <li>
                 <Link
                   href="/contact-us"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-sm text-maroon/85 underline-offset-4 transition-colors hover:text-maroon hover:underline"
                 >
                   Contact Us
