@@ -79,7 +79,6 @@ function CartReviewContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { recipients, cart } = useStore();
-  const firstNote = recipients[0]?.note;
 
   // Set gradient — render + useEffect
   useMemo(() => {
@@ -140,9 +139,6 @@ function CartReviewContent() {
             })),
     };
   }, [searchParams, cart, recipients]);
-
-  const primaryCard = cartItems[0];
-  const primaryRecipient = recipientRows[0];
 
   const giftCardValue = cartItems.reduce(
     (sum, c) => sum + (CARD_LOOKUP[c.id]?.price ?? 0) * c.qty,
@@ -278,7 +274,7 @@ function CartReviewContent() {
         </div>
       </section>
 
-      {/* ============ SINGLE COLUMN REVIEW (Order Summary + Email Preview) ============ */}
+      {/* ============ ORDER SUMMARY + TRUST BADGES ============ */}
       <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
         <div className="mx-auto grid w-full max-w-3xl gap-6">
           {/* RIGHT column content (now full width) */}
@@ -419,114 +415,6 @@ function CartReviewContent() {
         </div>
       </section>
 
-      {/* ============ EMAIL PREVIEW ============ */}
-      <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
-        <div className="mx-auto w-full max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.6 }}
-            className="flex flex-col items-center gap-2 text-center"
-          >
-            <h2 className="font-fraunces text-3xl font-extrabold text-maroon sm:text-4xl">
-              What Your Recipient Will Receive
-            </h2>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.14em] text-maroon shadow-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#F10897] animate-pulse" />
-              Live Preview Mode
-            </span>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="mx-auto mt-6 w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-[0_18px_60px_rgba(61, 0, 46, 0.18)]"
-          >
-            {/* Email header */}
-            <div className="flex items-center justify-between border-b border-maroon/10 bg-blush/40 px-5 py-3 sm:px-6">
-              <div className="flex items-center gap-2">
-                <Image
-                  src="/logo.png"
-                  alt="Tare logo"
-                  width={32}
-                  height={32}
-                  className="h-8 w-8 object-contain"
-                />
-                <span className="font-fraunces text-sm font-bold text-maroon">
-                  Tare Wellness
-                </span>
-              </div>
-              <span className="font-sans text-[11px] text-maroon/60" suppressHydrationWarning>
-                {today}
-              </span>
-            </div>
-
-            {/* Email body */}
-            <div className="p-5 sm:p-8">
-              <p className="font-sans text-sm text-maroon/80">
-                Dear{" "}
-                <span className="font-bold text-maroon">
-                  {primaryRecipient?.name || "Friend"}
-                </span>
-                ,
-              </p>
-              <p className="mt-3 font-sans text-sm leading-relaxed text-maroon/80">
-                Someone who cares about you has sent a Tare gift card. Take a
-                breath — your moment of rest is ready whenever you are.
-              </p>
-
-              {/* Embedded gift card */}
-              <div
-                className={`relative mt-5 flex aspect-[5/3] flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br ${
-                  primaryCard ? CARD_LOOKUP[primaryCard.id]?.gradient : "from-[#FCE4EC] to-[#F8BBD0]"
-                } p-5 shadow-[0_10px_30px_rgba(61, 0, 46, 0.18)]`}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-fraunces text-lg font-bold text-maroon">
-                      Tare Gift Card
-                    </p>
-                    <p className="mt-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-maroon/70">
-                      {primaryCard ? CARD_LOOKUP[primaryCard.id]?.title : "Gift"}
-                    </p>
-                  </div>
-                  <Gift className="h-6 w-6 text-maroon/70" strokeWidth={2} />
-                </div>
-                <div>
-                  <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon/60">
-                    Value
-                  </p>
-                  <p className="font-fraunces text-2xl font-extrabold text-maroon">
-                    {formatPrice(primaryCard ? CARD_LOOKUP[primaryCard.id]?.price ?? 0 : 0)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-5 rounded-2xl bg-blush/40 p-4">
-                <p className="font-fraunces text-sm italic text-maroon">
-                  &ldquo;{firstNote || "Sending you a moment of peace."}&rdquo;
-                </p>
-              </div>
-
-              <Link
-                href="/redeem"
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all hover:scale-[1.01] hover:bg-[#3a0023] active:scale-95"
-              >
-                Redeem My Gift
-                <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-              </Link>
-
-              <p className="mt-4 font-sans text-[11px] leading-relaxed text-maroon/50">
-                This gift card never expires. Questions? Reply to this email and
-                we&apos;ll take care of you.
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
 
       {/* ============ BOTTOM NAV ============ */}
       <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
