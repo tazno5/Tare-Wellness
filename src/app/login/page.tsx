@@ -20,12 +20,12 @@ export default function LoginPage() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
 
   if (typeof document !== "undefined") {
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
   }
   useEffect(() => {
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
   }, []);
 
   // Redirect if already logged in
@@ -121,7 +121,7 @@ export default function LoginPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-8 w-full rounded-3xl bg-white p-6 shadow-[0_15px_50px_rgba(61,0,46,0.15)] sm:p-8"
+            className="mt-8 w-full rounded-3xl bg-white p-6 shadow-[0_15px_50px_rgba(44, 41, 46, 0.15)] sm:p-8"
           >
             {/* Tab toggle */}
             <div className="flex rounded-full bg-blush/40 p-1">
@@ -129,7 +129,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setMode("login")}
                 className={`flex-1 rounded-full py-2.5 font-sans text-sm font-semibold transition-all duration-200 ${
-                  mode === "login" ? "bg-white text-[#4E0030] shadow-sm" : "text-[#4E0030]/50"
+                  mode === "login" ? "bg-white text-[#2C292E] shadow-sm" : "text-[#2C292E]/50"
                 }`}
               >
                 Sign In
@@ -138,17 +138,17 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setMode("signup")}
                 className={`flex-1 rounded-full py-2.5 font-sans text-sm font-semibold transition-all duration-200 ${
-                  mode === "signup" ? "bg-white text-[#4E0030] shadow-sm" : "text-[#4E0030]/50"
+                  mode === "signup" ? "bg-white text-[#2C292E] shadow-sm" : "text-[#2C292E]/50"
                 }`}
               >
                 Sign Up
               </button>
             </div>
 
-            <h1 className="mt-6 font-fraunces text-2xl font-bold text-[#4E0030] sm:text-3xl">
+            <h1 className="mt-6 font-fraunces text-2xl font-bold text-[#2C292E] sm:text-3xl">
               {mode === "login" ? "Welcome Back" : "Create Account"}
             </h1>
-            <p className="mt-1.5 font-sans text-sm text-[#4E0030]/60">
+            <p className="mt-1.5 font-sans text-sm text-[#2C292E]/60">
               {mode === "login"
                 ? "Sign in to access your gift cards and bookings."
                 : "Join Tare Wellness to send and receive care."}
@@ -157,11 +157,11 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               {mode === "signup" && (
                 <div>
-                  <label htmlFor="name" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">
+                  <label htmlFor="name" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#2C292E]/70">
                     Full Name
                   </label>
                   <div className="relative mt-2">
-                    <User className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4E0030]/30" strokeWidth={2.5} />
+                    <User className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2C292E]/30" strokeWidth={2.5} />
                     <input
                       id="name"
                       type="text"
@@ -169,18 +169,18 @@ export default function LoginPage() {
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
                       placeholder="Sarah Johnson"
-                      className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-[#4E0030] placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                      className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-[#2C292E] placeholder:text-[#2C292E]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
                     />
                   </div>
                 </div>
               )}
 
               <div>
-                <label htmlFor="email" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">
+                <label htmlFor="email" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#2C292E]/70">
                   Email Address
                 </label>
                 <div className="relative mt-2">
-                  <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4E0030]/30" strokeWidth={2.5} />
+                  <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2C292E]/30" strokeWidth={2.5} />
                   <input
                     id="email"
                     type="email"
@@ -188,17 +188,17 @@ export default function LoginPage() {
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                     placeholder="you@example.com"
-                    className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-[#4E0030] placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                    className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-[#2C292E] placeholder:text-[#2C292E]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="password" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">
+                <label htmlFor="password" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#2C292E]/70">
                   Password
                 </label>
                 <div className="relative mt-2">
-                  <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4E0030]/30" strokeWidth={2.5} />
+                  <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#2C292E]/30" strokeWidth={2.5} />
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -207,13 +207,13 @@ export default function LoginPage() {
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     placeholder="••••••••"
-                    className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-11 font-sans text-sm text-[#4E0030] placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                    className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-11 font-sans text-sm text-[#2C292E] placeholder:text-[#2C292E]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4E0030]/30 transition-colors hover:text-[#4E0030]/60"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#2C292E]/30 transition-colors hover:text-[#2C292E]/60"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={2.5} /> : <Eye className="h-4 w-4" strokeWidth={2.5} />}
                   </button>
@@ -231,7 +231,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#3a0023] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2C292E] px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#1F1B22] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
               >
                 {isLoading ? (
                   <>
@@ -249,15 +249,15 @@ export default function LoginPage() {
 
             {/* Balance hint if redeemed */}
             {redemption.redeemed && mode === "login" && (
-              <div className="mt-5 flex items-center gap-2 rounded-2xl bg-[#FCE4EC] p-3">
+              <div className="mt-5 flex items-center gap-2 rounded-2xl bg-[#FFF5EE] p-3">
                 <Check className="h-4 w-4 text-[#F10897]" strokeWidth={3} />
-                <p className="font-sans text-xs text-[#4E0030]/70">
-                  Gift card balance: <span className="font-bold text-[#4E0030]">₦{redemption.creditBalance.toLocaleString()}</span> — sign in to apply it to your account.
+                <p className="font-sans text-xs text-[#2C292E]/70">
+                  Gift card balance: <span className="font-bold text-[#2C292E]">₦{redemption.creditBalance.toLocaleString()}</span> — sign in to apply it to your account.
                 </p>
               </div>
             )}
 
-            <p className="mt-6 text-center font-sans text-xs text-[#4E0030]/50">
+            <p className="mt-6 text-center font-sans text-xs text-[#2C292E]/50">
               {mode === "login" ? "Don't have an account? " : "Already have an account? "}
               <button
                 type="button"
@@ -271,7 +271,7 @@ export default function LoginPage() {
 
           <Link
             href="/"
-            className="mt-6 font-sans text-sm font-medium text-[#4E0030]/60 transition-colors hover:text-[#4E0030]"
+            className="mt-6 font-sans text-sm font-medium text-[#2C292E]/60 transition-colors hover:text-[#2C292E]"
           >
             ← Back to home
           </Link>

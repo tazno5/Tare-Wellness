@@ -168,12 +168,12 @@ export default function BookSessionPage() {
   // Set gradient — render + useEffect
   useMemo(() => {
     if (typeof document === "undefined") return;
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
   }, []);
   useEffect(() => {
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
     return () => {
       document.body.style.removeProperty("--page-gradient-from");
       document.body.style.removeProperty("--page-gradient-to");
@@ -346,7 +346,7 @@ export default function BookSessionPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]"
+            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]"
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -409,7 +409,7 @@ export default function BookSessionPage() {
             {/* Session type */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <div className="flex items-center gap-2">
                 <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
@@ -457,7 +457,7 @@ export default function BookSessionPage() {
                             <Clock className="h-2.5 w-2.5" strokeWidth={2.5} />
                             {s.duration}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-[#4E0030]/10 px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-maroon">
+                          <span className="inline-flex items-center rounded-full bg-[#2C292E]/10 px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-maroon">
                             {s.coverage}
                           </span>
                         </div>
@@ -471,7 +471,7 @@ export default function BookSessionPage() {
             {/* Calendar */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <div className="flex items-center justify-between">
                 <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
@@ -559,7 +559,7 @@ export default function BookSessionPage() {
             {/* Time slots */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
                 Pick a Time
@@ -590,7 +590,7 @@ export default function BookSessionPage() {
                             aria-pressed={active}
                             className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
                               active
-                                ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(61,0,46,0.25)]"
+                                ? "bg-[#2C292E] text-white shadow-[0_4px_12px_rgba(44, 41, 46, 0.25)]"
                                 : "bg-blush/60 text-maroon hover:bg-blush active:scale-95"
                             }`}
                           >
@@ -607,7 +607,7 @@ export default function BookSessionPage() {
             {/* FAQ */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <div className="flex items-center gap-2">
                 <HelpCircle className="h-5 w-5 text-maroon" strokeWidth={2.5} />
@@ -638,7 +638,7 @@ export default function BookSessionPage() {
           <motion.div variants={container} initial="hidden" animate="show">
             <motion.article
               variants={itemUp}
-              className="sticky top-28 rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(61,0,46,0.30)] sm:p-6"
+              className="sticky top-28 rounded-3xl bg-[#2C292E] p-5 text-white shadow-[0_14px_40px_rgba(44, 41, 46, 0.30)] sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
                 Booking Summary
@@ -737,7 +737,7 @@ export default function BookSessionPage() {
           </p>
           <Link
             href="/redeem"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(44, 41, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95"
           >
             <Gift className="h-4 w-4" strokeWidth={2.5} />
             Redeem a Gift Card

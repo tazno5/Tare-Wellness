@@ -159,12 +159,12 @@ export default function FaqPage() {
   // Set gradient — render + useEffect
   useMemo(() => {
     if (typeof document === "undefined") return;
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
   }, []);
   useEffect(() => {
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
     return () => {
       document.body.style.removeProperty("--page-gradient-from");
       document.body.style.removeProperty("--page-gradient-to");
@@ -220,7 +220,7 @@ export default function FaqPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]"
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]"
           >
             <HelpCircle className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -300,7 +300,7 @@ export default function FaqPage() {
             <motion.article
               key={p.q}
               variants={itemUp}
-              className="flex flex-col rounded-3xl bg-white/85 p-6 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-7"
+              className="flex flex-col rounded-3xl bg-white/85 p-6 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-7"
             >
               <div className="flex items-center justify-between">
                 <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-blush text-maroon">
@@ -335,7 +335,7 @@ export default function FaqPage() {
                   onClick={() => setActiveTab(tab)}
                   className={`rounded-full px-4 py-2 font-sans text-xs font-semibold transition-all duration-200 sm:text-sm ${
                     active
-                      ? "bg-[#4E0030] text-white shadow-md"
+                      ? "bg-[#2C292E] text-white shadow-md"
                       : "bg-white/80 text-maroon hover:bg-white"
                   }`}
                 >
@@ -353,7 +353,7 @@ export default function FaqPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.3 }}
-              className="mt-6 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-8"
+              className="mt-6 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-8"
             >
               {filtered.length === 0 ? (
                 <div className="py-10 text-center">
@@ -402,7 +402,7 @@ export default function FaqPage() {
           transition={{ duration: 0.6 }}
           className="mx-auto max-w-6xl text-center"
         >
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-maroon shadow-[0_4px_15px_rgba(61,0,46,0.08)]">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-maroon shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]">
             <Headphones className="h-3 w-3" strokeWidth={2.5} />
             Reach Us
           </div>
@@ -425,9 +425,9 @@ export default function FaqPage() {
             <motion.article
               key={s.title}
               variants={itemUp}
-              className="flex flex-col items-center rounded-3xl bg-white/85 p-6 text-center shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm"
+              className="flex flex-col items-center rounded-3xl bg-white/85 p-6 text-center shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm"
             >
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#4E0030] text-white">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#2C292E] text-white">
                 {s.icon}
               </div>
               <h3 className="mt-4 font-fraunces text-lg font-bold text-maroon">
@@ -451,7 +451,7 @@ export default function FaqPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.7 }}
-          className="relative mx-auto w-full max-w-5xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#4E0030] via-[#5e003a] to-[#F10897] p-6 text-center shadow-[0_18px_50px_rgba(61,0,46,0.30)] sm:p-10"
+          className="relative mx-auto w-full max-w-5xl overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#2C292E] via-[#2C292E] to-[#F10897] p-6 text-center shadow-[0_18px_50px_rgba(44, 41, 46, 0.30)] sm:p-10"
         >
           {/* Decorative blooms */}
           <div
@@ -477,7 +477,7 @@ export default function FaqPage() {
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/gift-cards"
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 font-sans text-sm font-semibold text-[#4E0030] shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 sm:w-auto"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 font-sans text-sm font-semibold text-[#2C292E] shadow-lg transition-all duration-200 hover:scale-[1.02] active:scale-95 sm:w-auto"
               >
                 Browse Gift Cards
                 <ArrowRight

@@ -26,14 +26,14 @@ export default function NotFound() {
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/"
-            className="group inline-flex items-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:scale-[1.03] hover:bg-[#3a0023] active:scale-95 sm:text-base"
+            className="group inline-flex items-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:scale-[1.03] hover:bg-[#1F1B22] active:scale-95 sm:text-base"
           >
             <Home className="h-5 w-5" strokeWidth={2.5} />
             Back to Home
           </Link>
           <Link
             href="/gift-cards"
-            className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-sans text-sm font-semibold text-[#4E0030] shadow-lg transition-all duration-200 hover:scale-[1.03] hover:bg-blush active:scale-95 sm:text-base"
+            className="group inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-sans text-sm font-semibold text-[#2C292E] shadow-lg transition-all duration-200 hover:scale-[1.03] hover:bg-blush active:scale-95 sm:text-base"
           >
             Browse Gift Cards
             <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" strokeWidth={2.5} />

@@ -83,12 +83,12 @@ function CartReviewContent() {
   // Set gradient — render + useEffect
   useMemo(() => {
     if (typeof document === "undefined") return;
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
   }, []);
   useEffect(() => {
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
     return () => {
       document.body.style.removeProperty("--page-gradient-from");
       document.body.style.removeProperty("--page-gradient-to");
@@ -196,11 +196,11 @@ function CartReviewContent() {
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
             <Gift className="h-10 w-10 text-white" strokeWidth={2} />
           </div>
-          <h2 className="font-fraunces text-3xl font-bold text-[#4E0030]">Your cart is empty</h2>
-          <p className="mt-3 max-w-sm font-sans text-sm text-[#4E0030]/70">
+          <h2 className="font-fraunces text-3xl font-bold text-[#2C292E]">Your cart is empty</h2>
+          <p className="mt-3 max-w-sm font-sans text-sm text-[#2C292E]/70">
             Choose a gift card to start sending care to someone you love.
           </p>
-          <Link href="/gift-cards" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.03] hover:bg-[#3a0023]">
+          <Link href="/gift-cards" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.03] hover:bg-[#1F1B22]">
             Browse Gift Cards <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
           </Link>
         </section>
@@ -214,7 +214,7 @@ function CartReviewContent() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61, 0, 46, 0.08)]"
+            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]"
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -287,7 +287,7 @@ function CartReviewContent() {
             {/* Order Summary */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
                 Order Summary
@@ -319,7 +319,7 @@ function CartReviewContent() {
               <button
                 type="button"
                 onClick={handleCheckout}
-                className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95"
+                className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2C292E] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95"
               >
                 Continue to Checkout
                 <ArrowRight
@@ -353,7 +353,7 @@ function CartReviewContent() {
               ].map((b) => (
                 <div
                   key={b.title}
-                  className="rounded-2xl bg-white/80 p-3 text-center shadow-[0_6px_20px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm"
+                  className="rounded-2xl bg-white/80 p-3 text-center shadow-[0_6px_20px_rgba(44, 41, 46, 0.08)] backdrop-blur-sm"
                 >
                   <div className="mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon">
                     {b.icon}
@@ -371,7 +371,7 @@ function CartReviewContent() {
             {/* How It Reaches Them — dark card */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(61, 0, 46, 0.30)] sm:p-6"
+              className="rounded-3xl bg-[#2C292E] p-5 text-white shadow-[0_14px_40px_rgba(44, 41, 46, 0.30)] sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
                 How It Reaches Them
@@ -421,7 +421,7 @@ function CartReviewContent() {
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <Link
             href="/recipient-details"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61, 0, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(44, 41, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
             Recipient&apos;s Details
@@ -429,7 +429,7 @@ function CartReviewContent() {
           <button
             type="button"
             onClick={handleCheckout}
-            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 sm:w-auto"
+            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95 sm:w-auto"
           >
             Continue to Checkout
             <ArrowRight
@@ -481,7 +481,7 @@ function Stepper({
   active: number;
 }) {
   return (
-    <ol className="flex items-start justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm">
+    <ol className="flex items-start justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(44, 41, 46, 0.08)] backdrop-blur-sm">
       {steps.map((step, i) => {
         const isDone = i < active;
         const isActive = i === active;
@@ -503,7 +503,7 @@ function Stepper({
                 isActive
                   ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
                   : isDone
-                    ? "bg-[#4E0030] text-white"
+                    ? "bg-[#2C292E] text-white"
                     : "bg-maroon/10 text-maroon/60"
               }`}
             >

@@ -9,7 +9,7 @@ export default function Home() {
         className="pointer-events-none absolute inset-0 z-0 opacity-[0.07] mix-blend-overlay"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.6) 0, transparent 40%), radial-gradient(circle at 80% 70%, rgba(61,0,46,0.5) 0, transparent 50%)",
+            "radial-gradient(circle at 20% 30%, rgba(255,255,255,0.6) 0, transparent 40%), radial-gradient(circle at 80% 70%, rgba(44, 41, 46, 0.5) 0, transparent 50%)",
         }}
       />
 

@@ -118,12 +118,12 @@ export default function HowItWorksPage() {
   // Set gradient — render + useEffect
   useMemo(() => {
     if (typeof document === "undefined") return;
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
   }, []);
   useEffect(() => {
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
     return () => {
       document.body.style.removeProperty("--page-gradient-from");
       document.body.style.removeProperty("--page-gradient-to");
@@ -152,7 +152,7 @@ export default function HowItWorksPage() {
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="order-2 text-center lg:order-1 lg:text-left"
           >
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]">
               <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
               <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
                 How It Works
@@ -171,7 +171,7 @@ export default function HowItWorksPage() {
             <div className="mt-6 flex justify-center lg:justify-start">
               <Link
                 href="/gift-cards"
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95"
+                className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#2C292E] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95"
               >
                 Browse Gift Cards
                 <ArrowRight
@@ -214,7 +214,7 @@ export default function HowItWorksPage() {
           transition={{ duration: 0.6 }}
           className="mx-auto max-w-6xl text-center"
         >
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-maroon shadow-[0_4px_15px_rgba(61,0,46,0.08)]">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-maroon shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]">
             <HeartHandshake className="h-3 w-3" strokeWidth={2.5} />
             Step by Step
           </span>
@@ -243,10 +243,10 @@ export default function HowItWorksPage() {
             <motion.li
               key={step.title}
               variants={itemUp}
-              className="relative rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="relative rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <div className="flex items-center gap-3">
-                <div className="relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#4E0030] text-white shadow-[0_6px_18px_rgba(61,0,46,0.25)]">
+                <div className="relative inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#2C292E] text-white shadow-[0_6px_18px_rgba(44, 41, 46, 0.25)]">
                   {step.icon}
                   <span className="absolute -right-1 -top-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-[#F10897] px-1.5 font-sans text-[10px] font-extrabold text-white">
                     {i + 1}
@@ -274,7 +274,7 @@ export default function HowItWorksPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6 }}
-          className="mx-auto w-full max-w-3xl rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-8"
+          className="mx-auto w-full max-w-3xl rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-8"
         >
           <div className="text-center">
             <span className="inline-flex items-center gap-2 rounded-full bg-blush px-4 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-maroon">
@@ -311,7 +311,7 @@ export default function HowItWorksPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.7 }}
-          className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-[2rem] bg-white p-6 shadow-[0_18px_50px_rgba(61,0,46,0.15)] sm:p-8 lg:p-10"
+          className="relative mx-auto w-full max-w-6xl overflow-hidden rounded-[2rem] bg-white p-6 shadow-[0_18px_50px_rgba(44, 41, 46, 0.15)] sm:p-8 lg:p-10"
         >
           {/* Watermark */}
           <div
@@ -343,7 +343,7 @@ export default function HowItWorksPage() {
                 key={q.title}
                 className="flex flex-col rounded-2xl bg-blush/40 p-5"
               >
-                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#F10897] shadow-[0_4px_15px_rgba(61,0,46,0.08)]">
+                <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#F10897] shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]">
                   {q.icon}
                 </div>
                 <h3 className="mt-3 font-fraunces text-base font-bold text-maroon">
@@ -359,7 +359,7 @@ export default function HowItWorksPage() {
           <div className="relative mt-8 flex justify-center">
             <Link
               href="/gift-cards"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95"
             >
               Get Started Now
               <ArrowRight

@@ -120,12 +120,12 @@ function RecipientDetailsContent() {
   // Set the locked-in page gradient — both in render (useMemo) and useEffect for hydration safety
   useMemo(() => {
     if (typeof document === "undefined") return;
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
   }, []);
   useEffect(() => {
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
     return () => {
       document.body.style.removeProperty("--page-gradient-from");
       document.body.style.removeProperty("--page-gradient-to");
@@ -266,7 +266,7 @@ function RecipientDetailsContent() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61, 0, 46, 0.08)]"
+            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]"
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -329,7 +329,7 @@ function RecipientDetailsContent() {
       {/* ============ HYDRATION GUARD / EMPTY STATE ============ */}
       {!hydrated ? (
         <section className="relative w-full px-5 pb-32 pt-6 sm:px-8 lg:px-12">
-          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-12">
+          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-12">
             <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blush text-maroon">
               <span className="h-6 w-6 animate-spin rounded-full border-2 border-maroon/30 border-t-maroon" />
             </div>
@@ -343,7 +343,7 @@ function RecipientDetailsContent() {
         </section>
       ) : recipients.length === 0 ? (
         <section className="relative w-full px-5 pb-32 pt-6 sm:px-8 lg:px-12">
-          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-12">
+          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-12">
             <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blush text-maroon">
               <Gift className="h-6 w-6" strokeWidth={2.5} />
             </div>
@@ -356,7 +356,7 @@ function RecipientDetailsContent() {
             </p>
             <Link
               href="/gift-cards"
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95"
+              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95"
             >
               <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
               Back to Gift Cards
@@ -378,7 +378,7 @@ function RecipientDetailsContent() {
                 {/* Slide nav header */}
                 <motion.div
                   variants={itemUp}
-                  className="flex w-full items-center justify-between overflow-hidden rounded-2xl bg-white/80 p-3 shadow-[0_8px_30px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm"
+                  className="flex w-full items-center justify-between overflow-hidden rounded-2xl bg-white/80 p-3 shadow-[0_8px_30px_rgba(44, 41, 46, 0.08)] backdrop-blur-sm"
                 >
                   <button
                     type="button"
@@ -421,7 +421,7 @@ function RecipientDetailsContent() {
                         i === safeActiveIndex
                           ? "w-7 bg-[#F10897]"
                           : r.confirmed
-                            ? "w-2 bg-[#4E0030]/60"
+                            ? "w-2 bg-[#2C292E]/60"
                             : "w-2 bg-maroon/25"
                       }`}
                     />
@@ -469,7 +469,7 @@ function RecipientDetailsContent() {
                 {/* Live Card Preview */}
                 <motion.div
                   variants={itemUp}
-                  className="rounded-3xl bg-white/80 p-5 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-6"
+                  className="rounded-3xl bg-white/80 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
@@ -486,8 +486,8 @@ function RecipientDetailsContent() {
                       <div
                         className={`relative flex aspect-[5/3] flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br ${
                           CARD_LOOKUP[current.cardId]?.gradient ??
-                          "from-[#FCE4EC] to-[#F8BBD0]"
-                        } p-5 shadow-[0_10px_30px_rgba(61, 0, 46, 0.18)]`}
+                          "from-[#FFF5EE] to-[#F5E8DC]"
+                        } p-5 shadow-[0_10px_30px_rgba(44, 41, 46, 0.18)]`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-2">
@@ -496,7 +496,7 @@ function RecipientDetailsContent() {
                               alt="Tare logo"
                               width={28}
                               height={28}
-                              className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(61,0,46,0.2)]"
+                              className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(44, 41, 46, 0.2)]"
                             />
                             <div>
                               <p className="font-fraunces text-lg font-bold text-maroon sm:text-xl">
@@ -547,7 +547,7 @@ function RecipientDetailsContent() {
                 {/* Dark Gift Summary */}
                 <motion.div
                   variants={itemUp}
-                  className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(61, 0, 46, 0.30)] sm:p-6"
+                  className="rounded-3xl bg-[#2C292E] p-5 text-white shadow-[0_14px_40px_rgba(44, 41, 46, 0.30)] sm:p-6"
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
@@ -577,7 +577,7 @@ function RecipientDetailsContent() {
                           >
                             <div
                               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${
-                                c?.gradient ?? "from-[#FCE4EC] to-[#F8BBD0]"
+                                c?.gradient ?? "from-[#FFF5EE] to-[#F5E8DC]"
                               } font-sans text-xs font-bold text-maroon`}
                             >
                               {(r.name || "?").charAt(0).toUpperCase()}
@@ -632,7 +632,7 @@ function RecipientDetailsContent() {
             <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
               <Link
                 href="/gift-cards"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61, 0, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(44, 41, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
               >
                 <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
                 Gift Card
@@ -641,7 +641,7 @@ function RecipientDetailsContent() {
                 type="button"
                 onClick={handleContinue}
                 disabled={!allConfirmed}
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 Continue to Review
                 <ArrowRight
@@ -695,7 +695,7 @@ function RecipientSlide({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex min-h-[560px] flex-col space-y-4 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-6"
+      className="flex min-h-[560px] flex-col space-y-4 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
     >
       {/* Recipient header — "Recipient X of Y" (fixed height to prevent jitter) */}
       <div className="flex h-12 w-full items-center justify-between overflow-hidden">
@@ -713,7 +713,7 @@ function RecipientSlide({
           </div>
         </div>
         {isConfirmed && (
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#4E0030] px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#2C292E] px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white">
             <Check className="h-3 w-3" strokeWidth={2.5} />
             Confirmed
           </span>
@@ -879,7 +879,7 @@ function RecipientSlide({
         ) : (
           <button
             type="submit"
-            className="group inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61, 0, 46, 0.25)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#3a0023] active:scale-95"
+            className="group inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#2C292E] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#1F1B22] active:scale-95"
           >
             {isConfirmed ? (
               <>
@@ -923,7 +923,7 @@ function Stepper({
   active: number;
 }) {
   return (
-    <ol className="flex items-start justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm">
+    <ol className="flex items-start justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(44, 41, 46, 0.08)] backdrop-blur-sm">
       {steps.map((step, i) => {
         const isDone = i < active;
         const isActive = i === active;
@@ -947,7 +947,7 @@ function Stepper({
                 isActive
                   ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
                   : isDone
-                    ? "bg-[#4E0030] text-white"
+                    ? "bg-[#2C292E] text-white"
                     : "bg-maroon/10 text-maroon/60"
               }`}
             >

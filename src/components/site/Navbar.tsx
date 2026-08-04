@@ -58,7 +58,7 @@ export default function Navbar() {
       <div className="absolute inset-0 -z-10 backdrop-blur-md bg-transparent shadow-[0_8px_30px_rgba(0,0,0,0.12)]" />
       <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-3 sm:px-8 sm:py-4 lg:px-12">
         <Link href="/" className="group inline-flex shrink-0 items-center" aria-label="Tare home">
-          <Image src="/logo.png" alt="Tare logo" width={80} height={80} priority className="h-20 w-20 object-contain drop-shadow-[0_4px_10px_rgba(61, 0, 46, 0.25)] transition-transform duration-200 group-hover:scale-[1.04]" />
+          <Image src="/logo.png" alt="Tare logo" width={80} height={80} priority className="h-20 w-20 object-contain drop-shadow-[0_4px_10px_rgba(44, 41, 46, 0.25)] transition-transform duration-200 group-hover:scale-[1.04]" />
         </Link>
         <ul className="hidden items-center gap-9 md:flex">
           {NAV_LINKS.map((link) => { const active = isActive(link.href); return (
@@ -78,7 +78,7 @@ export default function Navbar() {
                 onClick={() => setProfileOpen(!profileOpen)}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-white/15 px-3 py-2 backdrop-blur-sm transition-colors hover:bg-white/25"
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#4E0030] font-sans text-xs font-bold text-white">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#2C292E] font-sans text-xs font-bold text-white">
                   {user.name.charAt(0).toUpperCase()}
                 </span>
                 <span className="font-sans text-sm font-medium text-maroon">{user.name.split(" ")[0]}</span>
@@ -91,26 +91,26 @@ export default function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-64 rounded-2xl bg-white p-2 shadow-[0_15px_50px_rgba(61, 0, 46, 0.20)]"
+                    className="absolute right-0 mt-2 w-64 rounded-2xl bg-white p-2 shadow-[0_15px_50px_rgba(44, 41, 46, 0.20)]"
                   >
                     {/* User info */}
                     <div className="px-3 py-3 border-b border-maroon/10">
-                      <p className="font-sans text-sm font-bold text-[#4E0030]">{user.name}</p>
-                      <p className="font-sans text-xs text-[#4E0030]/55">{user.email}</p>
+                      <p className="font-sans text-sm font-bold text-[#2C292E]">{user.name}</p>
+                      <p className="font-sans text-xs text-[#2C292E]/55">{user.email}</p>
                     </div>
                     {/* Balance */}
                     {redemption.redeemed && redemption.creditBalance > 0 && (
-                      <div className="mx-1 my-1 flex items-center gap-2 rounded-xl bg-[#FCE4EC] px-3 py-2">
+                      <div className="mx-1 my-1 flex items-center gap-2 rounded-xl bg-[#FFF5EE] px-3 py-2">
                         <Wallet className="h-4 w-4 text-[#F10897]" strokeWidth={2.5} />
-                        <span className="font-sans text-xs text-[#4E0030]/70">Balance:</span>
-                        <span className="font-sans text-sm font-bold text-[#4E0030]">₦{redemption.creditBalance.toLocaleString()}</span>
+                        <span className="font-sans text-xs text-[#2C292E]/70">Balance:</span>
+                        <span className="font-sans text-sm font-bold text-[#2C292E]">₦{redemption.creditBalance.toLocaleString()}</span>
                       </div>
                     )}
                     {/* Menu items */}
-                    <Link href="/book-session" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2.5 font-sans text-sm font-medium text-[#4E0030] transition-colors hover:bg-blush/40">
+                    <Link href="/book-session" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2.5 font-sans text-sm font-medium text-[#2C292E] transition-colors hover:bg-blush/40">
                       <User className="h-4 w-4" strokeWidth={2.5} />My Bookings
                     </Link>
-                    <button type="button" onClick={handleLogout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 font-sans text-sm font-medium text-[#4E0030] transition-colors hover:bg-blush/40">
+                    <button type="button" onClick={handleLogout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 font-sans text-sm font-medium text-[#2C292E] transition-colors hover:bg-blush/40">
                       <LogOut className="h-4 w-4" strokeWidth={2.5} />Sign Out
                     </button>
                   </motion.div>
@@ -123,7 +123,7 @@ export default function Navbar() {
             </Link>
           )}
 
-          <Link href="/gift-cards" className="hidden items-center justify-center gap-2 rounded-full bg-[#4E0030] px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#4E0030] active:scale-95 md:inline-flex"><span>Send a Gift</span></Link>
+          <Link href="/gift-cards" className="hidden items-center justify-center gap-2 rounded-full bg-[#2C292E] px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#2C292E] active:scale-95 md:inline-flex"><span>Send a Gift</span></Link>
 
           <button type="button" aria-label="Open menu" aria-expanded={open} onClick={() => setOpen(true)} className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-maroon/10 text-maroon transition-colors hover:bg-maroon/20 md:hidden">
             <Menu className="h-5 w-5" strokeWidth={2.5} />
@@ -137,7 +137,7 @@ export default function Navbar() {
           <motion.div key="mobile-menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="fixed inset-0 z-50 bg-brand-gradient backdrop-blur-md md:hidden">
             <div className="flex items-center justify-between px-5 py-3 sm:px-8">
               <Link href="/" onClick={() => setOpen(false)} className="inline-flex shrink-0 items-center" aria-label="Tare home">
-                <Image src="/logo.png" alt="Tare logo" width={80} height={80} className="h-20 w-20 object-contain drop-shadow-[0_4px_10px_rgba(61, 0, 46, 0.25)]" />
+                <Image src="/logo.png" alt="Tare logo" width={80} height={80} className="h-20 w-20 object-contain drop-shadow-[0_4px_10px_rgba(44, 41, 46, 0.25)]" />
               </Link>
               <button type="button" aria-label="Close menu" aria-expanded={open} onClick={() => setOpen(false)} className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-maroon/15 text-maroon transition-colors hover:bg-maroon/25">
                 <X className="h-5 w-5" strokeWidth={2.5} />
@@ -156,7 +156,7 @@ export default function Navbar() {
               {user ? (
                 <>
                   <div className="flex items-center gap-3 rounded-2xl bg-white/15 px-4 py-3 backdrop-blur-sm">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#4E0030] font-sans text-sm font-bold text-white">{user.name.charAt(0).toUpperCase()}</span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2C292E] font-sans text-sm font-bold text-white">{user.name.charAt(0).toUpperCase()}</span>
                     <div>
                       <p className="font-sans text-sm font-bold text-maroon">{user.name}</p>
                       {redemption.redeemed && redemption.creditBalance > 0 && (
@@ -173,7 +173,7 @@ export default function Navbar() {
                   <User className="h-5 w-5 shrink-0" strokeWidth={2.5} /><span>Login / Sign Up</span>
                 </Link>
               )}
-              <Link href="/gift-cards" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center rounded-full bg-[#4E0030] px-6 py-4 font-sans text-base font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:bg-[#4E0030] active:scale-95">Send a Gift</Link>
+              <Link href="/gift-cards" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center rounded-full bg-[#2C292E] px-6 py-4 font-sans text-base font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:bg-[#2C292E] active:scale-95">Send a Gift</Link>
             </motion.div>
           </motion.div>
         )}

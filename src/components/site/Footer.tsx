@@ -50,7 +50,7 @@ export default function Footer() {
                 alt="Tare logo"
                 width={80}
                 height={80}
-                className="h-20 w-20 object-contain drop-shadow-[0_6px_16px_rgba(61, 0, 46, 0.3)]"
+                className="h-20 w-20 object-contain drop-shadow-[0_6px_16px_rgba(44, 41, 46, 0.3)]"
               />
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-relaxed text-maroon/85">

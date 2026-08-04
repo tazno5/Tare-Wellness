@@ -70,9 +70,7 @@ export default function RootLayout({
       <body
         className={`${plusJakarta.variable} ${fraunces.variable} ${inter.variable} antialiased font-sans text-maroon`}
         style={{
-          backgroundImage:
-            "linear-gradient(to bottom, var(--page-gradient-from, #F10897), var(--page-gradient-to, #AD005A))",
-          backgroundAttachment: "fixed",
+          backgroundColor: "#FFF5EE",
           minHeight: "100vh",
         }}
       >

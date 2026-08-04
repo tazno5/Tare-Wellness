@@ -88,12 +88,12 @@ function CheckoutContent() {
   // Set gradient — render + useEffect
   useMemo(() => {
     if (typeof document === "undefined") return;
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
   }, []);
   useEffect(() => {
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
     return () => {
       document.body.style.removeProperty("--page-gradient-from");
       document.body.style.removeProperty("--page-gradient-to");
@@ -167,7 +167,7 @@ function CheckoutContent() {
         cardTitle: card?.title ?? "Gift",
         cardPrice: card?.price ?? 0,
         cardSessions: card?.sessions ?? 1,
-        cardGradient: card?.gradient ?? "from-[#FCE4EC] to-[#F8BBD0]",
+        cardGradient: card?.gradient ?? "from-[#FFF5EE] to-[#F5E8DC]",
       };
     });
   }, [recipientRows, recipients]);
@@ -295,7 +295,7 @@ function CheckoutContent() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]"
+            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]"
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -372,7 +372,7 @@ function CheckoutContent() {
             {/* Payment Information */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <div className="flex items-center justify-between">
                 <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
@@ -392,14 +392,14 @@ function CheckoutContent() {
                 <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-blush/60 p-1">
                   <TabsTrigger
                     value="card"
-                    className="rounded-xl font-sans text-xs font-bold uppercase tracking-[0.12em] data-[state=active]:bg-[#4E0030] data-[state=active]:text-white"
+                    className="rounded-xl font-sans text-xs font-bold uppercase tracking-[0.12em] data-[state=active]:bg-[#2C292E] data-[state=active]:text-white"
                   >
                     <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} />
                     Card
                   </TabsTrigger>
                   <TabsTrigger
                     value="transfer"
-                    className="rounded-xl font-sans text-xs font-bold uppercase tracking-[0.12em] data-[state=active]:bg-[#4E0030] data-[state=active]:text-white"
+                    className="rounded-xl font-sans text-xs font-bold uppercase tracking-[0.12em] data-[state=active]:bg-[#2C292E] data-[state=active]:text-white"
                   >
                     <Building2 className="h-3.5 w-3.5" strokeWidth={2.5} />
                     Bank Transfer
@@ -519,7 +519,7 @@ function CheckoutContent() {
             {/* Billing Information */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
                 Billing Information
@@ -639,7 +639,7 @@ function CheckoutContent() {
               ].map((b) => (
                 <div
                   key={b.title}
-                  className="rounded-2xl bg-white/80 p-3 text-center shadow-[0_6px_20px_rgba(61,0,46,0.08)] backdrop-blur-sm"
+                  className="rounded-2xl bg-white/80 p-3 text-center shadow-[0_6px_20px_rgba(44, 41, 46, 0.08)] backdrop-blur-sm"
                 >
                   <div className="mx-auto inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon">
                     {b.icon}
@@ -659,7 +659,7 @@ function CheckoutContent() {
           <motion.div variants={container} initial="hidden" animate="show" className="w-full">
             <motion.article
               variants={itemUp}
-              className="sticky top-28 w-full max-w-md overflow-hidden rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="sticky top-28 w-full max-w-md overflow-hidden rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
                 Gift Summary
@@ -688,7 +688,7 @@ function CheckoutContent() {
                       >
                         {/* Thumbnail */}
                         <div
-                          className={`relative flex aspect-[5/3] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${g.cardGradient} p-5 shadow-[0_10px_30px_rgba(61,0,46,0.18)]`}
+                          className={`relative flex aspect-[5/3] items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br ${g.cardGradient} p-5 shadow-[0_10px_30px_rgba(44, 41, 46, 0.18)]`}
                         >
                           {/* Small Tare logo */}
                           <Image
@@ -696,7 +696,7 @@ function CheckoutContent() {
                             alt="Tare logo"
                             width={28}
                             height={28}
-                            className="absolute left-3 top-3 h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(61,0,46,0.2)]"
+                            className="absolute left-3 top-3 h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(44, 41, 46, 0.2)]"
                           />
                           <div className="text-center">
                             <p className="font-fraunces text-xl font-bold text-maroon">
@@ -814,7 +814,7 @@ function CheckoutContent() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+                className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2C292E] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {submitting ? (
                   <>
@@ -843,7 +843,7 @@ function CheckoutContent() {
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <Link
             href="/cart-review"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(44, 41, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
             Cart Review
@@ -852,7 +852,7 @@ function CheckoutContent() {
             type="submit"
             form="checkout-form"
             disabled={submitting}
-            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           >
             {submitting ? "Processing…" : "Complete Purchase"}
             {!submitting && (
@@ -876,7 +876,7 @@ function Stepper({
   active: number;
 }) {
   return (
-    <ol className="flex items-start justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61,0,46,0.08)] backdrop-blur-sm">
+    <ol className="flex items-start justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(44, 41, 46, 0.08)] backdrop-blur-sm">
       {steps.map((step, i) => {
         const isDone = i < active;
         const isActive = i === active;
@@ -898,7 +898,7 @@ function Stepper({
                 isActive
                   ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
                   : isDone
-                    ? "bg-[#4E0030] text-white"
+                    ? "bg-[#2C292E] text-white"
                     : "bg-maroon/10 text-maroon/60"
               }`}
             >

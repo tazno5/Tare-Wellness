@@ -68,8 +68,8 @@ export default function BookingConfirmationPage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
   }, []);
 
   const meetingUrl = "https://wa.me/2349036530892";
@@ -134,7 +134,7 @@ export default function BookingConfirmationPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]"
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]"
           >
             <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#F10897] text-white">
               <Check className="h-2.5 w-2.5" strokeWidth={3} />
@@ -171,12 +171,12 @@ export default function BookingConfirmationPage() {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="mx-auto w-full max-w-4xl overflow-hidden rounded-[2rem] bg-white shadow-[0_18px_50px_rgba(61,0,46,0.15)]"
+          className="mx-auto w-full max-w-4xl overflow-hidden rounded-[2rem] bg-white shadow-[0_18px_50px_rgba(44, 41, 46, 0.15)]"
         >
           {/* Header strip */}
           <div className="flex flex-col gap-3 border-b border-maroon/10 bg-blush/40 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-6">
             <div className="flex items-center gap-3">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#4E0030] text-white">
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#2C292E] text-white">
                 <PartyPopper className="h-5 w-5" strokeWidth={2.5} />
               </div>
               <div>
@@ -250,7 +250,7 @@ export default function BookingConfirmationPage() {
                 Your WhatsApp link
               </p>
 
-              <div className="mt-3 flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 shadow-[0_4px_15px_rgba(61,0,46,0.08)]">
+              <div className="mt-3 flex items-center gap-2 rounded-xl bg-white px-3 py-2.5 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]">
                 <code className="flex-1 truncate font-mono text-sm font-bold text-maroon">
                   {meetingUrl}
                 </code>
@@ -267,7 +267,7 @@ export default function BookingConfirmationPage() {
                   type="button"
                   onClick={handleCopy}
                   aria-label="Copy WhatsApp link"
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#4E0030] text-white transition-all hover:bg-[#3a0023] active:scale-90"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#2C292E] text-white transition-all hover:bg-[#1F1B22] active:scale-90"
                 >
                   {copied ? (
                     <Check className="h-4 w-4" strokeWidth={2.5} />
@@ -304,7 +304,7 @@ export default function BookingConfirmationPage() {
           transition={{ duration: 0.6 }}
           className="mx-auto max-w-4xl text-center"
         >
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-maroon shadow-[0_4px_15px_rgba(61,0,46,0.08)]">
+          <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-maroon shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]">
             <Sparkles className="h-3 w-3" strokeWidth={2.5} />
             The path ahead
           </span>
@@ -327,7 +327,7 @@ export default function BookingConfirmationPage() {
             <motion.article
               key={step.title}
               variants={itemUp}
-              className="relative flex flex-col rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="relative flex flex-col rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <div className="flex items-center justify-between">
                 <div className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-[#F10897]/40 bg-blush/60 text-[#F10897]">
@@ -357,14 +357,14 @@ export default function BookingConfirmationPage() {
           <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/gift-cards"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(61,0,46,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 sm:w-auto"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95 sm:w-auto"
             >
               <Sparkles className="h-4 w-4" strokeWidth={2.5} />
               Send a Gift Card
             </Link>
             <Link
               href="/redeem"
-              className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(61,0,46,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+              className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(44, 41, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
             >
               Redeem Another
               <ArrowRight

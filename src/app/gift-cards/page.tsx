@@ -111,8 +111,8 @@ function GiftCardPageContent() {
   }, []);
 
   useEffect(() => {
-    document.body.style.setProperty("--page-gradient-from", "#FCE4EC");
-    document.body.style.setProperty("--page-gradient-to", "#F10897");
+    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
     return () => {
       document.body.style.removeProperty("--page-gradient-from");
       document.body.style.removeProperty("--page-gradient-to");
@@ -174,7 +174,7 @@ function GiftCardPageContent() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-[0_4px_15px_rgba(61,0,46,0.08)]"
+            className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]"
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -239,7 +239,7 @@ function GiftCardPageContent() {
                 onClick={() => setActiveFilter(active && label === "All Cards" ? null : label)}
                 className={`rounded-full px-4 py-2 font-sans text-xs font-semibold transition-all duration-200 sm:text-sm ${
                   active
-                    ? "bg-[#4E0030] text-white shadow-md"
+                    ? "bg-[#2C292E] text-white shadow-md"
                     : "bg-white/80 text-maroon hover:bg-white"
                 }`}
               >
@@ -266,7 +266,7 @@ function GiftCardPageContent() {
                 <motion.article
                   key={card.id}
                   variants={itemUp}
-                  className="flex flex-col overflow-hidden rounded-3xl bg-white shadow-[0_10px_40px_rgba(61,0,46,0.12)] transition-transform duration-300 hover:-translate-y-1"
+                  className="flex flex-col overflow-hidden rounded-3xl bg-white shadow-[0_10px_40px_rgba(44, 41, 46, 0.12)] transition-transform duration-300 hover:-translate-y-1"
                 >
                   {/* Top pastel graphic */}
                   <div
@@ -274,7 +274,7 @@ function GiftCardPageContent() {
                   >
                     {/* Badge pill — top-right corner */}
                     {card.badge && (
-                      <span className="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#4E0030] px-2.5 py-1 font-sans text-[9px] font-bold uppercase tracking-[0.14em] text-white shadow-sm sm:text-[10px]">
+                      <span className="absolute right-3 top-3 inline-flex items-center rounded-full bg-[#2C292E] px-2.5 py-1 font-sans text-[9px] font-bold uppercase tracking-[0.14em] text-white shadow-sm sm:text-[10px]">
                         {card.badge}
                       </span>
                     )}
@@ -334,7 +334,7 @@ function GiftCardPageContent() {
                           type="button"
                           aria-label={`Increase ${card.title} quantity`}
                           onClick={() => increment(card)}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#4E0030] text-white shadow-sm transition-all duration-200 hover:bg-[#3a0023] active:scale-90"
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#2C292E] text-white shadow-sm transition-all duration-200 hover:bg-[#1F1B22] active:scale-90"
                         >
                           <Plus className="h-4 w-4" strokeWidth={2.5} />
                         </button>
@@ -361,7 +361,7 @@ function GiftCardPageContent() {
             <button
               type="button"
               onClick={handleProceed}
-              className="group inline-flex w-full max-w-md items-center justify-between gap-3 rounded-full bg-[#4E0030] px-6 py-4 font-sans text-sm font-semibold text-white shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0023] active:scale-95 sm:text-base"
+              className="group inline-flex w-full max-w-md items-center justify-between gap-3 rounded-full bg-[#2C292E] px-6 py-4 font-sans text-sm font-semibold text-white shadow-[0_12px_40px_rgba(0,0,0,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95 sm:text-base"
             >
               <span className="inline-flex items-center gap-2">
                 <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-white/20 px-2 text-xs font-bold tabular-nums">
