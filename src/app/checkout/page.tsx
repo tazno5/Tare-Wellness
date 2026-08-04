@@ -655,11 +655,11 @@ function CheckoutContent() {
             </motion.div>
           </motion.div>
 
-          {/* RIGHT column — Gift Summary */}
-          <motion.div variants={container} initial="hidden" animate="show">
+          {/* RIGHT column — Gift Summary (locked width) */}
+          <motion.div variants={container} initial="hidden" animate="show" className="w-full">
             <motion.article
               variants={itemUp}
-              className="sticky top-28 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
+              className="sticky top-28 w-full max-w-md overflow-hidden rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61,0,46,0.10)] backdrop-blur-sm sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
                 Gift Summary
@@ -671,9 +671,9 @@ function CheckoutContent() {
                 )}
               </h2>
 
-              {/* Carousel window — CSS transform, no mount/unmount */}
+              {/* Carousel window — CSS transform, no mount/unmount (locked width) */}
               {giftRows.length > 0 && (
-                <div className="relative mt-4 overflow-hidden">
+                <div className="relative mt-4 w-full overflow-hidden">
                   <div
                     className="flex transition-transform duration-[400ms] ease-in-out"
                     style={{
@@ -715,29 +715,29 @@ function CheckoutContent() {
                           />
                         </div>
 
-                        {/* Recipient details for this gift */}
+                        {/* Recipient details for this gift (truncated to prevent width expansion) */}
                         <div className="mt-4 space-y-2">
                           <div className="flex items-center justify-between font-sans text-sm">
-                            <span className="text-maroon/70">Package</span>
-                            <span className="font-bold text-maroon">
+                            <span className="shrink-0 text-maroon/70">Package</span>
+                            <span className="ml-2 truncate font-bold text-maroon">
                               {g.cardTitle}
                             </span>
                           </div>
                           <div className="flex items-center justify-between font-sans text-sm">
-                            <span className="text-maroon/70">Recipient</span>
-                            <span className="font-bold text-maroon">
+                            <span className="shrink-0 text-maroon/70">Recipient</span>
+                            <span className="ml-2 truncate font-bold text-maroon">
                               {g.name || "—"}
                             </span>
                           </div>
                           <div className="flex items-center justify-between font-sans text-sm">
-                            <span className="text-maroon/70">Email</span>
-                            <span className="max-w-[55%] truncate font-bold text-maroon">
+                            <span className="shrink-0 text-maroon/70">Email</span>
+                            <span className="ml-2 max-w-[55%] truncate font-bold text-maroon">
                               {g.email || "—"}
                             </span>
                           </div>
                           <div className="flex items-center justify-between font-sans text-sm">
-                            <span className="text-maroon/70">Occasion</span>
-                            <span className="font-bold text-maroon">
+                            <span className="shrink-0 text-maroon/70">Occasion</span>
+                            <span className="ml-2 truncate font-bold text-maroon">
                               {g.occasion}
                             </span>
                           </div>
