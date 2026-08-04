@@ -369,17 +369,17 @@ function RecipientDetailsContent() {
           {/* ============ CAROUSEL FORM + PREVIEW ============ */}
           <section className="relative w-full px-5 pb-32 pt-2 sm:px-8 lg:px-12">
             <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
-              {/* LEFT: Carousel form */}
+              {/* LEFT: Carousel form (locked width) */}
               <motion.div
                 variants={container}
                 initial="hidden"
                 animate="show"
-                className="flex flex-col gap-4"
+                className="mx-auto flex w-full max-w-lg flex-col gap-4"
               >
                 {/* Slide nav header */}
                 <motion.div
                   variants={itemUp}
-                  className="flex items-center justify-between rounded-2xl bg-white/80 p-3 shadow-[0_8px_30px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm"
+                  className="flex w-full items-center justify-between overflow-hidden rounded-2xl bg-white/80 p-3 shadow-[0_8px_30px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm"
                 >
                   <button
                     type="button"
@@ -430,7 +430,7 @@ function RecipientDetailsContent() {
                 </div>
 
                 {/* Slide content — CSS transform carousel track (locked dimensions) */}
-                <div className="relative min-h-[580px] overflow-hidden rounded-3xl sm:min-h-[560px]">
+                <div className="relative w-full min-h-[580px] overflow-hidden rounded-3xl sm:min-h-[560px]">
                   <div
                     className="flex transition-transform duration-[400ms] ease-in-out"
                     style={{
@@ -699,16 +699,16 @@ function RecipientSlide({
       className="flex min-h-[560px] flex-col space-y-4 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(61, 0, 46, 0.10)] backdrop-blur-sm sm:p-6"
     >
       {/* Recipient header — "Recipient X of Y" (fixed height to prevent jitter) */}
-      <div className="flex h-12 items-center justify-between">
-        <div className="inline-flex items-center gap-2">
-          <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-blush text-maroon">
+      <div className="flex h-12 w-full items-center justify-between overflow-hidden">
+        <div className="inline-flex min-w-0 items-center gap-2">
+          <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blush text-maroon">
             <User className="h-4 w-4" strokeWidth={2.5} />
           </div>
-          <div className="flex flex-col">
+          <div className="flex min-w-0 flex-col">
             <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon/60">
               Recipient {recipientNumber} of {totalRecipients}
             </span>
-            <span className="font-fraunces text-lg font-bold text-maroon">
+            <span className="truncate font-fraunces text-lg font-bold text-maroon">
               {recipient.name || "New Recipient"}
             </span>
           </div>
