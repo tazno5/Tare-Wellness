@@ -876,44 +876,36 @@ function Stepper({
   active: number;
 }) {
   return (
-    <ol className="flex items-center justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61,0,46,0.08)] backdrop-blur-sm">
+    <ol className="flex items-start justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61,0,46,0.08)] backdrop-blur-sm">
       {steps.map((step, i) => {
         const isDone = i < active;
         const isActive = i === active;
         return (
           <li
             key={step.label}
-            className="flex flex-1 flex-col items-center gap-1.5 text-center"
+            className="relative flex flex-1 flex-col items-center gap-2 text-center"
           >
-            <div className="flex w-full items-center">
-              {i > 0 && (
-                <span
-                  className={`h-0.5 flex-1 ${
-                    isDone || isActive ? "bg-[#F10897]" : "bg-maroon/15"
-                  }`}
-                />
-              )}
+            {i > 0 && (
               <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-sans text-[11px] font-bold transition-colors ${
-                  isActive
-                    ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
-                    : isDone
-                      ? "bg-[#4E0030] text-white"
-                      : "bg-maroon/10 text-maroon/60"
+                className={`absolute top-[13px] right-1/2 h-0.5 w-full ${
+                  isDone || isActive ? "bg-[#F10897]" : "bg-maroon/15"
                 }`}
-              >
-                {isDone ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : i + 1}
-              </span>
-              {i < steps.length - 1 && (
-                <span
-                  className={`h-0.5 flex-1 ${
-                    i < active ? "bg-[#F10897]" : "bg-maroon/15"
-                  }`}
-                />
-              )}
-            </div>
+                aria-hidden
+              />
+            )}
             <span
-              className={`font-sans text-[10px] font-bold uppercase tracking-[0.1em] ${
+              className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-sans text-[11px] font-bold leading-none transition-colors ${
+                isActive
+                  ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
+                  : isDone
+                    ? "bg-[#4E0030] text-white"
+                    : "bg-maroon/10 text-maroon/60"
+              }`}
+            >
+              {isDone ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : i + 1}
+            </span>
+            <span
+              className={`font-sans text-[10px] font-bold uppercase leading-tight tracking-[0.1em] ${
                 isActive
                   ? "text-[#F10897]"
                   : isDone

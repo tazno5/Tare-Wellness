@@ -70,8 +70,7 @@ const INSPIRATION_PILLS = [
   "Take a moment for you.",
   "This is your time.",
   "Breathe. You've got this.",
-  "Sending love and light.",
-  "Proud of you, always.",
+  "Sending you peace.",
 ];
 
 const STEPS = [
@@ -175,7 +174,7 @@ function RecipientDetailsContent() {
     // Read the LATEST state from the store to avoid stale closure issues.
     const currentRecipients = useStore.getState().recipients;
     const r = currentRecipients.find((x) => x.uid === uid);
-    if (!r) return;
+    if (!r) return false;
     if (!r.name.trim() || !r.email.trim()) {
       toast({
         title: "Almost there",
@@ -714,7 +713,7 @@ function RecipientSlide({
           </div>
         </div>
         {isConfirmed && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[#4E0030] px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#4E0030] px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white">
             <Check className="h-3 w-3" strokeWidth={2.5} />
             Confirmed
           </span>
@@ -790,7 +789,7 @@ function RecipientSlide({
       {/* Delivery mode toggle */}
       <div className="flex items-center justify-between rounded-2xl border border-maroon/15 bg-blush/40 p-4">
         <div className="flex items-start gap-3">
-          <div className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-maroon shadow-sm">
+          <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-maroon shadow-sm">
             {recipient.deliveryMode === "now" ? (
               <Send className="h-4 w-4" strokeWidth={2.5} />
             ) : (
@@ -924,44 +923,39 @@ function Stepper({
   active: number;
 }) {
   return (
-    <ol className="flex items-center justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm">
+    <ol className="flex items-start justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(61, 0, 46, 0.08)] backdrop-blur-sm">
       {steps.map((step, i) => {
         const isDone = i < active;
         const isActive = i === active;
         return (
           <li
             key={step.label}
-            className="flex flex-1 flex-col items-center gap-1.5 text-center"
+            className="relative flex flex-1 flex-col items-center gap-2 text-center"
           >
-            <div className="flex w-full items-center">
-              {i > 0 && (
-                <span
-                  className={`h-0.5 flex-1 ${
-                    isDone || isActive ? "bg-[#F10897]" : "bg-maroon/15"
-                  }`}
-                />
-              )}
+            {/* Connector line — absolute, centered on the circle's vertical center */}
+            {i > 0 && (
               <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-sans text-[11px] font-bold transition-colors ${
-                  isActive
-                    ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
-                    : isDone
-                      ? "bg-[#4E0030] text-white"
-                      : "bg-maroon/10 text-maroon/60"
+                className={`absolute top-[13px] right-1/2 h-0.5 w-full ${
+                  isDone || isActive ? "bg-[#F10897]" : "bg-maroon/15"
                 }`}
-              >
-                {isDone ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : i + 1}
-              </span>
-              {i < steps.length - 1 && (
-                <span
-                  className={`h-0.5 flex-1 ${
-                    i < active ? "bg-[#F10897]" : "bg-maroon/15"
-                  }`}
-                />
-              )}
-            </div>
+                aria-hidden
+              />
+            )}
+            {/* Circle (number/check) — centered above the label */}
             <span
-              className={`font-sans text-[10px] font-bold uppercase tracking-[0.1em] ${
+              className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-sans text-[11px] font-bold leading-none transition-colors ${
+                isActive
+                  ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
+                  : isDone
+                    ? "bg-[#4E0030] text-white"
+                    : "bg-maroon/10 text-maroon/60"
+              }`}
+            >
+              {isDone ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : i + 1}
+            </span>
+            {/* Label — centered directly under the circle */}
+            <span
+              className={`font-sans text-[10px] font-bold uppercase leading-tight tracking-[0.1em] ${
                 isActive
                   ? "text-[#F10897]"
                   : isDone
