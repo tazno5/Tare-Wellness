@@ -118,7 +118,7 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
           ) : (
-            <Link href="/login" className="hidden items-center justify-center gap-1.5 rounded-full bg-white/15 px-4 py-2 font-sans text-sm font-semibold text-[#F10897] backdrop-blur-sm transition-all duration-200 hover:scale-[1.03] hover:bg-white/25 md:inline-flex">
+            <Link href="/login" className="hidden items-center justify-center gap-1.5 rounded-full bg-white px-4 py-2 font-sans text-sm font-semibold text-[#F10897] shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#FFF5EE] md:inline-flex">
               <User className="h-4 w-4 shrink-0" strokeWidth={2.5} /><span>Login</span>
             </Link>
           )}
@@ -164,12 +164,12 @@ export default function Navbar() {
                       )}
                     </div>
                   </div>
-                  <button onClick={() => { handleLogout(); setOpen(false); }} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/15 px-6 py-3 font-sans text-sm font-semibold text-[#F10897] backdrop-blur-sm transition-all hover:bg-white/25">
+                  <button onClick={() => { handleLogout(); setOpen(false); }} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-sans text-sm font-semibold text-[#F10897] shadow-sm transition-all hover:bg-[#FFF5EE]">
                     <LogOut className="h-4 w-4 shrink-0" strokeWidth={2.5} /><span>Sign Out</span>
                   </button>
                 </>
               ) : (
-                <Link href="/login" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/15 px-6 py-4 font-sans text-base font-semibold text-[#F10897] backdrop-blur-sm transition-all hover:bg-white/25">
+                <Link href="/login" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-4 font-sans text-base font-semibold text-[#F10897] shadow-sm transition-all hover:bg-[#FFF5EE]">
                   <User className="h-5 w-5 shrink-0" strokeWidth={2.5} /><span>Login / Sign Up</span>
                 </Link>
               )}

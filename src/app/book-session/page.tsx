@@ -482,7 +482,7 @@ export default function BookSessionPage() {
                     type="button"
                     onClick={handlePrevMonth}
                     aria-label="Previous month"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-[#F10897] transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#F10897] shadow-sm transition-all hover:bg-[#FFF5EE] active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
                     disabled={
                       viewMonth.getFullYear() === today.getFullYear() &&
                       viewMonth.getMonth() === today.getMonth()
@@ -497,7 +497,7 @@ export default function BookSessionPage() {
                     type="button"
                     onClick={handleNextMonth}
                     aria-label="Next month"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-[#F10897] transition-all hover:bg-blush-dark active:scale-90"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#F10897] shadow-sm transition-all hover:bg-[#FFF5EE] active:scale-90"
                   >
                     <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
                   </button>
@@ -737,7 +737,7 @@ export default function BookSessionPage() {
           </p>
           <Link
             href="/redeem"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#FFF5EE] active:scale-95"
           >
             <Gift className="h-4 w-4" strokeWidth={2.5} />
             Redeem a Gift Card

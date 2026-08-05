@@ -490,7 +490,7 @@ function OrderConfirmationContent() {
                       onClick={() => setConfirmIndex(Math.max(0, confirmIndex - 1))}
                       disabled={confirmIndex === 0}
                       aria-label="Previous gift"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-[#F10897] transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#F10897] shadow-sm transition-all hover:bg-[#FFF5EE] active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
                     </button>
@@ -514,7 +514,7 @@ function OrderConfirmationContent() {
                       onClick={() => setConfirmIndex(Math.min(receipts.length - 1, confirmIndex + 1))}
                       disabled={confirmIndex === receipts.length - 1}
                       aria-label="Next gift"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-[#F10897] transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#F10897] shadow-sm transition-all hover:bg-[#FFF5EE] active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                     </button>
@@ -694,7 +694,7 @@ function OrderConfirmationContent() {
           </button>
           <Link
             href="/redeem"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#FFF5EE] active:scale-95 sm:w-auto"
           >
             <Sparkles className="h-4 w-4" strokeWidth={2.5} />
             Redeem a Card
