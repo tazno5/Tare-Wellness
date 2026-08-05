@@ -50,7 +50,7 @@ export default function Footer() {
                 alt="Tare logo"
                 width={80}
                 height={80}
-                className="h-20 w-20 object-contain drop-shadow-[0_6px_16px_rgba(44, 41, 46, 0.3)]"
+                className="h-20 w-20 object-contain drop-shadow-[0_6px_16px_rgba(78, 0, 48, 0.3)]"
               />
             </Link>
             <p className="mt-5 max-w-xs text-sm leading-relaxed text-maroon/85">
@@ -68,7 +68,7 @@ export default function Footer() {
                   aria-label={label}
                   target={href.startsWith("http") ? "_blank" : undefined}
                   rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blush text-maroon transition-all duration-200 hover:scale-110 hover:bg-white active:scale-95"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blush text-[#F10897] transition-all duration-200 hover:scale-110 hover:bg-white active:scale-95"
                 >
                   <Icon className="h-4 w-4" strokeWidth={2.5} />
                 </a>
@@ -94,7 +94,7 @@ export default function Footer() {
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-maroon/85 underline-offset-4 transition-colors hover:text-maroon hover:underline"
+                    className="text-sm text-[#4E0030]/85 underline-offset-4 transition-colors hover:text-maroon hover:underline"
                   >
                     {link.label}
                   </Link>
@@ -121,7 +121,7 @@ export default function Footer() {
                     href={link.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-maroon/85 underline-offset-4 transition-colors hover:text-maroon hover:underline"
+                    className="text-sm text-[#4E0030]/85 underline-offset-4 transition-colors hover:text-maroon hover:underline"
                   >
                     {link.label}
                   </Link>
@@ -147,7 +147,7 @@ export default function Footer() {
                   href="/contact-us"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-maroon/85 underline-offset-4 transition-colors hover:text-maroon hover:underline"
+                  className="text-sm text-[#4E0030]/85 underline-offset-4 transition-colors hover:text-maroon hover:underline"
                 >
                   Contact Us
                 </Link>
@@ -160,7 +160,7 @@ export default function Footer() {
         <div className="mt-12 border-t border-maroon/20 lg:mt-16" />
 
         {/* Copyright */}
-        <p className="mt-6 text-center text-xs text-maroon/80 sm:text-sm">
+        <p className="mt-6 text-center text-xs text-[#4E0030]/80 sm:text-sm">
           © 2026 Tare Wellness Enterprise Ltd. All rights reserved.
         </p>
       </div>

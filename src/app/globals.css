@@ -14,7 +14,7 @@
 
   /* Brand palette — Everyman + Caregiver aesthetic
    * Background: #FFF5EE (warm seashell cream)
-   * Text: #2C292E (warm charcoal)
+   * Text: #4E0030 (warm charcoal)
    * Accent: #F10897 (pink — CTA buttons, active links, focus rings ONLY)
    * Cards: #FFFFFF (pure white) with soft diffused shadows
    */
@@ -23,8 +23,8 @@
   --color-magenta-100: #fce7f3;
   --color-magenta-600: #d4006f;
   --color-magenta-700: #b3005e;
-  --color-maroon: #2C292E;
-  --color-maroon-soft: rgba(44, 41, 46, 0.55);
+  --color-maroon: #4E0030;
+  --color-maroon-soft: rgba(78, 0, 48, 0.55);
   --color-blush: #FFF5EE;
   --color-blush-200: #F5E8DC;
 
@@ -70,22 +70,22 @@
 :root {
   --radius: 0.75rem;
   --background: #FFF5EE;
-  --foreground: #2C292E;
+  --foreground: #4E0030;
   --card: #FFFFFF;
-  --card-foreground: #2C292E;
+  --card-foreground: #4E0030;
   --popover: #FFFFFF;
-  --popover-foreground: #2C292E;
-  --primary: #2C292E;
+  --popover-foreground: #4E0030;
+  --primary: #4E0030;
   --primary-foreground: #ffffff;
   --secondary: #FFF5EE;
-  --secondary-foreground: #2C292E;
+  --secondary-foreground: #4E0030;
   --muted: #F5E8DC;
-  --muted-foreground: rgba(44, 41, 46, 0.55);
+  --muted-foreground: rgba(78, 0, 48, 0.55);
   --accent: #FFF5EE;
-  --accent-foreground: #2C292E;
+  --accent-foreground: #4E0030;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: rgba(44, 41, 46, 0.10);
-  --input: rgba(44, 41, 46, 0.10);
+  --border: rgba(78, 0, 48, 0.08);
+  --input: rgba(78, 0, 48, 0.08);
   --ring: #F10897;
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -93,12 +93,12 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: #FFF5EE;
-  --sidebar-foreground: #2C292E;
-  --sidebar-primary: #2C292E;
+  --sidebar-foreground: #4E0030;
+  --sidebar-primary: #4E0030;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #F5E8DC;
-  --sidebar-accent-foreground: #2C292E;
-  --sidebar-border: rgba(44, 41, 46, 0.10);
+  --sidebar-accent-foreground: #4E0030;
+  --sidebar-border: rgba(78, 0, 48, 0.08);
   --sidebar-ring: #F10897;
 }
 
@@ -171,7 +171,7 @@
     background-color: #d4006f;
   }
   .bg-maroon {
-    background-color: #2C292E;
+    background-color: #4E0030;
   }
   .bg-blush {
     background-color: #FFF5EE;
@@ -180,13 +180,13 @@
     color: #F10897;
   }
   .text-maroon {
-    color: #2C292E;
+    color: #4E0030;
   }
   .text-maroon-soft {
-    color: rgba(44, 41, 46, 0.55);
+    color: rgba(78, 0, 48, 0.55);
   }
   .border-maroon {
-    border-color: #2C292E;
+    border-color: #4E0030;
   }
   .font-serif {
     font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
@@ -202,7 +202,7 @@
   }
   /* Soft floating shadow for hero illustration */
   .hero-shadow {
-    filter: drop-shadow(0 25px 45px rgba(44, 41, 46, 0.15))
-      drop-shadow(0 10px 20px rgba(44, 41, 46, 0.10));
+    filter: drop-shadow(0 25px 45px rgba(78, 0, 48, 0.12))
+      drop-shadow(0 10px 20px rgba(78, 0, 48, 0.08));
   }
 }

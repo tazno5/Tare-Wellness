@@ -44,52 +44,52 @@ export async function POST(req: Request) {
     const emailHtml = `
       <div style="font-family: 'Plus Jakarta Sans', sans-serif; max-width: 600px; margin: 0 auto; background: #FFF5EE; padding: 40px 20px;">
         <div style="background: white; border-radius: 24px; padding: 40px; text-align: center;">
-          <h1 style="font-family: 'Fraunces', serif; color: #2C292E; font-size: 28px; margin-bottom: 8px;">
+          <h1 style="font-family: 'Fraunces', serif; color: #4E0030; font-size: 28px; margin-bottom: 8px;">
             You've received a Tare Gift Card!
           </h1>
-          <p style="color: #2C292E; opacity: 0.7; font-size: 14px; margin-bottom: 24px;">
+          <p style="color: #4E0030; opacity: 0.7; font-size: 14px; margin-bottom: 24px;">
             A moment of care from ${orderItem.order.buyerName}
           </p>
 
           <div style="background: linear-gradient(135deg, #D6C7F2, #E0CBF0, #F0CFE6); border-radius: 16px; padding: 32px; margin-bottom: 24px;">
-            <p style="font-family: 'Fraunces', serif; font-weight: bold; color: #2C292E; font-size: 20px; margin: 0;">
+            <p style="font-family: 'Fraunces', serif; font-weight: bold; color: #4E0030; font-size: 20px; margin: 0;">
               Tare Gift Card
             </p>
-            <p style="color: #2C292E; opacity: 0.7; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 4px 0 0 0;">
+            <p style="color: #4E0030; opacity: 0.7; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin: 4px 0 0 0;">
               ${orderItem.cardSessions} Session${orderItem.cardSessions === 1 ? "" : "s"}
             </p>
-            <p style="font-size: 32px; font-weight: bold; color: #2C292E; margin: 16px 0 0 0;">
+            <p style="font-size: 32px; font-weight: bold; color: #4E0030; margin: 16px 0 0 0;">
               ₦${orderItem.cardPrice.toLocaleString()}
             </p>
           </div>
 
           ${orderItem.personalNote ? `
             <div style="background: #FFF5EE; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
-              <p style="font-family: 'Fraunces', serif; font-style: italic; color: #2C292E; font-size: 15px; margin: 0;">
+              <p style="font-family: 'Fraunces', serif; font-style: italic; color: #4E0030; font-size: 15px; margin: 0;">
                 "${orderItem.personalNote}"
               </p>
             </div>
           ` : ""}
 
           <div style="background: #FFF5EE; border: 2px dashed #F10897; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
-            <p style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; color: #2C292E; opacity: 0.7; margin: 0 0 8px 0;">
+            <p style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; color: #4E0030; opacity: 0.7; margin: 0 0 8px 0;">
               Redemption Code
             </p>
-            <p style="font-family: monospace; font-size: 20px; font-weight: bold; color: #2C292E; letter-spacing: 3px; margin: 0;">
+            <p style="font-family: monospace; font-size: 20px; font-weight: bold; color: #4E0030; letter-spacing: 3px; margin: 0;">
               ${orderItem.redemption.code}
             </p>
           </div>
 
-          <a href="https://bewelltare.com/redeem" style="display: inline-block; background: #2C292E; color: white; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 15px;">
+          <a href="https://bewelltare.com/redeem" style="display: inline-block; background: #F10897; color: white; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 15px;">
             Redeem Now
           </a>
 
-          <p style="color: #2C292E; opacity: 0.5; font-size: 11px; margin-top: 24px;">
+          <p style="color: #4E0030; opacity: 0.5; font-size: 11px; margin-top: 24px;">
             No expiration date · Redeemable anytime
           </p>
         </div>
 
-        <p style="text-align: center; color: #2C292E; opacity: 0.5; font-size: 12px; margin-top: 24px;">
+        <p style="text-align: center; color: #4E0030; opacity: 0.5; font-size: 12px; margin-top: 24px;">
           © 2026 Tare Wellness Enterprise Ltd. All rights reserved.
         </p>
       </div>

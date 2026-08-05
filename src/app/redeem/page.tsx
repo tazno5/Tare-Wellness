@@ -218,7 +218,7 @@ export default function RedeemPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]"
+            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(78, 0, 48, 0.08)]"
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -230,7 +230,7 @@ export default function RedeemPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-maroon sm:text-5xl lg:text-6xl"
+            className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-[#F10897] sm:text-5xl lg:text-6xl"
           >
             You&apos;ve received a gift of care!
           </motion.h1>
@@ -296,7 +296,7 @@ export default function RedeemPage() {
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", bounce: 0.5 }}
-                  className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#2C292E] text-white"
+                  className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-[#F10897] text-white"
                 >
                   <Check className="h-4 w-4" strokeWidth={2.5} />
                 </motion.span>
@@ -334,7 +334,7 @@ export default function RedeemPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3 }}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2C292E] px-6 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:text-base"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-6 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:text-base"
                   >
                     {submitting ? (
                       <>
@@ -361,7 +361,7 @@ export default function RedeemPage() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 12, scale: 0.97 }}
                 transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                className="mt-6 w-full max-w-md overflow-hidden rounded-2xl border border-[#F10897]/30 bg-white/85 p-4 shadow-[0_8px_30px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm"
+                className="mt-6 w-full max-w-md overflow-hidden rounded-2xl border border-[#F10897]/30 bg-white/85 p-4 shadow-[0_8px_30px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm"
               >
                 <div className="flex items-start gap-3">
                   <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F10897] text-white">
@@ -418,9 +418,9 @@ export default function RedeemPage() {
             <motion.article
               key={opt.id}
               variants={itemUp}
-              className="group flex flex-col rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1 sm:p-6"
+              className="group flex flex-col rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1 sm:p-6"
             >
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blush text-maroon transition-colors group-hover:bg-[#F10897] group-hover:text-white">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-blush text-[#F10897] transition-colors group-hover:bg-[#F10897] group-hover:text-white">
                 {opt.icon}
               </div>
               <h3 className="mt-4 font-fraunces text-xl font-bold text-maroon">
@@ -429,7 +429,7 @@ export default function RedeemPage() {
               <p className="mt-2 flex-1 font-sans text-sm leading-relaxed text-maroon/75">
                 {opt.description}
               </p>
-              <span className="mt-4 inline-flex w-fit items-center rounded-full bg-blush px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon">
+              <span className="mt-4 inline-flex w-fit items-center rounded-full bg-blush px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-[#F10897]">
                 {opt.duration}
               </span>
             </motion.article>
@@ -466,10 +466,10 @@ export default function RedeemPage() {
               <motion.li
                 key={step.title}
                 variants={itemUp}
-                className="relative rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
+                className="relative rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
               >
                 <div className="flex items-center gap-3">
-                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#2C292E] text-white">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#F10897] text-white">
                     {step.icon}
                   </div>
                   <span className="font-fraunces text-3xl font-extrabold text-maroon/15">
@@ -501,7 +501,7 @@ export default function RedeemPage() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6 }}
-          className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl bg-[#2C292E] p-6 text-white shadow-[0_14px_40px_rgba(44, 41, 46, 0.30)] sm:p-8"
+          className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl bg-[#4E0030] p-6 text-white shadow-[0_14px_40px_rgba(78, 0, 48, 0.30)] sm:p-8"
         >
           <div className="grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center">
             <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15">
@@ -547,7 +547,7 @@ export default function RedeemPage() {
           {redemption.redeemed ? (
             <Link
               href="/book-session"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
             >
               Book a Session
               <ArrowRight
@@ -558,7 +558,7 @@ export default function RedeemPage() {
           ) : (
             <Link
               href="/gift-cards"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(44, 41, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95"
             >
               <Gift className="h-4 w-4" strokeWidth={2.5} />
               Send a Gift Card

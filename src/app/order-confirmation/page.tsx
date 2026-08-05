@@ -327,11 +327,11 @@ function OrderConfirmationContent() {
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
             <Gift className="h-10 w-10 text-white" strokeWidth={2} />
           </div>
-          <h2 className="font-fraunces text-3xl font-bold text-[#2C292E]">No order found</h2>
-          <p className="mt-3 max-w-sm font-sans text-sm text-[#2C292E]/70">
+          <h2 className="font-fraunces text-3xl font-bold text-[#4E0030]">No order found</h2>
+          <p className="mt-3 max-w-sm font-sans text-sm text-[#4E0030]/70">
             We couldn&apos;t find any order details. Try sending a gift card to get started.
           </p>
-          <Link href="/gift-cards" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.03] hover:bg-[#1F1B22]">
+          <Link href="/gift-cards" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.03] hover:bg-[#d4007d]">
             Browse Gift Cards <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
           </Link>
         </section>
@@ -345,7 +345,7 @@ function OrderConfirmationContent() {
             initial={{ opacity: 0, y: -10, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.6, type: "spring", bounce: 0.4 }}
-            className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(44, 41, 46, 0.15)]"
+            className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(78, 0, 48, 0.15)]"
           >
             <PartyPopper className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />
           </motion.div>
@@ -354,7 +354,7 @@ function OrderConfirmationContent() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]"
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(78, 0, 48, 0.08)]"
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -366,7 +366,7 @@ function OrderConfirmationContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-maroon sm:text-5xl lg:text-6xl"
+            className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-[#F10897] sm:text-5xl lg:text-6xl"
           >
             Your gift is on its way{" "}
             <span className="text-[#F10897]">&#10084;&#65039;</span>
@@ -433,7 +433,7 @@ function OrderConfirmationContent() {
                 Receipt
               </h2>
               {receipts.length > 1 && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-maroon">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-[#F10897]">
                   <Gift className="h-3 w-3" strokeWidth={2.5} />
                   {confirmIndex + 1} / {receipts.length}
                 </span>
@@ -490,7 +490,7 @@ function OrderConfirmationContent() {
                       onClick={() => setConfirmIndex(Math.max(0, confirmIndex - 1))}
                       disabled={confirmIndex === 0}
                       aria-label="Previous gift"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-[#F10897] transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
                     </button>
@@ -514,7 +514,7 @@ function OrderConfirmationContent() {
                       onClick={() => setConfirmIndex(Math.min(receipts.length - 1, confirmIndex + 1))}
                       disabled={confirmIndex === receipts.length - 1}
                       aria-label="Next gift"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-blush text-[#F10897] transition-all hover:bg-blush-dark active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                     </button>
@@ -529,7 +529,7 @@ function OrderConfirmationContent() {
             {/* Order Total — dark */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-[#2C292E] p-5 text-white shadow-[0_14px_40px_rgba(44, 41, 46, 0.30)] sm:p-6"
+              className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(78, 0, 48, 0.30)] sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
                 Order Total
@@ -569,7 +569,7 @@ function OrderConfirmationContent() {
             {/* Gift Journey */}
             <motion.article
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
                 Gift Journey
@@ -605,15 +605,15 @@ function OrderConfirmationContent() {
                     <div
                       className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
                         s.done
-                          ? "bg-[#2C292E] text-white"
-                          : "bg-blush text-maroon/50"
+                          ? "bg-[#4E0030] text-white"
+                          : "bg-blush text-[#F10897]/50"
                       }`}
                     >
                       {s.icon}
                       {i < 3 && (
                         <span
                           className={`absolute -bottom-4 left-1/2 h-3 w-px -translate-x-1/2 ${
-                            s.done ? "bg-[#2C292E]/40" : "bg-maroon/15"
+                            s.done ? "bg-[#4E0030]/40" : "bg-maroon/15"
                           }`}
                         />
                       )}
@@ -632,7 +632,7 @@ function OrderConfirmationContent() {
             {/* Trust pill */}
             <motion.div
               variants={itemUp}
-              className="rounded-3xl bg-blush/60 p-4 text-center shadow-[0_6px_20px_rgba(44, 41, 46, 0.08)]"
+              className="rounded-3xl bg-blush/60 p-4 text-center shadow-[0_6px_20px_rgba(78, 0, 48, 0.08)]"
             >
               <ShieldCheck className="mx-auto h-6 w-6 text-maroon" strokeWidth={2} />
               <p className="mt-2 font-sans text-[11px] font-bold uppercase tracking-[0.14em] text-maroon">
@@ -654,7 +654,7 @@ function OrderConfirmationContent() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6 }}
-          className="mx-auto w-full max-w-3xl rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-8"
+          className="mx-auto w-full max-w-3xl rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-8"
         >
           <div className="flex items-center gap-2">
             <HelpCircle className="h-5 w-5 text-maroon" strokeWidth={2.5} />
@@ -687,14 +687,14 @@ function OrderConfirmationContent() {
           <button
             type="button"
             onClick={handleSendAnother}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95 sm:w-auto"
           >
             <Gift className="h-4 w-4" strokeWidth={2.5} />
             Send Another Gift
           </button>
           <Link
             href="/redeem"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(44, 41, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
           >
             <Sparkles className="h-4 w-4" strokeWidth={2.5} />
             Redeem a Card
@@ -781,7 +781,7 @@ function OrderMergedCard({
   };
 
   return (
-    <div className="overflow-hidden rounded-3xl bg-white/85 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm">
+    <div className="overflow-hidden rounded-3xl bg-white/85 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm">
       {/* Card header — logo + package value */}
       <div
         className={`relative flex items-center justify-between bg-gradient-to-br ${cardGradient} px-5 py-4 sm:px-6`}
@@ -793,7 +793,7 @@ function OrderMergedCard({
             alt="Tare logo"
             width={32}
             height={32}
-            className="h-8 w-8 object-contain drop-shadow-[0_2px_6px_rgba(44, 41, 46, 0.2)]"
+            className="h-8 w-8 object-contain drop-shadow-[0_2px_6px_rgba(78, 0, 48, 0.2)]"
           />
           <div>
             <p className="font-fraunces text-sm font-bold text-maroon">

@@ -68,17 +68,17 @@ export default function Hero() {
           {/* Headline — Fraunces serif */}
           <motion.h1
             variants={itemUp}
-            className="font-fraunces text-5xl font-extrabold leading-[1.02] tracking-tight text-maroon sm:text-6xl lg:text-7xl xl:text-8xl"
+            className="font-fraunces text-5xl font-extrabold leading-[1.02] tracking-tight text-[#F10897] sm:text-6xl lg:text-7xl xl:text-8xl"
           >
             Send Love
             <br />
-            <span className="text-maroon-soft">They Can Feel</span>
+            <span className="text-[#F10897]/60">They Can Feel</span>
           </motion.h1>
 
           {/* Body copy — Plus Jakarta Sans, exactly 18px */}
           <motion.p
             variants={itemUp}
-            className="mt-7 max-w-xl font-sans text-[18px] leading-relaxed text-maroon/80"
+            className="mt-7 max-w-xl font-sans text-[18px] leading-relaxed text-[#4E0030]/80"
           >
             A gift card. A real session. Their pace, not yours.
           </motion.p>
@@ -90,14 +90,14 @@ export default function Hero() {
           >
             <Link
               href="/gift-cards"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-[#2C292E] px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.03] hover:bg-[#1F1B22] active:scale-95 sm:text-base"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-[#F10897] px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.03] hover:bg-[#d4007d] active:scale-95 sm:text-base"
             >
               <Gift className="h-5 w-5 transition-transform group-hover:rotate-[-8deg]" strokeWidth={2.5} />
               Send a Gift Card
             </Link>
             <Link
               href="/redeem"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-blush px-7 py-4 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(44, 41, 46, 0.12)] transition-all duration-200 hover:scale-[1.03] hover:bg-blush-dark active:scale-95 sm:text-base"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-blush px-7 py-4 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.03] hover:bg-blush-dark active:scale-95 sm:text-base"
             >
               <CalendarDays className="h-5 w-5 transition-transform group-hover:scale-110" strokeWidth={2.5} />
               I Received a Gift{" "}

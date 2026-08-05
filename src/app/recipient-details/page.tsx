@@ -266,7 +266,7 @@ function RecipientDetailsContent() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(44, 41, 46, 0.08)]"
+            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(78, 0, 48, 0.08)]"
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
@@ -278,7 +278,7 @@ function RecipientDetailsContent() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-maroon sm:text-5xl lg:text-6xl"
+            className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-[#F10897] sm:text-5xl lg:text-6xl"
           >
             Tell us who&apos;s receiving care.
           </motion.h1>
@@ -329,8 +329,8 @@ function RecipientDetailsContent() {
       {/* ============ HYDRATION GUARD / EMPTY STATE ============ */}
       {!hydrated ? (
         <section className="relative w-full px-5 pb-32 pt-6 sm:px-8 lg:px-12">
-          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-12">
-            <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blush text-maroon">
+          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-12">
+            <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blush text-[#F10897]">
               <span className="h-6 w-6 animate-spin rounded-full border-2 border-maroon/30 border-t-maroon" />
             </div>
             <h2 className="mt-4 font-fraunces text-2xl font-bold text-maroon">
@@ -343,8 +343,8 @@ function RecipientDetailsContent() {
         </section>
       ) : recipients.length === 0 ? (
         <section className="relative w-full px-5 pb-32 pt-6 sm:px-8 lg:px-12">
-          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-12">
-            <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blush text-maroon">
+          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-12">
+            <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blush text-[#F10897]">
               <Gift className="h-6 w-6" strokeWidth={2.5} />
             </div>
             <h2 className="mt-4 font-fraunces text-2xl font-bold text-maroon">
@@ -356,7 +356,7 @@ function RecipientDetailsContent() {
             </p>
             <Link
               href="/gift-cards"
-              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95"
+              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
             >
               <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
               Back to Gift Cards
@@ -378,14 +378,14 @@ function RecipientDetailsContent() {
                 {/* Slide nav header */}
                 <motion.div
                   variants={itemUp}
-                  className="flex w-full items-center justify-between overflow-hidden rounded-2xl bg-white/80 p-3 shadow-[0_8px_30px_rgba(44, 41, 46, 0.08)] backdrop-blur-sm"
+                  className="flex w-full items-center justify-between overflow-hidden rounded-2xl bg-white/80 p-3 shadow-[0_8px_30px_rgba(78, 0, 48, 0.08)] backdrop-blur-sm"
                 >
                   <button
                     type="button"
                     onClick={() => goToSlide(safeActiveIndex - 1)}
                     disabled={safeActiveIndex === 0}
                     aria-label="Previous recipient"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush/70 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blush text-[#F10897] transition-all hover:bg-blush/70 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
                   </button>
@@ -403,7 +403,7 @@ function RecipientDetailsContent() {
                     onClick={() => goToSlide(safeActiveIndex + 1)}
                     disabled={safeActiveIndex === recipients.length - 1}
                     aria-label="Next recipient"
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blush text-maroon transition-all hover:bg-blush/70 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blush text-[#F10897] transition-all hover:bg-blush/70 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
                   </button>
@@ -421,7 +421,7 @@ function RecipientDetailsContent() {
                         i === safeActiveIndex
                           ? "w-7 bg-[#F10897]"
                           : r.confirmed
-                            ? "w-2 bg-[#2C292E]/60"
+                            ? "w-2 bg-[#4E0030]/60"
                             : "w-2 bg-maroon/25"
                       }`}
                     />
@@ -469,13 +469,13 @@ function RecipientDetailsContent() {
                 {/* Live Card Preview */}
                 <motion.div
                   variants={itemUp}
-                  className="rounded-3xl bg-white/80 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
+                  className="rounded-3xl bg-white/80 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
                       Live Card Preview
                     </h3>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-blush px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blush px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-[#F10897]">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#F10897] animate-pulse" />
                       Live
                     </span>
@@ -487,7 +487,7 @@ function RecipientDetailsContent() {
                         className={`relative flex aspect-[5/3] flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br ${
                           CARD_LOOKUP[current.cardId]?.gradient ??
                           "from-[#FFF5EE] to-[#F5E8DC]"
-                        } p-5 shadow-[0_10px_30px_rgba(44, 41, 46, 0.18)]`}
+                        } p-5 shadow-[0_10px_30px_rgba(78, 0, 48, 0.18)]`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-center gap-2">
@@ -496,7 +496,7 @@ function RecipientDetailsContent() {
                               alt="Tare logo"
                               width={28}
                               height={28}
-                              className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(44, 41, 46, 0.2)]"
+                              className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(78, 0, 48, 0.2)]"
                             />
                             <div>
                               <p className="font-fraunces text-lg font-bold text-maroon sm:text-xl">
@@ -547,7 +547,7 @@ function RecipientDetailsContent() {
                 {/* Dark Gift Summary */}
                 <motion.div
                   variants={itemUp}
-                  className="rounded-3xl bg-[#2C292E] p-5 text-white shadow-[0_14px_40px_rgba(44, 41, 46, 0.30)] sm:p-6"
+                  className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(78, 0, 48, 0.30)] sm:p-6"
                 >
                   <div className="flex items-center justify-between">
                     <h3 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
@@ -632,7 +632,7 @@ function RecipientDetailsContent() {
             <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
               <Link
                 href="/gift-cards"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-maroon shadow-[0_8px_24px_rgba(44, 41, 46, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-blush px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-blush-dark active:scale-95 sm:w-auto"
               >
                 <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
                 Gift Card
@@ -641,7 +641,7 @@ function RecipientDetailsContent() {
                 type="button"
                 onClick={handleContinue}
                 disabled={!allConfirmed}
-                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2C292E] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#1F1B22] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
               >
                 Continue to Review
                 <ArrowRight
@@ -695,12 +695,12 @@ function RecipientSlide({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex min-h-[560px] flex-col space-y-4 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(44, 41, 46, 0.10)] backdrop-blur-sm sm:p-6"
+      className="flex min-h-[560px] flex-col space-y-4 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
     >
       {/* Recipient header — "Recipient X of Y" (fixed height to prevent jitter) */}
       <div className="flex h-12 w-full items-center justify-between overflow-hidden">
         <div className="inline-flex min-w-0 items-center gap-2">
-          <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blush text-maroon">
+          <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blush text-[#F10897]">
             <User className="h-4 w-4" strokeWidth={2.5} />
           </div>
           <div className="flex min-w-0 flex-col">
@@ -713,7 +713,7 @@ function RecipientSlide({
           </div>
         </div>
         {isConfirmed && (
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#2C292E] px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#F10897] px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white">
             <Check className="h-3 w-3" strokeWidth={2.5} />
             Confirmed
           </span>
@@ -841,7 +841,7 @@ function RecipientSlide({
               key={pill}
               type="button"
               onClick={() => onUpdate({ note: pill })}
-              className="rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-semibold text-maroon transition-all hover:bg-blush-dark hover:scale-105 active:scale-95"
+              className="rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-semibold text-[#F10897] transition-all hover:bg-blush-dark hover:scale-105 active:scale-95"
             >
               {pill}
             </button>
@@ -856,7 +856,7 @@ function RecipientSlide({
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-blush px-5 py-3.5 font-sans text-sm font-semibold text-maroon transition-all duration-200 hover:bg-blush-dark active:scale-95 sm:w-auto"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-blush px-5 py-3.5 font-sans text-sm font-semibold text-[#F10897] transition-all duration-200 hover:bg-blush-dark active:scale-95 sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
             Back
@@ -879,7 +879,7 @@ function RecipientSlide({
         ) : (
           <button
             type="submit"
-            className="group inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#2C292E] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(44, 41, 46, 0.25)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#1F1B22] active:scale-95"
+            className="group inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#F10897] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#d4007d] active:scale-95"
           >
             {isConfirmed ? (
               <>
@@ -923,7 +923,7 @@ function Stepper({
   active: number;
 }) {
   return (
-    <ol className="flex items-start justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(44, 41, 46, 0.08)] backdrop-blur-sm">
+    <ol className="flex items-start justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(78, 0, 48, 0.08)] backdrop-blur-sm">
       {steps.map((step, i) => {
         const isDone = i < active;
         const isActive = i === active;
@@ -947,7 +947,7 @@ function Stepper({
                 isActive
                   ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
                   : isDone
-                    ? "bg-[#2C292E] text-white"
+                    ? "bg-[#4E0030] text-white"
                     : "bg-maroon/10 text-maroon/60"
               }`}
             >
