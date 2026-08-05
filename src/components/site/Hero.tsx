@@ -119,7 +119,7 @@ export default function Hero() {
             />
             <Image
               src="/hero.png"
-              alt="Two smurf-like woodland creatures with mushroom caps sitting together on a mossy log, holding glowing blue mushrooms and acorns"
+              alt="Tare Wellness Hero Character"
               fill
               priority
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 520px, 620px"
