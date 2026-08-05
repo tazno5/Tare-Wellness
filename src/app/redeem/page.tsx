@@ -558,7 +558,7 @@ export default function RedeemPage() {
           ) : (
             <Link
               href="/gift-cards"
-              className="group inline-flex items-center justify-center gap-2 rounded-full bg-white px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#FFF5EE] active:scale-95"
+              className="group inline-flex items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#FFF5EE] active:scale-95"
             >
               <Gift className="h-4 w-4" strokeWidth={2.5} />
               Send a Gift Card
