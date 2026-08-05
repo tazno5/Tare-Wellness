@@ -46,15 +46,15 @@ export default function ContactUsPage() {
   return (
     <main className="relative flex flex-1 flex-col">
       <section className="relative w-full overflow-hidden px-5 pb-10 pt-6 sm:px-8 sm:pt-8 lg:px-12 lg:pt-10">
-        <div aria-hidden className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-white/40 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-[#B5E1C3]/25 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />
         <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center gap-8 md:flex-row md:gap-12">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="flex-1 text-center md:text-left">
             <h1 className="font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-[#4E0030] sm:text-5xl lg:text-6xl">We&apos;re Here for You</h1>
             <p className="mt-4 max-w-xl font-sans text-[16px] leading-relaxed text-[#4E0030]/85 sm:text-[18px]">Have a question about gift cards, bookings, or our platform? Our dedicated wellness support team is ready to help. Reach out and we&apos;ll get back to you as soon as possible.</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, scale: 0.94, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }} className="relative aspect-[619/491] w-full max-w-xs sm:max-w-sm lg:max-w-md">
-            <div aria-hidden className="absolute inset-6 rounded-full bg-white/30 blur-2xl" />
+            <div aria-hidden className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl" />
             <Image src="/hero-contact.png" alt="Four whimsical creatures sitting together around a cozy campfire" fill priority sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 400px" className="hero-shadow relative animate-float-slow object-contain" />
           </motion.div>
         </div>

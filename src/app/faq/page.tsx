@@ -186,11 +186,11 @@ export default function FaqPage() {
       {/* Decorative blooms */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-white/50 blur-3xl"
+        className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-[#C7B2E2]/20 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl"
+        className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
       />
 
       {/* ============ HERO ============ */}
@@ -204,7 +204,7 @@ export default function FaqPage() {
           >
             <div
               aria-hidden
-              className="absolute inset-6 rounded-full bg-white/30 blur-2xl"
+              className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl"
             />
             <Image
               src="/hero-faq.png"

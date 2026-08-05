@@ -94,8 +94,8 @@ export default function LoginPage() {
   return (
     <main className="relative flex flex-1 flex-col">
       <section className="relative w-full overflow-hidden px-5 pb-16 pt-6 sm:px-8 sm:pt-8 lg:px-12 lg:pt-10">
-        <div aria-hidden className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-white/40 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-[#B5E1C3]/25 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />
 
         <div className="relative mx-auto flex w-full max-w-md flex-col items-center">
           {/* Hero image */}
@@ -105,7 +105,7 @@ export default function LoginPage() {
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             className="relative aspect-square w-full max-w-[200px] sm:max-w-[240px]"
           >
-            <div aria-hidden className="absolute inset-4 rounded-full bg-white/30 blur-2xl" />
+            <div aria-hidden className="absolute inset-4 rounded-full bg-[#BCE1F0]/20 blur-2xl" />
             <Image
               src="/logo.png"
               alt="BE WELL TARE logo"

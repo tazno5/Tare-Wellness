@@ -42,11 +42,11 @@ export default function Hero() {
       {/* Decorative blurred blooms in the background */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-blush/30 blur-3xl"
+        className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#C7B2E2]/30 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-brand-to/40 blur-3xl"
+        className="pointer-events-none absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-[#BCE1F0]/30 blur-3xl"
       />
       <div
         aria-hidden
@@ -54,7 +54,7 @@ export default function Hero() {
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/4 top-1/2 h-1.5 w-1.5 rounded-full bg-blush"
+        className="pointer-events-none absolute left-1/4 top-1/2 h-1.5 w-1.5 rounded-full bg-[#E8B6D5]"
       />
 
       <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 lg:grid-cols-2 lg:gap-12">
@@ -97,7 +97,7 @@ export default function Hero() {
             </Link>
             <Link
               href="/redeem"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-4 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.03] hover:bg-[#FFF5EE] active:scale-95 sm:text-base"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-4 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.03] hover:bg-[#E8B6D5]/15 active:scale-95 sm:text-base"
             >
               <CalendarDays className="h-5 w-5 transition-transform group-hover:scale-110" strokeWidth={2.5} />
               I Received a Gift{" "}

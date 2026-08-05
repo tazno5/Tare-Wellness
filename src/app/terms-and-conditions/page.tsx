@@ -56,8 +56,8 @@ export default function TermsAndConditionsPage() {
   return (
     <main className="relative flex flex-1 flex-col">
       <section className="relative w-full overflow-hidden px-5 pb-10 pt-6 sm:px-8 sm:pt-8 lg:px-12 lg:pt-10">
-        <div aria-hidden className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-white/40 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-[#B5E1C3]/25 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />
         <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center gap-8 md:flex-row md:gap-12">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="flex-1 text-center md:text-left">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 font-sans text-xs font-semibold text-[#4E0030] shadow-sm backdrop-blur-sm"><Clock className="h-3.5 w-3.5" strokeWidth={2.5} />Last Updated: January 2026</span>
@@ -65,7 +65,7 @@ export default function TermsAndConditionsPage() {
             <p className="mt-4 max-w-xl font-sans text-[16px] leading-relaxed text-[#4E0030]/85 sm:text-[18px]">We believe in clear boundaries and understandable agreements. These terms outline our commitment to you and your responsibilities when using our boutique wellness platform.</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, scale: 0.94, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }} className="relative aspect-square w-full max-w-xs sm:max-w-sm lg:max-w-md">
-            <div aria-hidden className="absolute inset-6 rounded-full bg-white/30 blur-2xl" />
+            <div aria-hidden className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl" />
             <Image src="/hero-terms.png" alt="A whimsical blue creature sitting at a desk reading a legal contract by lamplight" fill priority sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 400px" className="hero-shadow relative animate-float-slow object-contain" />
           </motion.div>
         </div>

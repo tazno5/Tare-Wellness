@@ -43,8 +43,8 @@ export default function Navbar() {
 
   const activeClass = (href: string) => {
     if (href === "/redeem" || href === "/how-it-works" || href === "/faq")
-      return "relative font-sans text-sm font-semibold text-[#F20997] underline decoration-[#F20997] decoration-2 underline-offset-4";
-    return "relative font-sans text-sm font-semibold text-[#F10897] underline decoration-[#F10897] decoration-2 underline-offset-4";
+      return "relative font-sans text-sm font-semibold text-[#F20997] underline decoration-[#E8B6D5] decoration-2 underline-offset-4";
+    return "relative font-sans text-sm font-semibold text-[#F10897] underline decoration-[#E8B6D5] decoration-2 underline-offset-4";
   };
 
   const handleLogout = () => {
@@ -63,7 +63,7 @@ export default function Navbar() {
         <ul className="hidden items-center gap-9 md:flex">
           {NAV_LINKS.map((link) => { const active = isActive(link.href); return (
             <li key={link.label}>
-              <Link href={link.href} target="_blank" rel="noopener noreferrer" className={active ? activeClass(link.href) : "relative font-sans text-sm font-medium text-maroon transition-colors hover:text-maroon-700 after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-0 after:bg-maroon after:transition-all after:duration-300 hover:after:w-full"}>
+              <Link href={link.href} target="_blank" rel="noopener noreferrer" className={active ? activeClass(link.href) : "relative font-sans text-sm font-medium text-maroon transition-colors hover:text-[#C7B2E2] after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-0 after:bg-[#C7B2E2] after:transition-all after:duration-300 hover:after:w-full"}>
                 {link.label}
               </Link>
             </li>
@@ -118,7 +118,7 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
           ) : (
-            <Link href="/login" className="hidden items-center justify-center gap-1.5 rounded-full bg-white border-[0.3px] border-[#F10897] px-4 py-2 font-sans text-sm font-semibold text-[#F10897] shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#FFF5EE] md:inline-flex">
+            <Link href="/login" className="hidden items-center justify-center gap-1.5 rounded-full bg-white border-[0.3px] border-[#F10897] px-4 py-2 font-sans text-sm font-semibold text-[#F10897] shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#E8B6D5]/15 md:inline-flex">
               <User className="h-4 w-4 shrink-0" strokeWidth={2.5} /><span>Login</span>
             </Link>
           )}
@@ -146,7 +146,7 @@ export default function Navbar() {
             <motion.ul initial="hidden" animate="show" variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } } }} className="mt-4 flex flex-col gap-2 px-5 sm:px-8">
               {NAV_LINKS.map((link) => { const active = isActive(link.href); return (
                 <motion.li key={link.label} variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
-                  <Link href={link.href} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className={active ? (link.href === "/redeem" || link.href === "/how-it-works" || link.href === "/faq" ? "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F20997] underline decoration-[#F20997] decoration-2 underline-offset-4" : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F10897] underline decoration-[#F10897] decoration-2 underline-offset-4") : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-maroon transition-colors hover:bg-maroon/10"}>
+                  <Link href={link.href} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className={active ? (link.href === "/redeem" || link.href === "/how-it-works" || link.href === "/faq" ? "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F20997] underline decoration-[#E8B6D5] decoration-2 underline-offset-4" : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F10897] underline decoration-[#E8B6D5] decoration-2 underline-offset-4") : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-maroon transition-colors hover:bg-[#C7B2E2]/15"}>
                     {link.label}
                   </Link>
                 </motion.li>
@@ -164,12 +164,12 @@ export default function Navbar() {
                       )}
                     </div>
                   </div>
-                  <button onClick={() => { handleLogout(); setOpen(false); }} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-6 py-3 font-sans text-sm font-semibold text-[#F10897] shadow-sm transition-all hover:bg-[#FFF5EE]">
+                  <button onClick={() => { handleLogout(); setOpen(false); }} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-6 py-3 font-sans text-sm font-semibold text-[#F10897] shadow-sm transition-all hover:bg-[#E8B6D5]/15">
                     <LogOut className="h-4 w-4 shrink-0" strokeWidth={2.5} /><span>Sign Out</span>
                   </button>
                 </>
               ) : (
-                <Link href="/login" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-6 py-4 font-sans text-base font-semibold text-[#F10897] shadow-sm transition-all hover:bg-[#FFF5EE]">
+                <Link href="/login" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-6 py-4 font-sans text-base font-semibold text-[#F10897] shadow-sm transition-all hover:bg-[#E8B6D5]/15">
                   <User className="h-5 w-5 shrink-0" strokeWidth={2.5} /><span>Login / Sign Up</span>
                 </Link>
               )}

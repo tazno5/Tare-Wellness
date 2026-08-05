@@ -161,11 +161,11 @@ function GiftCardPageContent() {
         {/* Decorative soft blooms */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-white/40 blur-3xl"
+          className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-[#B5E1C3]/25 blur-3xl"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl"
+          className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
         />
 
         <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center text-center">
@@ -213,7 +213,7 @@ function GiftCardPageContent() {
           >
             <div
               aria-hidden
-              className="absolute inset-6 rounded-full bg-white/30 blur-2xl"
+              className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl"
             />
             <Image
               src="/hero-giftcards.png"

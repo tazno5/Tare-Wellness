@@ -143,10 +143,17 @@
   body {
     @apply text-foreground;
     font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
-    /* Global background — warm seashell cream, no gradient */
+    /* Global background — warm seashell cream with pastel ambient mesh */
     --page-gradient-from: #FFF5EE;
     --page-gradient-to: #FFF5EE;
     background-color: #FFF5EE;
+    /* Soft watercolor ambient mesh — delicate washes of pastel hues */
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% 0%, rgba(199, 178, 226, 0.25), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 10%, rgba(188, 225, 240, 0.20), transparent 60%),
+      radial-gradient(ellipse 70% 60% at 50% 100%, rgba(232, 182, 213, 0.18), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 90% 80%, rgba(181, 225, 195, 0.15), transparent 60%);
+    background-attachment: fixed;
   }
 }
 
@@ -161,6 +168,44 @@
   /* Slightly lighter version for navbar glass so the bg shows through */
   .bg-glass-blush {
     background-color: rgba(255, 255, 255, 0.10);
+  }
+
+  /* Pastel palette utilities */
+  .bg-lavender {
+    background-color: #C7B2E2;
+  }
+  .bg-mint {
+    background-color: #B5E1C3;
+  }
+  .bg-sky {
+    background-color: #BCE1F0;
+  }
+  .bg-blush-pink {
+    background-color: #E8B6D5;
+  }
+  .text-lavender {
+    color: #C7B2E2;
+  }
+  .text-mint {
+    color: #B5E1C3;
+  }
+  .text-sky {
+    color: #BCE1F0;
+  }
+  .text-blush-pink {
+    color: #E8B6D5;
+  }
+  .border-lavender {
+    border-color: #C7B2E2;
+  }
+  .border-mint {
+    border-color: #B5E1C3;
+  }
+  .border-sky {
+    border-color: #BCE1F0;
+  }
+  .border-blush-pink {
+    border-color: #E8B6D5;
   }
 
   /* Legacy compat aliases (used by older code paths if any) */

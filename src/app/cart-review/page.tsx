@@ -183,11 +183,11 @@ function CartReviewContent() {
       {/* Decorative blooms */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-white/40 blur-3xl"
+        className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-[#B5E1C3]/25 blur-3xl"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#F10897]/20 blur-3xl"
+        className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
       />
 
       {/* Empty state: no cart data */}
@@ -250,7 +250,7 @@ function CartReviewContent() {
           >
             <div
               aria-hidden
-              className="absolute inset-6 rounded-full bg-white/30 blur-2xl"
+              className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl"
             />
             <Image
               src="/hero-cart-review.png"
@@ -421,7 +421,7 @@ function CartReviewContent() {
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
           <Link
             href="/recipient-details"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#FFF5EE] active:scale-95 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95 sm:w-auto"
           >
             <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
             Recipient&apos;s Details
