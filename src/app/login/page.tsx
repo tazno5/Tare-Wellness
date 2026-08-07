@@ -107,8 +107,8 @@ export default function LoginPage() {
           >
             <div aria-hidden className="absolute inset-4 rounded-full bg-[#BCE1F0]/20 blur-2xl" />
             <Image
-              src="/logo.png"
-              alt="BE WELL TARE logo"
+              src="/hero-login.png"
+              alt="Tare Wellness login illustration"
               fill
               priority
               sizes="(max-width: 640px) 80vw, 240px"
