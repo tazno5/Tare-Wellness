@@ -320,7 +320,8 @@
     .animate-blob-2,
     .animate-blob-3,
     .animate-blob-4,
-    .animate-watercolor-morph {
+    .animate-watercolor-morph,
+    .hero-card-glow {
       animation: none;
     }
   }
@@ -371,5 +372,23 @@
   }
   .animate-watercolor-morph {
     will-change: transform;
+  }
+
+  /* === Gift Card Ambient Glow — pulsing pink drop-shadow (2.5s loop) === */
+  @keyframes card-glow-pulse {
+    0%, 100% {
+      filter: drop-shadow(0 25px 45px rgba(78, 0, 48, 0.12))
+              drop-shadow(0 10px 20px rgba(78, 0, 48, 0.08))
+              drop-shadow(0 0 0 rgba(230, 0, 115, 0));
+    }
+    50% {
+      filter: drop-shadow(0 25px 45px rgba(78, 0, 48, 0.12))
+              drop-shadow(0 10px 20px rgba(78, 0, 48, 0.08))
+              drop-shadow(0 0 12px rgba(230, 0, 115, 0.35));
+    }
+  }
+  .hero-card-glow {
+    animation: card-glow-pulse 2.5s ease-in-out infinite;
+    will-change: filter;
   }
 }

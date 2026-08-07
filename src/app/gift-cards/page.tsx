@@ -227,11 +227,11 @@ function GiftCardPageContent() {
             />
             <Image
               src="/hero-giftcards.png"
-              alt="Tare Wellness gift card hero illustration"
+              alt="Tare Wellness gift card hero — two characters handing off a vibrant pink TARE Be well gift card"
               fill
               priority
               sizes="(max-width: 640px) 90vw, (max-width: 1024px) 500px, 576px"
-              className="hero-shadow relative z-[3] animate-float-slow object-contain"
+              className="hero-shadow hero-card-glow relative z-[3] animate-float-slow object-contain"
             />
             {/* Micro-interaction overlays — GPU-accelerated CSS animations */}
             {/* 1. Steam wisps rising from pizza area (top-right of image) */}
