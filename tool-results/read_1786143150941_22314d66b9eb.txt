@@ -1,0 +1,774 @@
+     1→"use client";
+     2→
+     3→import { useEffect, useMemo, useState } from "react";
+     4→import Link from "next/link";
+     5→import Image from "next/image";
+     6→import { useRouter } from "next/navigation";
+     7→import { motion, AnimatePresence } from "framer-motion";
+     8→import {
+     9→  Sparkles,
+    10→  ChevronLeft,
+    11→  ChevronRight,
+    12→  User,
+    13→  Users,
+    14→  Users2,
+    15→  HeartHandshake,
+    16→  Clock,
+    17→  Sun,
+    18→  Sunset,
+    19→  Moon,
+    20→  Check,
+    21→  ArrowRight,
+    22→  CalendarCheck,
+    23→  Gift,
+    24→  HelpCircle,
+    25→  Loader2,
+    26→} from "lucide-react";
+    27→import {
+    28→  Accordion,
+    29→  AccordionContent,
+    30→  AccordionItem,
+    31→  AccordionTrigger,
+    32→} from "@/components/ui/accordion";
+    33→import { useStore, type BookingDetails } from "@/lib/store";
+    34→import { useToast } from "@/hooks/use-toast";
+    35→
+    36→const SESSION_TYPES: {
+    37→  id: BookingDetails["sessionType"];
+    38→  title: string;
+    39→  duration: string;
+    40→  price: number;
+    41→  coverage: string;
+    42→  icon: React.ReactNode;
+    43→  description: string;
+    44→}[] = [
+    45→  {
+    46→    id: "individual",
+    47→    title: "One-on-One",
+    48→    duration: "50 min",
+    49→    price: 20000,
+    50→    coverage: "1 person",
+    51→    icon: <User className="h-5 w-5" strokeWidth={2.5} />,
+    52→    description: "Just you and someone who listens.",
+    53→  },
+    54→  {
+    55→    id: "couples",
+    56→    title: "Together",
+    57→    duration: "60 min",
+    58→    price: 30000,
+    59→    coverage: "2 people",
+    60→    icon: <Users className="h-5 w-5" strokeWidth={2.5} />,
+    61→    description: "For two. Side by side.",
+    62→  },
+    63→  {
+    64→    id: "family",
+    65→    title: "Family Circle",
+    66→    duration: "75 min",
+    67→    price: 40000,
+    68→    coverage: "Up to 4",
+    69→    icon: <Users2 className="h-5 w-5" strokeWidth={2.5} />,
+    70→    description: "The whole house, one honest talk.",
+    71→  },
+    72→  {
+    73→    id: "wellness",
+    74→    title: "Quick Check-In",
+    75→    duration: "30 min",
+    76→    price: 15000,
+    77→    coverage: "1 person",
+    78→    icon: <HeartHandshake className="h-5 w-5" strokeWidth={2.5} />,
+    79→    description: "A short reset.",
+    80→  },
+    81→];
+    82→
+    83→const TIME_SLOTS: {
+    84→  id: string;
+    85→  label: string;
+    86→  range: string;
+    87→  icon: React.ReactNode;
+    88→  times: string[];
+    89→}[] = [
+    90→  {
+    91→    id: "morning",
+    92→    label: "Morning",
+    93→    range: "9:00 AM – 11:30 AM",
+    94→    icon: <Sun className="h-4 w-4" strokeWidth={2.5} />,
+    95→    times: ["9:00 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM"],
+    96→  },
+    97→  {
+    98→    id: "afternoon",
+    99→    label: "Afternoon",
+   100→    range: "12:00 PM – 4:30 PM",
+   101→    icon: <Sunset className="h-4 w-4" strokeWidth={2.5} />,
+   102→    times: ["12:00 PM", "1:00 PM", "2:30 PM", "3:00 PM", "4:00 PM"],
+   103→  },
+   104→  {
+   105→    id: "evening",
+   106→    label: "Evening",
+   107→    range: "5:00 PM – 8:30 PM",
+   108→    icon: <Moon className="h-4 w-4" strokeWidth={2.5} />,
+   109→    times: ["5:00 PM", "6:00 PM", "6:30 PM", "7:00 PM", "8:00 PM"],
+   110→  },
+   111→];
+   112→
+   113→const FAQS = [
+   114→  {
+   115→    q: "Can I reschedule my session?",
+   116→    a: "Yes — up to 24 hours before your appointment, with no penalty. Just visit your booking confirmation page or reply to your confirmation email.",
+   117→  },
+   118→  {
+   119→    q: "What if I need to cancel?",
+   120→    a: "Life happens. You can cancel up to 24 hours in advance and your gift credit returns to your balance, ready to rebook whenever suits you.",
+   121→  },
+   122→  {
+   123→    q: "Are sessions online or in person?",
+   124→    a: "Both options are available. After confirming your booking, your therapist will reach out with details and a secure video link if you choose online.",
+   125→  },
+   126→];
+   127→
+   128→const container = {
+   129→  hidden: { opacity: 0 },
+   130→  show: {
+   131→    opacity: 1,
+   132→    transition: { staggerChildren: 0.1, delayChildren: 0.05 },
+   133→  },
+   134→};
+   135→
+   136→const itemUp = {
+   137→  hidden: { opacity: 0, y: 18 },
+   138→  show: {
+   139→    opacity: 1,
+   140→    y: 0,
+   141→    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+   142→  },
+   143→};
+   144→
+   145→const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+   146→const MONTH_NAMES = [
+   147→  "January", "February", "March", "April", "May", "June",
+   148→  "July", "August", "September", "October", "November", "December",
+   149→];
+   150→
+   151→export default function BookSessionPage() {
+   152→  const router = useRouter();
+   153→  const { toast } = useToast();
+   154→  const { booking, setBooking, redemption } = useStore();
+   155→
+   156→  const [viewMonth, setViewMonth] = useState(() => {
+   157→    const now = new Date();
+   158→    return new Date(now.getFullYear(), now.getMonth(), 1);
+   159→  });
+   160→  const [selectedDate, setSelectedDate] = useState<Date | null>(
+   161→    booking.selectedDate ? new Date(booking.selectedDate) : null,
+   162→  );
+   163→  const [sessionType, setSessionType] = useState<BookingDetails["sessionType"]>(
+   164→    booking.sessionType,
+   165→  );
+   166→  const [selectedTime, setSelectedTime] = useState<string>(booking.selectedTime);
+   167→
+   168→  // Set gradient — render + useEffect
+   169→  useMemo(() => {
+   170→    if (typeof document === "undefined") return;
+   171→    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+   172→    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
+   173→  }, []);
+   174→  useEffect(() => {
+   175→    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+   176→    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
+   177→    return () => {
+   178→      document.body.style.removeProperty("--page-gradient-from");
+   179→      document.body.style.removeProperty("--page-gradient-to");
+   180→    };
+   181→  }, []);
+   182→
+   183→  // On any selection change, write booking details to the store
+   184→  useEffect(() => {
+   185→    const session = SESSION_TYPES.find((s) => s.id === sessionType)!;
+   186→    setBooking({
+   187→      sessionType,
+   188→      sessionTitle: session.title,
+   189→      sessionPrice: session.price,
+   190→      selectedDate: selectedDate ? selectedDate.toISOString() : null,
+   191→      selectedTime,
+   192→      therapist: booking.therapist,
+   193→    });
+   194→  }, [sessionType, selectedDate, selectedTime, setBooking, booking.therapist]);
+   195→
+   196→  // Calendar grid for current view month
+   197→  const today = useMemo(() => {
+   198→    const d = new Date();
+   199→    d.setHours(0, 0, 0, 0);
+   200→    return d;
+   201→  }, []);
+   202→
+   203→  const calendarDays = useMemo(() => {
+   204→    const year = viewMonth.getFullYear();
+   205→    const month = viewMonth.getMonth();
+   206→    const firstOfMonth = new Date(year, month, 1);
+   207→    const startDay = firstOfMonth.getDay();
+   208→    const daysInMonth = new Date(year, month + 1, 0).getDate();
+   209→
+   210→    const cells: (Date | null)[] = [];
+   211→    for (let i = 0; i < startDay; i++) cells.push(null);
+   212→    for (let d = 1; d <= daysInMonth; d++) {
+   213→      cells.push(new Date(year, month, d));
+   214→    }
+   215→    // Pad trailing to fill a 6-row grid (42 cells)
+   216→    while (cells.length % 7 !== 0) cells.push(null);
+   217→    return cells;
+   218→  }, [viewMonth]);
+   219→
+   220→  const isSameDay = (a: Date, b: Date) =>
+   221→    a.getFullYear() === b.getFullYear() &&
+   222→    a.getMonth() === b.getMonth() &&
+   223→    a.getDate() === b.getDate();
+   224→
+   225→  const isPast = (d: Date) => {
+   226→    const cmp = new Date(d);
+   227→    cmp.setHours(0, 0, 0, 0);
+   228→    return cmp < today;
+   229→  };
+   230→
+   231→  const handlePrevMonth = () => {
+   232→    // Don't navigate before the current month
+   233→    const now = new Date();
+   234→    if (
+   235→      viewMonth.getFullYear() === now.getFullYear() &&
+   236→      viewMonth.getMonth() === now.getMonth()
+   237→    ) {
+   238→      return;
+   239→    }
+   240→    setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1));
+   241→  };
+   242→  const handleNextMonth = () => {
+   243→    setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1));
+   244→  };
+   245→
+   246→  const formattedDate = selectedDate
+   247→    ? selectedDate.toLocaleDateString("en-NG", {
+   248→        weekday: "long",
+   249→        day: "numeric",
+   250→        month: "long",
+   251→        year: "numeric",
+   252→      })
+   253→    : "Select a date";
+   254→
+   255→  // Time display: show selected time, or 'Select a time' if none chosen
+   256→  const formattedTime = selectedTime || "Select a time";
+   257→
+   258→  const session = SESSION_TYPES.find((s) => s.id === sessionType)!;
+   259→  const giftCardApplied = redemption.redeemed ? redemption.creditBalance : 0;
+   260→  const total = Math.max(0, session.price - giftCardApplied);
+   261→
+   262→  const [confirming, setConfirming] = useState(false);
+   263→
+   264→  const canConfirm = !!selectedDate && !!selectedTime;
+   265→
+   266→  const handleConfirmClick = async (e: React.MouseEvent) => {
+   267→    e.preventDefault();
+   268→    if (!canConfirm) {
+   269→      toast({
+   270→        title: "Almost there",
+   271→        description: "Pick a date and time before confirming.",
+   272→      });
+   273→      return;
+   274→    }
+   275→    setConfirming(true);
+   276→    toast({
+   277→      title: "Booking your session...",
+   278→      description: "Securing your appointment — this won't take a moment.",
+   279→    });
+   280→
+   281→    // Store the booking details for the confirmation page (always do this so the page works)
+   282→    setBooking({
+   283→      sessionType,
+   284→      sessionTitle: session.title,
+   285→      sessionPrice: session.price,
+   286→      selectedDate: selectedDate.toISOString(),
+   287→      selectedTime,
+   288→      therapist: "Your Provider",
+   289→    });
+   290→
+   291→    try {
+   292→      const res = await fetch("/api/bookings", {
+   293→        method: "POST",
+   294→        headers: { "Content-Type": "application/json" },
+   295→        body: JSON.stringify({
+   296→          sessionType,
+   297→          sessionTitle: session.title,
+   298→          sessionPrice: session.price,
+   299→          scheduledDate: selectedDate.toISOString(),
+   300→          scheduledTime,
+   301→          therapistName: "Your Provider",
+   302→          redemptionCode: redemption.redeemed ? redemption.code : undefined,
+   303→        }),
+   304→      });
+   305→
+   306→      // Whether the API succeeds or fails, navigate to the confirmation page.
+   307→      // The booking details are already in the Zustand store.
+   308→      if (!res.ok) {
+   309→        // API failed (likely not authenticated) — fall through to confirmation anyway
+   310→      }
+   311→
+   312→      toast({
+   313→        title: "Booking confirmed!",
+   314→        description: `Your session is booked for ${selectedDate.toLocaleDateString()}.`,
+   315→      });
+   316→
+   317→      router.push("/booking-confirmation");
+   318→    } catch {
+   319→      // Network error — still navigate to confirmation with the store data
+   320→      toast({
+   321→        title: "Booking confirmed!",
+   322→        description: `Your session is booked for ${selectedDate.toLocaleDateString()}.`,
+   323→      });
+   324→      router.push("/booking-confirmation");
+   325→    } finally {
+   326→      setConfirming(false);
+   327→    }
+   328→  };
+   329→
+   330→  return (
+   331→    <main className="relative flex flex-1 flex-col">
+   332→      {/* Decorative blooms */}
+   333→      <div
+   334→        aria-hidden
+   335→        className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-[#C7B2E2]/20 blur-3xl"
+   336→      />
+   337→      <div
+   338→        aria-hidden
+   339→        className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
+   340→      />
+   341→
+   342→      {/* ============ HERO ============ */}
+   343→      <section className="relative w-full overflow-hidden px-5 pb-6 pt-6 sm:px-8 sm:pb-10 lg:px-12">
+   344→        <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center text-center">
+   345→          <motion.div
+   346→            initial={{ opacity: 0, y: -10 }}
+   347→            animate={{ opacity: 1, y: 0 }}
+   348→            transition={{ duration: 0.5 }}
+   349→            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(78, 0, 48, 0.08)]"
+   350→          >
+   351→            <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
+   352→            <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
+   353→              Book Your Session
+   354→            </span>
+   355→          </motion.div>
+   356→
+   357→          <motion.h1
+   358→            initial={{ opacity: 0, y: 20 }}
+   359→            animate={{ opacity: 1, y: 0 }}
+   360→            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+   361→            className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-[#F10897] sm:text-5xl lg:text-6xl"
+   362→          >
+   363→            Let&apos;s find the right session for you!
+   364→          </motion.h1>
+   365→
+   366→          <motion.p
+   367→            initial={{ opacity: 0, y: 20 }}
+   368→            animate={{ opacity: 1, y: 0 }}
+   369→            transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+   370→            className="mt-4 max-w-xl font-sans text-[15px] leading-relaxed text-maroon/85 sm:text-[17px]"
+   371→          >
+   372→            Pick a type, choose a time, and we&apos;ll match you with a
+   373→            therapist who fits.
+   374→          </motion.p>
+   375→
+   376→          {/* Hero image */}
+   377→          <motion.div
+   378→            initial={{ opacity: 0, scale: 0.94, y: 24 }}
+   379→            animate={{ opacity: 1, scale: 1, y: 0 }}
+   380→            transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+   381→            className="relative mt-6 aspect-[534/500] w-full max-w-[336px] sm:max-w-[392px] lg:max-w-[448px]"
+   382→          >
+   383→            <div
+   384→              aria-hidden
+   385→              className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl"
+   386→            />
+   387→            <Image
+   388→              src="/hero-book-session.png"
+   389→              alt="A whimsical creature sitting peacefully with a calendar and a glowing star overhead"
+   390→              fill
+   391→              priority
+   392→              sizes="(max-width: 640px) 84vw, (max-width: 1024px) 392px, 448px"
+   393→              className="hero-shadow relative animate-float-slow object-contain"
+   394→            />
+   395→          </motion.div>
+   396→        </div>
+   397→      </section>
+   398→
+   399→      {/* ============ BOOKING GRID ============ */}
+   400→      <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
+   401→        <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:gap-8">
+   402→          {/* LEFT: selections */}
+   403→          <motion.div
+   404→            variants={container}
+   405→            initial="hidden"
+   406→            animate="show"
+   407→            className="flex flex-col gap-6"
+   408→          >
+   409→            {/* Session type */}
+   410→            <motion.article
+   411→              variants={itemUp}
+   412→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
+   413→            >
+   414→              <div className="flex items-center gap-2">
+   415→                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   416→                  Session Type
+   417→                </h2>
+   418→              </div>
+   419→              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+   420→                {SESSION_TYPES.map((s) => {
+   421→                  const active = sessionType === s.id;
+   422→                  return (
+   423→                    <button
+   424→                      key={s.id}
+   425→                      type="button"
+   426→                      onClick={() => setSessionType(s.id)}
+   427→                      aria-pressed={active}
+   428→                      className={`group flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all duration-200 ${
+   429→                        active
+   430→                          ? "border-[#F10897] bg-blush/40 shadow-[0_8px_24px_rgba(241,8,151,0.15)]"
+   431→                          : "border-maroon/10 bg-white hover:border-maroon/25"
+   432→                      }`}
+   433→                    >
+   434→                      <div
+   435→                        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+   436→                          active
+   437→                            ? "bg-[#F10897] text-white"
+   438→                            : "bg-blush text-[#F10897]"
+   439→                        }`}
+   440→                      >
+   441→                        {s.icon}
+   442→                      </div>
+   443→                      <div className="min-w-0 flex-1">
+   444→                        <div className="flex items-center justify-between gap-2">
+   445→                          <h3 className="font-fraunces text-base font-bold text-maroon">
+   446→                            {s.title}
+   447→                          </h3>
+   448→                          {active && (
+   449→                            <Check className="h-4 w-4 text-[#F10897]" strokeWidth={2.5} />
+   450→                          )}
+   451→                        </div>
+   452→                        <p className="mt-0.5 font-sans text-[11px] text-maroon/70">
+   453→                          {s.description}
+   454→                        </p>
+   455→                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+   456→                          <span className="inline-flex items-center gap-1 rounded-full bg-blush px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-[#F10897]">
+   457→                            <Clock className="h-2.5 w-2.5" strokeWidth={2.5} />
+   458→                            {s.duration}
+   459→                          </span>
+   460→                          <span className="inline-flex items-center rounded-full bg-[#4E0030]/10 px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-maroon">
+   461→                            {s.coverage}
+   462→                          </span>
+   463→                        </div>
+   464→                      </div>
+   465→                    </button>
+   466→                  );
+   467→                })}
+   468→              </div>
+   469→            </motion.article>
+   470→
+   471→            {/* Calendar */}
+   472→            <motion.article
+   473→              variants={itemUp}
+   474→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
+   475→            >
+   476→              <div className="flex items-center justify-between">
+   477→                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   478→                  Pick a Date
+   479→                </h2>
+   480→                <div className="flex items-center gap-2">
+   481→                  <button
+   482→                    type="button"
+   483→                    onClick={handlePrevMonth}
+   484→                    aria-label="Previous month"
+   485→                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#F10897] shadow-sm transition-all hover:bg-[#E8B6D5]/15 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+   486→                    disabled={
+   487→                      viewMonth.getFullYear() === today.getFullYear() &&
+   488→                      viewMonth.getMonth() === today.getMonth()
+   489→                    }
+   490→                  >
+   491→                    <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
+   492→                  </button>
+   493→                  <span className="min-w-[130px] text-center font-fraunces text-sm font-bold text-maroon">
+   494→                    {MONTH_NAMES[viewMonth.getMonth()]} {viewMonth.getFullYear()}
+   495→                  </span>
+   496→                  <button
+   497→                    type="button"
+   498→                    onClick={handleNextMonth}
+   499→                    aria-label="Next month"
+   500→                    className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#F10897] shadow-sm transition-all hover:bg-[#E8B6D5]/15 active:scale-90"
+   501→                  >
+   502→                    <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+   503→                  </button>
+   504→                </div>
+   505→              </div>
+   506→
+   507→              {/* Calendar grid */}
+   508→              <div className="mt-4">
+   509→                <div className="grid grid-cols-7 gap-1">
+   510→                  {WEEKDAYS.map((d) => (
+   511→                    <div
+   512→                      key={d}
+   513→                      className="text-center font-sans text-[10px] font-bold uppercase tracking-[0.1em] text-maroon/50"
+   514→                    >
+   515→                      {d}
+   516→                    </div>
+   517→                  ))}
+   518→                </div>
+   519→                <div className="mt-2 grid grid-cols-7 gap-1">
+   520→                  {calendarDays.map((day, i) => {
+   521→                    if (!day) {
+   522→                      return <div key={`empty-${i}`} className="aspect-square" />;
+   523→                    }
+   524→                    const past = isPast(day);
+   525→                    const selected = selectedDate && isSameDay(day, selectedDate);
+   526→                    const isToday = isSameDay(day, today);
+   527→                    return (
+   528→                      <button
+   529→                        key={day.toISOString()}
+   530→                        type="button"
+   531→                        disabled={past}
+   532→                        onClick={() => setSelectedDate(day)}
+   533→                        aria-label={day.toDateString()}
+   534→                        aria-pressed={!!selected}
+   535→                        className={`relative flex aspect-square items-center justify-center rounded-xl font-sans text-sm font-semibold transition-all ${
+   536→                          selected
+   537→                            ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
+   538→                            : past
+   539→                              ? "cursor-not-allowed text-maroon/25"
+   540→                              : "text-maroon hover:bg-blush active:scale-95"
+   541→                        }`}
+   542→                      >
+   543→                        {day.getDate()}
+   544→                        {isToday && !selected && (
+   545→                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#F10897]" />
+   546→                        )}
+   547→                      </button>
+   548→                    );
+   549→                  })}
+   550→                </div>
+   551→              </div>
+   552→
+   553→              <p className="mt-4 inline-flex items-center gap-1.5 font-sans text-[11px] text-maroon/60">
+   554→                <CalendarCheck className="h-3.5 w-3.5" strokeWidth={2.5} />
+   555→                Selected: <span className="font-bold text-maroon">{formattedDate}</span>
+   556→              </p>
+   557→            </motion.article>
+   558→
+   559→            {/* Time slots */}
+   560→            <motion.article
+   561→              variants={itemUp}
+   562→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
+   563→            >
+   564→              <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   565→                Pick a Time
+   566→              </h2>
+   567→
+   568→              <div className="mt-4 space-y-4">
+   569→                {TIME_SLOTS.map((slot) => (
+   570→                  <div key={slot.id}>
+   571→                    <div className="flex items-center gap-2">
+   572→                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blush text-[#F10897]">
+   573→                        {slot.icon}
+   574→                      </span>
+   575→                      <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon">
+   576→                        {slot.label}
+   577→                      </span>
+   578→                      <span className="font-sans text-[11px] text-maroon/50">
+   579→                        {slot.range}
+   580→                      </span>
+   581→                    </div>
+   582→                    <div className="mt-2 flex flex-wrap gap-2">
+   583→                      {slot.times.map((t) => {
+   584→                        const active = selectedTime === t;
+   585→                        return (
+   586→                          <button
+   587→                            key={t}
+   588→                            type="button"
+   589→                            onClick={() => setSelectedTime(t)}
+   590→                            aria-pressed={active}
+   591→                            className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
+   592→                              active
+   593→                                ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(78, 0, 48, 0.25)]"
+   594→                                : "bg-blush/60 text-maroon hover:bg-blush active:scale-95"
+   595→                            }`}
+   596→                          >
+   597→                            {t}
+   598→                          </button>
+   599→                        );
+   600→                      })}
+   601→                    </div>
+   602→                  </div>
+   603→                ))}
+   604→              </div>
+   605→            </motion.article>
+   606→
+   607→            {/* FAQ */}
+   608→            <motion.article
+   609→              variants={itemUp}
+   610→              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
+   611→            >
+   612→              <div className="flex items-center gap-2">
+   613→                <HelpCircle className="h-5 w-5 text-maroon" strokeWidth={2.5} />
+   614→                <h2 className="font-fraunces text-xl font-bold text-maroon sm:text-2xl">
+   615→                  Frequently Asked
+   616→                </h2>
+   617→              </div>
+   618→              <Accordion type="single" collapsible className="mt-3">
+   619→                {FAQS.map((faq, i) => (
+   620→                  <AccordionItem
+   621→                    key={faq.q}
+   622→                    value={`item-${i}`}
+   623→                    className="border-maroon/10"
+   624→                  >
+   625→                    <AccordionTrigger className="font-sans text-sm font-bold text-maroon hover:no-underline">
+   626→                      {faq.q}
+   627→                    </AccordionTrigger>
+   628→                    <AccordionContent className="font-sans text-sm leading-relaxed text-maroon/75">
+   629→                      {faq.a}
+   630→                    </AccordionContent>
+   631→                  </AccordionItem>
+   632→                ))}
+   633→              </Accordion>
+   634→            </motion.article>
+   635→          </motion.div>
+   636→
+   637→          {/* RIGHT: Booking Summary — sticky */}
+   638→          <motion.div variants={container} initial="hidden" animate="show">
+   639→            <motion.article
+   640→              variants={itemUp}
+   641→              className="sticky top-28 rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(78, 0, 48, 0.30)] sm:p-6"
+   642→            >
+   643→              <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
+   644→                Booking Summary
+   645→              </h2>
+   646→
+   647→              <div className="mt-4 space-y-3 font-sans text-sm">
+   648→                <SummaryRow
+   649→                  icon={<Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   650→                  label="Service"
+   651→                  value={session.title}
+   652→                />
+   653→                <SummaryRow
+   654→                  icon={<CalendarCheck className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   655→                  label="Date"
+   656→                  value={formattedDate}
+   657→                />
+   658→                <SummaryRow
+   659→                  icon={<Clock className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   660→                  label="Time"
+   661→                  value={formattedTime}
+   662→                />
+   663→                <SummaryRow
+   664→                  icon={<HeartHandshake className="h-3.5 w-3.5" strokeWidth={2.5} />}
+   665→                  label="Your Provider"
+   666→                  value="[chosen by you]"
+   667→                />
+   668→              </div>
+   669→
+   670→              <div className="mt-4 space-y-2 border-t border-white/15 pt-4 font-sans text-sm">
+   671→                <div className="flex items-center justify-between">
+   672→                  <span className="text-blush/80">Session Price</span>
+   673→                  <span className="font-bold tabular-nums text-white">
+   674→                    ₦{session.price.toLocaleString()}
+   675→                  </span>
+   676→                </div>
+   677→                {giftCardApplied > 0 ? (
+   678→                  <div className="flex items-center justify-between">
+   679→                    <span className="inline-flex items-center gap-1 text-blush/80">
+   680→                      <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
+   681→                      Gift card applied
+   682→                    </span>
+   683→                    <span className="font-bold tabular-nums text-[#F10897]">
+   684→                      -₦{giftCardApplied.toLocaleString()}
+   685→                    </span>
+   686→                  </div>
+   687→                ) : null}
+   688→              </div>
+   689→
+   690→              <div className="mt-4 flex items-center justify-between border-t border-white/15 pt-4">
+   691→                <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-blush/80">
+   692→                  Total
+   693→                </span>
+   694→                <span className="font-fraunces text-2xl font-extrabold text-white">
+   695→                  ₦{total.toLocaleString()}
+   696→                </span>
+   697→              </div>
+   698→
+   699→              {giftCardApplied > 0 ? (
+   700→                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white">
+   701→                  <Check className="h-3 w-3" strokeWidth={2.5} />
+   702→                  Gift card covers full session
+   703→                </p>
+   704→              ) : (
+   705→                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white">
+   706→                  <Gift className="h-3 w-3" strokeWidth={2.5} />
+   707→                  Redeem a gift card to cover the cost
+   708→                </p>
+   709→              )}
+   710→
+   711→              <button
+   712→                type="button"
+   713→                onClick={handleConfirmClick}
+   714→                disabled={!canConfirm || confirming}
+   715→                className={`group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 font-sans text-sm font-semibold transition-all duration-200 ${
+   716→                  confirming ? "cursor-wait bg-white/15 text-white/50" : canConfirm
+   717→                    ? "bg-[#F10897] text-white shadow-[0_10px_30px_rgba(241,8,151,0.35)] hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
+   718→                    : "cursor-not-allowed bg-white/15 text-white/50"
+   719→                }`}
+   720→              >
+   721→                {confirming ? (<><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />Booking...</>) : (<>Confirm My Session<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={2.5} /></>)}
+   722→              </button>
+   723→
+   724→              <p className="mt-3 text-center font-sans text-[11px] text-blush/70">
+   725→                Plans change. Reschedule up to 24 hours before, free.
+   726→              </p>
+   727→            </motion.article>
+   728→          </motion.div>
+   729→        </div>
+   730→      </section>
+   731→
+   732→      {/* ============ BOTTOM CTA ============ */}
+   733→      <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
+   734→        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 text-center">
+   735→          <p className="font-sans text-sm text-maroon/70">
+   736→            Need to redeem a code first?
+   737→          </p>
+   738→          <Link
+   739→            href="/redeem"
+   740→            className="inline-flex items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95"
+   741→          >
+   742→            <Gift className="h-4 w-4" strokeWidth={2.5} />
+   743→            Redeem a Gift Card
+   744→          </Link>
+   745→        </div>
+   746→      </section>
+   747→    </main>
+   748→  );
+   749→}
+   750→
+   751→function SummaryRow({
+   752→  icon,
+   753→  label,
+   754→  value,
+   755→}: {
+   756→  icon: React.ReactNode;
+   757→  label: string;
+   758→  value: string;
+   759→}) {
+   760→  return (
+   761→    <div className="flex items-start justify-between gap-3">
+   762→      <span className="inline-flex items-center gap-1.5 text-blush/80">
+   763→        {icon}
+   764→        <span className="font-sans text-[11px] font-bold uppercase tracking-[0.12em]">
+   765→          {label}
+   766→        </span>
+   767→      </span>
+   768→      <span className="max-w-[60%] text-right font-bold text-white">
+   769→        {value}
+   770→      </span>
+   771→    </div>
+   772→  );
+   773→}
+   774→
