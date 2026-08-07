@@ -250,4 +250,73 @@
     filter: drop-shadow(0 25px 45px rgba(78, 0, 48, 0.12))
       drop-shadow(0 10px 20px rgba(78, 0, 48, 0.08));
   }
+
+  /* === Micro-interaction animations (GPU-accelerated, 60fps) === */
+
+  /* 1. Steam wisps — rise and fade (2s loop, staggered) */
+  @keyframes steam-rise-1 {
+    0% { transform: translateY(0) scaleY(1); opacity: 0; }
+    20% { opacity: 0.4; }
+    80% { opacity: 0.15; }
+    100% { transform: translateY(-40px) scaleY(1.5); opacity: 0; }
+  }
+  @keyframes steam-rise-2 {
+    0% { transform: translateY(0) scaleY(1); opacity: 0; }
+    25% { opacity: 0.35; }
+    75% { opacity: 0.1; }
+    100% { transform: translateY(-50px) scaleY(1.6); opacity: 0; }
+  }
+  @keyframes steam-rise-3 {
+    0% { transform: translateY(0) scaleY(1); opacity: 0; }
+    15% { opacity: 0.3; }
+    85% { opacity: 0.1; }
+    100% { transform: translateY(-30px) scaleY(1.4); opacity: 0; }
+  }
+  .animate-steam-1 {
+    animation: steam-rise-1 2s ease-out infinite;
+    will-change: transform, opacity;
+  }
+  .animate-steam-2 {
+    animation: steam-rise-2 2.2s ease-out infinite 0.4s;
+    will-change: transform, opacity;
+  }
+  .animate-steam-3 {
+    animation: steam-rise-3 1.8s ease-out infinite 0.8s;
+    will-change: transform, opacity;
+  }
+
+  /* 2. Phone shimmer sweep — diagonal light beam (2.5s loop) */
+  @keyframes shimmer-sweep {
+    0% { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+    40% { opacity: 0.6; }
+    60% { opacity: 0.4; }
+    100% { transform: translateX(200%) skewX(-15deg); opacity: 0; }
+  }
+  .animate-shimmer-sweep {
+    animation: shimmer-sweep 2.5s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+
+  /* 3. Envelope edge shimmer — subtle light stroke (3s loop) */
+  @keyframes envelope-shimmer {
+    0% { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0); opacity: 0; }
+    30% { box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.4); opacity: 0.6; }
+    70% { box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2); opacity: 0.3; }
+    100% { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0); opacity: 0; }
+  }
+  .animate-envelope-shimmer {
+    animation: envelope-shimmer 3s ease-in-out infinite;
+    will-change: box-shadow, opacity;
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-steam-1,
+    .animate-steam-2,
+    .animate-steam-3,
+    .animate-shimmer-sweep,
+    .animate-envelope-shimmer {
+      animation: none;
+    }
+  }
 }

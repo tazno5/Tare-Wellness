@@ -217,12 +217,27 @@ function GiftCardPageContent() {
             />
             <Image
               src="/hero-giftcards.png"
-              alt="Two whimsical mushroom-cap creatures exchanging a gift, surrounded by glowing mushrooms and acorns"
+              alt="Tare Wellness gift card hero illustration"
               fill
               priority
               sizes="(max-width: 640px) 90vw, (max-width: 1024px) 500px, 576px"
               className="hero-shadow relative animate-float-slow object-contain"
             />
+            {/* Micro-interaction overlays — GPU-accelerated CSS animations */}
+            {/* 1. Steam wisps rising from pizza area (top-right of image) */}
+            <div aria-hidden className="pointer-events-none absolute right-[20%] top-[15%] h-[30%] w-[12%]">
+              <span className="absolute left-[30%] bottom-0 h-8 w-1.5 rounded-full bg-white/40 blur-sm animate-steam-1" />
+              <span className="absolute left-[55%] bottom-0 h-10 w-1.5 rounded-full bg-white/30 blur-sm animate-steam-2" />
+              <span className="absolute left-[10%] bottom-0 h-6 w-1 rounded-full bg-white/35 blur-sm animate-steam-3" />
+            </div>
+            {/* 2. Phone screen shimmer sweep */}
+            <div aria-hidden className="pointer-events-none absolute right-[8%] top-[30%] h-[25%] w-[18%] overflow-hidden rounded-lg">
+              <span className="absolute inset-0 bg-gradient-to-br from-transparent via-white/30 to-transparent animate-shimmer-sweep" />
+            </div>
+            {/* 3. Envelope edge shimmer */}
+            <div aria-hidden className="pointer-events-none absolute right-[35%] top-[55%] h-[8%] w-[20%]">
+              <span className="absolute inset-0 rounded animate-envelope-shimmer" />
+            </div>
           </motion.div>
         </div>
       </section>
