@@ -305,8 +305,8 @@ function RecipientDetailsContent() {
               className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl"
             />
             <Image
-              src="/hero-giftcards.png"
-              alt="Two whimsical mushroom-cap creatures exchanging a gift, surrounded by glowing mushrooms and acorns"
+              src="/hero-recipient.png"
+              alt="Tare Wellness — sharing a moment of care"
               fill
               priority
               sizes="(max-width: 640px) 70vw, (max-width: 1024px) 320px, 360px"
