@@ -315,8 +315,61 @@
     .animate-steam-2,
     .animate-steam-3,
     .animate-shimmer-sweep,
-    .animate-envelope-shimmer {
+    .animate-envelope-shimmer,
+    .animate-blob-1,
+    .animate-blob-2,
+    .animate-blob-3,
+    .animate-blob-4,
+    .animate-watercolor-morph {
       animation: none;
     }
+  }
+
+  /* === Organic Watercolor Liquid Morphing === */
+  /* 4 color blobs that slowly pulse, warp, and bleed into each other */
+  /* Ultra-slow 8-12s loops, GPU-accelerated (transform + opacity only) */
+
+  @keyframes blob-morph-1 {
+    0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    33% { transform: translate(15px, -20px) scale(1.15) rotate(120deg); }
+    66% { transform: translate(-10px, 15px) scale(0.9) rotate(240deg); }
+  }
+  @keyframes blob-morph-2 {
+    0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    33% { transform: translate(-20px, 10px) scale(1.1) rotate(-120deg); }
+    66% { transform: translate(15px, -10px) scale(1.2) rotate(-240deg); }
+  }
+  @keyframes blob-morph-3 {
+    0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    33% { transform: translate(10px, 20px) scale(0.85) rotate(180deg); }
+    66% { transform: translate(-15px, -15px) scale(1.1) rotate(300deg); }
+  }
+  @keyframes blob-morph-4 {
+    0%, 100% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    33% { transform: translate(-10px, -15px) scale(1.2) rotate(90deg); }
+    66% { transform: translate(20px, 10px) scale(0.95) rotate(270deg); }
+  }
+  .animate-blob-1 {
+    animation: blob-morph-1 10s ease-in-out infinite;
+    will-change: transform;
+    mix-blend-mode: multiply;
+  }
+  .animate-blob-2 {
+    animation: blob-morph-2 12s ease-in-out infinite;
+    will-change: transform;
+    mix-blend-mode: multiply;
+  }
+  .animate-blob-3 {
+    animation: blob-morph-3 8s ease-in-out infinite;
+    will-change: transform;
+    mix-blend-mode: multiply;
+  }
+  .animate-blob-4 {
+    animation: blob-morph-4 11s ease-in-out infinite;
+    will-change: transform;
+    mix-blend-mode: multiply;
+  }
+  .animate-watercolor-morph {
+    will-change: transform;
   }
 }

@@ -211,9 +211,19 @@ function GiftCardPageContent() {
             transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="relative mt-10 aspect-[534/500] w-full max-w-md sm:max-w-lg lg:max-w-xl"
           >
+            {/* Watercolor liquid morphing background layer (z-1) */}
+            <div aria-hidden className="absolute inset-0 z-[1] overflow-hidden rounded-[3rem]">
+              <div className="absolute inset-0 animate-watercolor-morph">
+                <div className="absolute left-[10%] top-[15%] h-[50%] w-[50%] rounded-full bg-[#C7B2E2]/40 blur-3xl animate-blob-1" />
+                <div className="absolute right-[5%] top-[20%] h-[45%] w-[45%] rounded-full bg-[#B5E1C3]/35 blur-3xl animate-blob-2" />
+                <div className="absolute left-[20%] bottom-[10%] h-[40%] w-[40%] rounded-full bg-[#BCE1F0]/35 blur-3xl animate-blob-3" />
+                <div className="absolute right-[15%] bottom-[15%] h-[35%] w-[35%] rounded-full bg-[#E8B6D5]/30 blur-3xl animate-blob-4" />
+              </div>
+            </div>
+            {/* Foreground character layer (z-2, static) */}
             <div
               aria-hidden
-              className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl"
+              className="absolute inset-6 z-[2] rounded-full bg-white/10 blur-2xl"
             />
             <Image
               src="/hero-giftcards.png"
@@ -221,7 +231,7 @@ function GiftCardPageContent() {
               fill
               priority
               sizes="(max-width: 640px) 90vw, (max-width: 1024px) 500px, 576px"
-              className="hero-shadow relative animate-float-slow object-contain"
+              className="hero-shadow relative z-[3] animate-float-slow object-contain"
             />
             {/* Micro-interaction overlays — GPU-accelerated CSS animations */}
             {/* 1. Steam wisps rising from pizza area (top-right of image) */}
