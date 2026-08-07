@@ -459,13 +459,39 @@ function RecipientDetailsContent() {
                 </div>
               </motion.div>
 
-              {/* RIGHT: Preview + Gift summary */}
+              {/* RIGHT: Hero image + Preview + Gift summary */}
               <motion.div
                 variants={container}
                 initial="hidden"
                 animate="show"
                 className="flex flex-col gap-6"
               >
+                {/* Hero visual anchor — sticky on desktop, emotional hook on mobile */}
+                <motion.div
+                  variants={itemUp}
+                  className="lg:sticky lg:top-28"
+                >
+                  <div className="relative aspect-square w-full overflow-hidden rounded-[2rem]">
+                    {/* Watercolor morphing background (z-1) */}
+                    <div aria-hidden className="absolute inset-0 z-[1] overflow-hidden rounded-[2rem]">
+                      <div className="absolute inset-0 animate-watercolor-morph">
+                        <div className="absolute left-[10%] top-[15%] h-[50%] w-[50%] rounded-full bg-[#C7B2E2]/40 blur-3xl animate-blob-1" />
+                        <div className="absolute right-[5%] top-[20%] h-[45%] w-[45%] rounded-full bg-[#B5E1C3]/35 blur-3xl animate-blob-2" />
+                        <div className="absolute left-[20%] bottom-[10%] h-[40%] w-[40%] rounded-full bg-[#BCE1F0]/35 blur-3xl animate-blob-3" />
+                        <div className="absolute right-[15%] bottom-[15%] h-[35%] w-[35%] rounded-full bg-[#E8B6D5]/30 blur-3xl animate-blob-4" />
+                      </div>
+                    </div>
+                    {/* Foreground character (z-3, static) */}
+                    <Image
+                      src="/hero-recipient.png"
+                      alt="Tare Wellness — sharing a moment of care"
+                      fill
+                      sizes="(max-width: 640px) 90vw, (max-width: 1024px) 400px, 480px"
+                      className="hero-shadow relative z-[3] object-contain"
+                    />
+                  </div>
+                </motion.div>
+
                 {/* Live Card Preview */}
                 <motion.div
                   variants={itemUp}
@@ -735,7 +761,7 @@ function RecipientSlide({
           value={recipient.name}
           onChange={(e) => onUpdate({ name: e.target.value })}
           placeholder="e.g. Adaobi Okafor"
-          className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+          className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#C7B2E2] focus:outline-none focus:ring-2 focus:ring-[#C7B2E2]/40"
         />
       </div>
 
@@ -756,7 +782,7 @@ function RecipientSlide({
             value={recipient.email}
             onChange={(e) => onUpdate({ email: e.target.value })}
             placeholder="they@example.com"
-            className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+            className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#C7B2E2] focus:outline-none focus:ring-2 focus:ring-[#C7B2E2]/40"
           />
         </div>
       </div>
@@ -771,7 +797,7 @@ function RecipientSlide({
           onValueChange={(v) => onUpdate({ occasion: v })}
         >
           <SelectTrigger
-            className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-maroon focus:border-[#F10897] focus:ring-[#F10897]/30"
+            className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-maroon focus:border-[#C7B2E2] focus:ring-[#C7B2E2]/40"
             aria-label="Occasion"
           >
             <SelectValue placeholder="Choose an occasion" />
@@ -833,7 +859,7 @@ function RecipientSlide({
           value={recipient.note}
           onChange={(e) => onUpdate({ note: e.target.value })}
           placeholder="A word from you..."
-          className="mt-2 w-full rounded-2xl border border-maroon/15 bg-white px-4 py-3 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+          className="mt-2 w-full rounded-2xl border border-maroon/15 bg-white px-4 py-3 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#C7B2E2] focus:outline-none focus:ring-2 focus:ring-[#C7B2E2]/40"
         />
         <div className="mt-3 flex flex-wrap gap-2">
           {INSPIRATION_PILLS.map((pill) => (
