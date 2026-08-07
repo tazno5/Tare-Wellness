@@ -378,7 +378,7 @@ export default function BookSessionPage() {
             initial={{ opacity: 0, scale: 0.94, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mt-6 aspect-[534/500] w-full max-w-[240px] sm:max-w-[280px] lg:max-w-[320px]"
+            className="relative mt-6 aspect-[534/500] w-full max-w-[336px] sm:max-w-[392px] lg:max-w-[448px]"
           >
             <div
               aria-hidden
@@ -389,7 +389,7 @@ export default function BookSessionPage() {
               alt="A whimsical creature sitting peacefully with a calendar and a glowing star overhead"
               fill
               priority
-              sizes="(max-width: 640px) 60vw, (max-width: 1024px) 280px, 320px"
+              sizes="(max-width: 640px) 84vw, (max-width: 1024px) 392px, 448px"
               className="hero-shadow relative animate-float-slow object-contain"
             />
           </motion.div>
