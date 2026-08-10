@@ -257,21 +257,19 @@ function CheckoutContent() {
         return;
       }
 
-      // API failed — fall through to mock mode (no error shown to user)
-      // This ensures the flow always completes for testing.
-    } catch {
-      // Network error — fall through to mock mode (no error shown to user)
+      // API returned an error — surface it to the user
+      const errData = await res.json().catch(() => null);
+      throw new Error(errData?.error || "Payment failed. Please check your details and try again.");
+    } catch (error) {
+      // Show the error — do NOT silently fall through to mock mode
+      toast({
+        title: "Payment failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+      setSubmitting(false);
+      return;
     }
-
-    // Mock successful transaction — pass cart + recipient state via query params
-    // so the order-confirmation page renders correctly without a backend order.
-    const mockOrderNumber = `BK-2026-${Math.floor(Math.random() * 900000 + 100000)}`;
-    toast({
-      title: "Payment successful!",
-      description: `Order ${mockOrderNumber} confirmed.`,
-    });
-
-    router.push(`/order-confirmation?orderNumber=${mockOrderNumber}&method=${paymentMethod}&txn=${mockTxnRef}&${forwardQuery}`);
   };
 
   const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
@@ -287,6 +285,29 @@ function CheckoutContent() {
         aria-hidden
         className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
       />
+
+      {/* ============ EMPTY CART STATE ============ */}
+      {cartItems.length === 0 ? (
+        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
+          <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(78,0,48,0.10)]">
+            <Gift className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />
+          </div>
+          <h2 className="mt-4 font-fraunces text-2xl font-bold text-[#4E0030]">
+            Your cart is empty
+          </h2>
+          <p className="mt-2 max-w-sm font-sans text-sm text-[#4E0030]/70">
+            Choose a gift card first, then come back here to check out.
+          </p>
+          <Link
+            href="/gift-cards"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78,0,48,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
+          >
+            <Gift className="h-4 w-4" strokeWidth={2.5} />
+            Browse Gift Cards
+          </Link>
+        </section>
+      ) : (
+      <>
 
       {/* ============ HERO ============ */}
       <section className="relative w-full overflow-hidden px-5 pb-6 pt-6 sm:px-8 sm:pb-10 lg:px-12">
@@ -864,6 +885,8 @@ function CheckoutContent() {
           </button>
         </div>
       </section>
+      </>
+      )}
     </main>
   );
 }

@@ -303,10 +303,10 @@ export default function BookSessionPage() {
         }),
       });
 
-      // Whether the API succeeds or fails, navigate to the confirmation page.
-      // The booking details are already in the Zustand store.
       if (!res.ok) {
-        // API failed (likely not authenticated) — fall through to confirmation anyway
+        // API returned an error — surface it to the user
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || "Booking failed. Please try again.");
       }
 
       toast({
@@ -315,13 +315,13 @@ export default function BookSessionPage() {
       });
 
       router.push("/booking-confirmation");
-    } catch {
-      // Network error — still navigate to confirmation with the store data
+    } catch (error) {
+      // Show the error — do NOT silently navigate to confirmation
       toast({
-        title: "Booking confirmed!",
-        description: `Your session is booked for ${selectedDate.toLocaleDateString()}.`,
+        title: "Booking failed",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        variant: "destructive",
       });
-      router.push("/booking-confirmation");
     } finally {
       setConfirming(false);
     }

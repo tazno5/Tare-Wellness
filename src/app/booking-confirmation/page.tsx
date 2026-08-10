@@ -74,9 +74,12 @@ export default function BookingConfirmationPage() {
 
   const meetingUrl = "https://wa.me/2349036530892";
 
+  // If no booking data exists (direct navigation / refresh after store clear), show empty state
+  const hasBooking = !!booking.selectedDate && !!booking.selectedTime;
+
   const formattedDate = booking.selectedDate
     ? formatDate(booking.selectedDate)
-    : "Tuesday, February 17, 2026";
+    : "";
 
   const sessionLabel =
     booking.sessionTitle && booking.sessionTitle.length > 0
@@ -106,6 +109,29 @@ export default function BookingConfirmationPage() {
         aria-hidden
         className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
       />
+
+      {/* ============ EMPTY STATE (no booking data) ============ */}
+      {!hasBooking ? (
+        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
+          <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(78,0,48,0.10)]">
+            <CalendarClock className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />
+          </div>
+          <h2 className="mt-4 font-fraunces text-2xl font-bold text-[#4E0030]">
+            No booking found
+          </h2>
+          <p className="mt-2 max-w-sm font-sans text-sm text-[#4E0030]/70">
+            We couldn&apos;t find a booking to display. This can happen if you
+            navigated here directly or refreshed the page.
+          </p>
+          <Link
+            href="/book-session"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78,0,48,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
+          >
+            Book a Session
+          </Link>
+        </section>
+      ) : (
+      <>
 
       {/* ============ HERO ============ */}
       <section className="relative w-full overflow-hidden px-5 pb-6 pt-6 sm:px-8 sm:pb-10 lg:px-12">
@@ -375,6 +401,8 @@ export default function BookingConfirmationPage() {
           </div>
         </div>
       </section>
+      </>
+      )}
     </main>
   );
 }
