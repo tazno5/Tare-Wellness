@@ -1,17 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowRight, Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, login, redemption } = useStore();
+  // Read callbackUrl from query — fall back to home. Validate it's a relative
+  // path to avoid open-redirect issues.
+  const rawCallback = searchParams.get("callbackUrl") || "/";
+  const callbackUrl = rawCallback.startsWith("/");
+  if (!rawCallback.startsWith("/")) {
+    console.warn("Invalid callbackUrl, ignoring:", rawCallback);
+  }
+  const safeCallbackUrl = callbackUrl ? rawCallback : "/";
   const { toast } = useToast();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPassword, setShowPassword] = useState(false);
@@ -28,10 +38,11 @@ export default function LoginPage() {
     document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
   }, []);
 
-  // Redirect if already logged in
+  // Redirect if already logged in — respect callbackUrl
   useEffect(() => {
-    if (user) router.push("/");
-  }, [user, router]);
+    if (user) router.replace(safeCallbackUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +50,7 @@ export default function LoginPage() {
 
     try {
       if (mode === "signup") {
-        // Call register API
+        // Call register API to create the user, then sign in via NextAuth
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -48,38 +59,63 @@ export default function LoginPage() {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to create account");
 
+        // Sign in via NextAuth so the session cookie is set
+        const result = await signIn("credentials", {
+          email: form.email,
+          password: form.password,
+          redirect: false,
+          callbackUrl: safeCallbackUrl,
+        });
+
+        if (result?.error) {
+          throw new Error(result.error);
+        }
+
+        // Sync to Zustand store
         login({ id: data.id, name: data.name, email: data.email });
         toast({ title: "Account created!", description: `Welcome to Tare Wellness, ${form.name}!` });
       } else {
-        // Call NextAuth credentials sign-in
-        const res = await fetch("/api/auth/callback/credentials", {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ email: form.email, password: form.password, csrfToken: "", callbackUrl: "/" }),
+        // NextAuth credentials sign-in — sets the JWT session cookie
+        const result = await signIn("credentials", {
+          email: form.email,
+          password: form.password,
+          redirect: false,
+          callbackUrl: safeCallbackUrl,
         });
 
-        // NextAuth credentials endpoint returns a redirect — we just check it didn't error
-        if (res.status === 401) throw new Error("Invalid email or password");
+        if (result?.error) {
+          throw new Error("Invalid email or password");
+        }
 
-        // Fallback: also try direct user lookup (since NextAuth session is JWT-based, we sync to Zustand)
-        const userRes = await fetch("/api/auth/me", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          if (userData?.user) {
-            login({ id: userData.user.id, name: userData.user.name, email: userData.user.email });
+        // Fetch the session to sync user info into Zustand
+        try {
+          const userRes = await fetch("/api/auth/me", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            if (userData?.user) {
+              login({
+                id: userData.user.id,
+                name: userData.user.name ?? form.email.split("@")[0],
+                email: userData.user.email ?? form.email,
+              });
+            } else {
+              // Session not set but signIn didn't error — fall back to form data
+              login({ id: `user-${Date.now()}`, name: form.email.split("@")[0], email: form.email });
+            }
+          } else {
+            login({ id: `user-${Date.now()}`, name: form.email.split("@")[0], email: form.email });
           }
-        } else {
-          // If session API fails, use form data as fallback (for dev)
+        } catch {
           login({ id: `user-${Date.now()}`, name: form.email.split("@")[0], email: form.email });
         }
 
         toast({ title: "Welcome back!", description: `Signed in as ${form.email}` });
       }
 
-      router.push("/");
+      router.push(safeCallbackUrl);
     } catch (error) {
       toast({
         title: "Authentication failed",
@@ -278,5 +314,13 @@ export default function LoginPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }

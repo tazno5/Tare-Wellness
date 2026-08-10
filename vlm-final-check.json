@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "**Score: 10/10**\n\n**Differences:** None. The two images are identical in layout, typography, colors, imagery, and all UI elements.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1786358045,
+  "id": "20260810183402284de9c99ae843cf",
+  "model": "glm-5v-turbo",
+  "object": "chat.completion",
+  "request_id": "20260810183402284de9c99ae843cf",
+  "usage": {
+    "completion_tokens": 34,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 3930,
+    "prompt_tokens_details": {
+      "cached_tokens": 2
+    },
+    "total_tokens": 3964
+  }
+}

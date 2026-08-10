@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { Providers } from "@/components/providers";
 import Navbar from "@/components/site/Navbar";
 import Footer from "@/components/site/Footer";
 
@@ -74,12 +75,14 @@ export default function RootLayout({
           minHeight: "100vh",
         }}
       >
-        <Navbar />
-        <div className="flex min-h-screen flex-col pt-[112px]">
-          <div className="flex-1">{children}</div>
-          <Footer />
-        </div>
-        <Toaster />
+        <Providers>
+          <Navbar />
+          <div className="flex min-h-screen flex-col pt-[112px]">
+            <div className="flex-1">{children}</div>
+            <Footer />
+          </div>
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );

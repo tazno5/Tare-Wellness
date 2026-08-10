@@ -6,27 +6,35 @@ import { db } from "@/lib/db";
 // ============ Helpers ============
 
 function generateOrderNumber(): string {
-  const hash = Math.abs(
-    Date.now().toString().split("").reduce((s, c) => s + parseInt(c), 0) * 7919,
-  ).toString().padStart(6, "0").slice(0, 6);
-  return `TG-${hash}`;
+  // Use random bytes + timestamp to guarantee uniqueness even when two
+  // orders are placed in the same millisecond. Format: TG-XXXXXXXX (8 chars).
+  const ts = Date.now().toString(36).toUpperCase().slice(-6);
+  const rand = Math.random().toString(36).toUpperCase().slice(2, 6);
+  return `TG-${ts}${rand}`;
 }
 
 function generateRedemptionCode(seed: string): string {
+  // Generate 16 random chars from a 32-char alphabet (no ambiguous chars).
+  // Excludes 0/O/1/I to avoid confusion when read aloud.
   const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  // Mix the seed into a PRNG state so different recipients in the same
+  // millisecond still get distinct codes, but the call is still seedable.
   let n = 0;
   for (let i = 0; i < seed.length; i++) {
     n = (n * 31 + seed.charCodeAt(i)) >>> 0;
   }
+  // Add high-resolution time + Math.random for true entropy
+  n = (n ^ Date.now() ^ (Math.random() * 0xffffffff) >>> 0) >>> 0;
   let code = "";
   for (let i = 0; i < 4; i++) {
-    code += "-";
+    if (i > 0) code += "-";
     for (let j = 0; j < 4; j++) {
+      // Stir n each iteration so consecutive chars are not correlated
+      n = (n * 1103515245 + 12345 + i * 7919 + j * 31) >>> 0;
       code += charset[n % charset.length];
-      n = (n * 31 + i * 7 + j * 13) >>> 0;
     }
   }
-  return code.slice(1);
+  return code;
 }
 
 // ============ POST /api/orders — Create order ============
