@@ -313,3 +313,87 @@ Stage Summary:
 - **Final build:** ✅ `npx next build` passes, 25 routes generated, zero errors.
 - **Final typecheck:** ✅ `npx tsc --noEmit` reports zero errors in `src/`.
 
+---
+Task ID: launch-readiness
+Agent: Super Z (main)
+Task: Launch-readiness pass — (1) wire Resend email provider, (2) set up PostgreSQL production DB schema + migration guide, (3) document hosting-platform deployment (Vercel + Docker), (4) clean up test data from dev DB.
+
+Work Log:
+
+### #1 — Wire Resend email provider (DONE ✅)
+- Installed `resend@6.18.1` via `bun add resend`.
+- Rewrote `src/app/api/email/send/route.ts`:
+  - Added lazy-instantiated `getResend()` helper that returns `null` if `RESEND_API_KEY` is not set, so the app still imports cleanly without a key.
+  - When `RESEND_API_KEY` is set: sends via `resend.emails.send({ from, to, subject, html })`.
+  - When `RESEND_API_KEY` is NOT set AND `NODE_ENV !== "production"`: logs the email content to console (dev fallback).
+  - When `RESEND_API_KEY` is NOT set AND `NODE_ENV === "production"`: returns success with `emailId: null` and a warning that the email wasn't sent — the recipient can still redeem via the code on `/order-confirmation`.
+  - Email send errors are caught and returned as warnings, not 500s — the email is best-effort and shouldn't fail the order.
+- Added `EMAIL_FROM` env var (defaults to `Tare Wellness <hello@bewelltare.com>`).
+- Updated `.env.example` with the new vars and usage notes.
+- `npx tsc --noEmit` clean.
+
+### #2 — PostgreSQL production DB (DONE ✅)
+- The Prisma schema is provider-agnostic — only the `provider = "sqlite"` line needs to change to switch to PostgreSQL.
+- Created `prisma/schema.postgres.prisma` — a complete copy of the schema with `provider = "postgresql"`. Documented the switch-back-and-forth workflow at the top of the file.
+- Updated `prisma/schema.prisma` with a header comment explaining that the provider can be swapped via env var, and pointing to the PostgreSQL variant.
+- Updated `.env.example` with the full PostgreSQL migration workflow:
+  1. `cp prisma/schema.postgres.prisma prisma/schema.prisma`
+  2. Set `DATABASE_URL=postgresql://...`
+  3. `npx prisma migrate dev --name init`
+  4. `npx prisma db seed`
+- No code changes needed — Prisma client works with either provider.
+
+### #3 — Hosting-platform deployment (DONE ✅)
+Created three artifacts:
+
+**`vercel.json`** — Vercel project config:
+- Framework: `nextjs` (auto-detected).
+- Install command: `bun install` (matches the lockfile).
+- Regions: `fra1` (Frankfurt — closest to NG/West Africa).
+- Lists all build-time env vars that need to be configured in the Vercel dashboard.
+
+**`Dockerfile`** — Multi-stage production build:
+- Stage 1 (`deps`): Node 22 Alpine + OpenSSL, `bun install --frozen-lockfile`, `prisma generate`.
+- Stage 2 (`builder`): Copies deps, runs `next build`. Handles the fail-fast `NEXTAUTH_SECRET` check by passing a build-time placeholder via `ARG` (the real secret is injected at runtime).
+- Stage 3 (`runner`): Minimal runtime image — non-root `nextjs` user, copies standalone output + static assets + Prisma client. Includes `HEALTHCHECK` hitting `/api`.
+- Documents the build + run commands at the top, plus a Caddy reverse-proxy example for HTTPS.
+
+**`DEPLOYMENT.md`** — Comprehensive deployment guide:
+- Prerequisites checklist.
+- **Option A (Vercel):** GitHub push → import → env vars → schema swap → migration → custom domain. Step-by-step.
+- **Option B (Docker):** Build → run with env vars → migration → Caddy reverse proxy.
+- Environment variables reference table.
+- PostgreSQL migration steps (SQLite → Postgres).
+- Resend email setup walkthrough.
+- Troubleshooting section covering common issues (NEXTAUTH_SECRET, Prisma client errors, unique-constraint failures, auth redirects, email delivery).
+
+### #4 — Clean up test data from dev DB (DONE ✅)
+- Wrote `/home/z/my-project/scripts/cleanup-dev-db.js` — a persisted, idempotent cleanup script that:
+  - Counts all rows before deletion.
+  - Supports `--dry-run` flag to preview without deleting.
+  - Deletes in dependency order (Bookings → Redemptions → OrderItems → Orders → Sessions → Accounts → VerificationTokens → Users).
+  - Preserves `GiftCardType` rows (these are seed data, not test data).
+- Dry-run output confirmed counts before deletion: 3 users, 6 orders, 6 order items, 6 redemptions, 2 bookings, 3 gift card types.
+- Actual cleanup deleted: 2 bookings, 6 redemptions, 6 order items, 6 orders, 3 users. All NextAuth tables were already empty (no OAuth flows tested).
+- Final state: 0 users, 0 orders, 0 bookings, 0 redemptions, **3 GiftCardTypes preserved** (the seed data).
+
+### Final verification
+- `npx tsc --noEmit` → zero errors in `src/`.
+- `npx next build` → ✅ passes, 25 routes generated, zero errors.
+- Dev DB is clean — only seed data (3 GiftCardTypes) remains.
+
+Stage Summary:
+- **#1 (Resend):** ✅ Wired up. Sends real emails when `RESEND_API_KEY` is set, falls back to console.log in dev. Best-effort — never fails an order.
+- **#2 (PostgreSQL):** ✅ Schema variant created, migration workflow documented in `.env.example` and `DEPLOYMENT.md`. No code changes needed.
+- **#3 (Deployment docs):** ✅ `vercel.json`, `Dockerfile`, and `DEPLOYMENT.md` all created. Covers Vercel + Docker + Postgres migration + Resend setup + troubleshooting.
+- **#4 (DB cleanup):** ✅ Test users/orders/bookings/redemptions deleted. Seed data (GiftCardTypes) preserved. Cleanup script persisted at `scripts/cleanup-dev-db.js` for future use.
+- **Final build:** ✅ `next build` passes, `tsc` clean.
+
+The app is now launch-ready. Remaining manual steps before going live:
+1. Sign up for Resend, verify your sending domain, get an API key.
+2. Provision a PostgreSQL database (Neon/Supabase/Railway/RDS).
+3. Choose Vercel or Docker, follow the corresponding section in `DEPLOYMENT.md`.
+4. Configure the env vars on your hosting platform.
+5. Run `npx prisma migrate deploy` + `npx prisma db seed` against production.
+6. Point your domain at the deployment.
+

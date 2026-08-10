@@ -1,21 +1,30 @@
-// Tare Wellness — Prisma Schema
-// Full data model for gift card platform with auth, orders, bookings
+// Tare Wellness — Prisma Schema (PostgreSQL variant for production)
 //
-// Database provider is chosen via the DATABASE_URL env var:
-//   - Dev (default):  DATABASE_URL=file:./db/custom.db           → SQLite
-//   - Production:     DATABASE_URL=postgresql://user:pass@host/db → PostgreSQL
+// This is a copy of schema.prisma with the datasource provider switched
+// to PostgreSQL. Use this when deploying to production.
 //
-// Both providers work with this schema. No code changes needed when
-// switching — just update DATABASE_URL and run `prisma migrate deploy`.
+// Switching workflow:
+//   1. Copy this file over schema.prisma:
+//        cp prisma/schema.postgres.prisma prisma/schema.prisma
+//   2. Set DATABASE_URL in .env to your PostgreSQL connection string:
+//        DATABASE_URL=postgresql://user:pass@host:5432/tare_wellness?schema=public
+//   3. Create and apply the migration:
+//        npx prisma migrate dev --name init
+//   4. Seed the database:
+//        npx prisma db seed
+//
+// To switch back to SQLite for local dev:
+//   1. Restore the SQLite schema:
+//        git checkout prisma/schema.prisma
+//   2. Restore the SQLite DATABASE_URL in .env:
+//        DATABASE_URL=file:/home/z/my-project/db/custom.db
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  // provider is auto-detected from DATABASE_URL by Prisma at runtime.
-  // Set to "sqlite" or "postgresql" explicitly if you want to lock it.
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 

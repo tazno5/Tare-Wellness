@@ -1,8 +1,27 @@
 import { NextResponse } from "next/server";
+import { Resend } from "resend";
 import { db } from "@/lib/db";
 
 // POST /api/email/send — Send gift card email to recipient
 // Called automatically after order creation, or manually to resend
+//
+// Email provider: Resend (https://resend.com)
+// Requires RESEND_API_KEY in env. If not set, falls back to console.log
+// so the app still works in dev without a real email provider.
+
+// Lazily instantiate the Resend client so we don't crash on import
+// when RESEND_API_KEY is missing (dev environments).
+let _resend: Resend | null = null;
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
+
+// Sender email — must be a verified domain in your Resend account.
+// Override via env if you want to use a different sender.
+const FROM_EMAIL =
+  process.env.EMAIL_FROM || "Tare Wellness <hello@bewelltare.com>";
 
 export async function POST(req: Request) {
   try {
@@ -95,28 +114,70 @@ export async function POST(req: Request) {
       </div>
     `;
 
-    // In production, send via email service (Resend, SendGrid, etc.)
-    // For now, log the email (will be replaced with real email service)
-    console.log(`📧 Email sent to: ${orderItem.recipientEmail}`);
-    console.log(`   Subject: ${emailSubject}`);
-    console.log(`   Redemption code: ${orderItem.redemption.code}`);
-    console.log(`   Card: ${orderItem.cardTitle} — ₦${orderItem.cardPrice.toLocaleString()}`);
+    // Send via Resend if API key is configured, otherwise log to console
+    // (so dev environments without RESEND_API_KEY still work).
+    const resend = getResend();
 
-    // TODO: Replace with real email service when ready:
-    // import { Resend } from 'resend';
-    // const resend = new Resend(process.env.RESEND_API_KEY);
-    // await resend.emails.send({
-    //   from: 'Tare Wellness <hello@bewelltare.com>',
-    //   to: orderItem.recipientEmail,
-    //   subject: emailSubject,
-    //   html: emailHtml,
-    // });
+    if (resend) {
+      try {
+        const { data, error } = await resend.emails.send({
+          from: FROM_EMAIL,
+          to: orderItem.recipientEmail,
+          subject: emailSubject,
+          html: emailHtml,
+        });
+
+        if (error) {
+          console.error("Resend API error:", error);
+          // Don't fail the order — email is best-effort. Return success
+          // with a warning so the client can show the redemption code
+          // even if the email didn't go through.
+          return NextResponse.json({
+            success: true,
+            sentTo: orderItem.recipientEmail,
+            orderItemId: orderItem.id,
+            emailId: null,
+            warning: "Email provider returned an error — recipient can still redeem via the code on this page.",
+            message: "Email queued for delivery (with warnings)",
+          });
+        }
+
+        return NextResponse.json({
+          success: true,
+          sentTo: orderItem.recipientEmail,
+          orderItemId: orderItem.id,
+          emailId: data?.id ?? null,
+          message: "Email queued for delivery",
+        });
+      } catch (sendError) {
+        console.error("Resend send exception:", sendError);
+        return NextResponse.json({
+          success: true,
+          sentTo: orderItem.recipientEmail,
+          orderItemId: orderItem.id,
+          emailId: null,
+          warning: "Failed to send email — recipient can still redeem via the code on this page.",
+          message: "Email send failed (best-effort)",
+        });
+      }
+    }
+
+    // Dev fallback — no RESEND_API_KEY configured. Log to console so
+    // developers can see the email content during local testing.
+    if (process.env.NODE_ENV !== "production") {
+      console.log("📧 [DEV] Email not sent — RESEND_API_KEY not set.");
+      console.log(`   To: ${orderItem.recipientEmail}`);
+      console.log(`   Subject: ${emailSubject}`);
+      console.log(`   Redemption code: ${orderItem.redemption.code}`);
+      console.log(`   Card: ${orderItem.cardTitle} — ₦${orderItem.cardPrice.toLocaleString()}`);
+    }
 
     return NextResponse.json({
       success: true,
       sentTo: orderItem.recipientEmail,
       orderItemId: orderItem.id,
-      message: "Email queued for delivery",
+      emailId: null,
+      message: "Email logged to console (no provider configured)",
     });
   } catch (error) {
     console.error("Email send error:", error);
