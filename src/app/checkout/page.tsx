@@ -220,23 +220,26 @@ function CheckoutContent() {
 
     // Build recipients payload from store data
     const storeRecipients = useStore.getState().recipients;
-    const recipientsPayload = (storeRecipients.length > 0 ? storeRecipients : recipientRows.map((r: { name: string; email: string; occasion: string; note: string }) => ({
-      cardSlug: cartItems[0]?.id ?? "three",
-      recipientName: r.name || "Recipient",
-      recipientEmail: r.email || "recipient@email.com",
-      occasion: r.occasion || "Just Because",
-      deliveryMode: "now",
-      scheduledFor: null,
-      personalNote: r.note || "",
-    }))).map((r) => ({
-      cardSlug: r.cardId ?? cartItems[0]?.id ?? "three",
-      recipientName: r.name,
-      recipientEmail: r.email,
-      occasion: r.occasion || "Just Because",
-      deliveryMode: r.deliveryMode ?? "now",
-      scheduledFor: null,
-      personalNote: r.note || "",
-    }));
+    const fallbackCardSlug = cartItems[0]?.id ?? "three";
+    const recipientsPayload = (storeRecipients.length > 0
+      ? storeRecipients.map((r) => ({
+          cardSlug: r.cardId || fallbackCardSlug,
+          recipientName: r.name || "Recipient",
+          recipientEmail: r.email || "recipient@email.com",
+          occasion: r.occasion || "Just Because",
+          deliveryMode: r.deliveryMode,
+          scheduledFor: null as string | null,
+          personalNote: r.note || "",
+        }))
+      : recipientRows.map((r) => ({
+          cardSlug: r.cardId || fallbackCardSlug,
+          recipientName: r.name || "Recipient",
+          recipientEmail: r.email || "recipient@email.com",
+          occasion: "Just Because",
+          deliveryMode: "now" as const,
+          scheduledFor: null as string | null,
+          personalNote: "",
+        })));
 
     // Generate a mock transaction reference (used as fallback or for display)
     const mockTxnRef = `TARE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;

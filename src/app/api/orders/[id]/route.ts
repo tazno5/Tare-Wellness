@@ -3,11 +3,12 @@ import { db } from "@/lib/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const order = await db.order.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         orderItems: {
           include: { redemption: true },
@@ -18,7 +19,7 @@ export async function GET(
     if (!order) {
       // Try by order number
       const orderByNumber = await db.order.findUnique({
-        where: { orderNumber: params.id },
+        where: { orderNumber: id },
         include: {
           orderItems: {
             include: { redemption: true },

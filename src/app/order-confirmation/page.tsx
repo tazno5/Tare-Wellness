@@ -168,7 +168,7 @@ function OrderConfirmationContent() {
       fetch(`/api/orders/${orderId}`)
         .then((res) => res.ok ? res.json() : null)
         .then((data) => { if (data) setApiOrder(data); })
-        .catch(() => {}, []);
+        .catch(() => {});
     }
   }, [orderId]);
 
@@ -242,10 +242,14 @@ function OrderConfirmationContent() {
       code: string;
       index: number;
       total: number;
+      price: number;
+      sessions: number;
+      gradient: string;
     }[] = [];
 
     let recipientQueue = [...recipientSource];
     cartSource.forEach((c) => {
+      const card = CARD_LOOKUP[c.id];
       for (let i = 0; i < c.qty; i++) {
         const r = recipientQueue.shift() ?? {
           uid: `${c.id}-${i}-${Math.random().toString(36).slice(2, 7)}`,
@@ -261,6 +265,9 @@ function OrderConfirmationContent() {
           code: seededRedemptionCode(`${r.uid}-${c.id}-${i}`),
           index: expanded.length,
           total: 0, // filled after we know length
+          price: card?.price ?? 0,
+          sessions: card?.sessions ?? 1,
+          gradient: card?.gradient ?? "from-[#FFF5EE] to-[#F5E8DC]",
         });
       }
     });
@@ -307,13 +314,13 @@ function OrderConfirmationContent() {
       toast({
         title: "Code copied",
         description: "Share it carefully — this is the key to their gift.",
-      }, []);
+      });
       setTimeout(() => setCopiedUid(null), 1800);
     } catch {
       toast({
         title: "Couldn't copy",
         description: "Select the code and copy manually.",
-      }, []);
+      });
     }
   };
 
@@ -491,7 +498,7 @@ function OrderConfirmationContent() {
                             cardPrice={r.price ?? card?.price ?? 0}
                             cardSessions={card?.sessions ?? 1}
                             cardGradient={card?.gradient ?? "from-[#FFF5EE] to-[#F5E8DC]"}
-                            cardTag={card?.tag ?? (card ? "Gift" : "")}
+                            cardTag={card?.title?.split("—")[0]?.trim() ?? "Gift"}
                             recipientName={r.name}
                             recipientEmail={r.email}
                             occasion={storeR?.occasion ?? "Just Because"}

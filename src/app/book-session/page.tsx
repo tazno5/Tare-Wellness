@@ -307,7 +307,7 @@ export default function BookSessionPage() {
           sessionTitle: session.title,
           sessionPrice: session.price,
           scheduledDate: selectedDate.toISOString(),
-          scheduledTime,
+          scheduledTime: selectedTime,
           therapistName: "Your Provider",
           redemptionCode: redemption.redeemed ? redemption.code : undefined,
         }),

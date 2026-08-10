@@ -124,3 +124,45 @@ Stage Summary:
 - All 5 protected routes now hard-redirect logged-out users to `/login?callbackUrl=<original-path>` and return them to that path after sign-in.
 - The inline `<Lock>` fallback UI shows during the brief redirect window for accessibility.
 - Pre-existing TypeScript errors (in `/api/orders`, `/order-confirmation` downstream code, `/checkout` recipient payload shape) are still present but unrelated to this task — they would need to be fixed separately before `next build` succeeds for production.
+
+---
+Task ID: verify-and-fix
+Agent: Super Z (main)
+Task: Three-step verification pass — (1) smoke-test protected routes, (2) fix pre-existing TypeScript errors, (3) re-run VLM fidelity check on home page.
+
+Work Log:
+
+### Step 1 — Smoke-test protected routes (PASSED)
+- For each of the 5 protected routes (`/book-session`, `/checkout`, `/cart-review`, `/order-confirmation`, `/booking-confirmation`), curled `http://localhost:3000/<path>` as an unauthenticated user and grepped the HTML for the auth-gate fallback UI text.
+- All 5 returned HTTP 200 with the expected "Sign in to …" + `callbackUrl=/<path>` strings in the server-rendered HTML — confirms the auth gate renders before client-side `router.replace` fires.
+
+### Step 2 — Fix pre-existing TypeScript errors (5 files patched, zero new errors)
+- `src/app/api/orders/route.ts:91` — replaced `session?.user?.id` with `(session?.user as { id?: string } | undefined)?.id` to match the NextAuth session augmentation pattern already used in the GET handler at line 184.
+- `src/app/api/orders/[id]/route.ts` — updated route handler signature from `{ params: { id: string } }` to `{ params: Promise<{ id: string }> }` and added `const { id } = await params;` to comply with Next.js 16's async params contract. Updated both `findUnique` calls to use the destructured `id`.
+- `src/app/order-confirmation/page.tsx`:
+  - Line 171 — removed stray `, []` second argument to `.catch(() => {})` (Promise.catch only takes one handler).
+  - Lines 310 & 316 — removed stray `, []` second argument to `toast({...})` calls (toast signature only takes one argument).
+  - Lines 237–275 — extended the fallback `expanded[]` receipt shape to include `price`, `sessions`, `gradient` fields (matching the API-data branch) so the union type resolves and downstream `r.price` references typecheck.
+  - Line 501 — replaced `card?.tag` (property doesn't exist on `CARD_LOOKUP`'s type) with `card?.title?.split("—")[0]?.trim() ?? "Gift"` to derive the small card label from the existing title.
+- `src/app/checkout/page.tsx:223` — rewrote the `recipientsPayload` builder as two explicit `.map()` branches (one for `storeRecipients`, one for `recipientRows` fallback) so each branch has a correct, self-consistent shape. Removed the misleading inline type annotation on the map callback that claimed `occasion`/`note` exist on `recipientRows` items.
+- `src/app/book-session/page.tsx:310` — replaced the `scheduledTime` shorthand (no variable of that name in scope) with `scheduledTime: selectedTime` (the actual state variable).
+- Re-ran `npx tsc --noEmit` — zero errors in any application source file. The only remaining 4 errors are in `examples/websocket/*` and `skills/image-edit|stock-analysis-skill/*` which are scaffold/template files not part of the app.
+
+### Step 3 — Re-run VLM fidelity check on home page (SCORE: 2/10, significant regression detected)
+- Took fresh full-page desktop screenshot (1440×900 viewport, full page) via `agent-browser` and saved to `/home/z/my-project/download/home-desktop-full.png`.
+- Ran `z-ai vision` with `glm-5v-turbo` model comparing the reference (`/home/z/my-project/upload/Home Page.jpg`) against the new screenshot. Raw JSON output saved to `/home/z/my-project/vlm-comparison.json`.
+- Result: **2/10 fidelity** (down from 6/10 in the previous check).
+- Key divergences identified:
+  1. **Background color** — implementation uses pale seashell cream (`#FFF5EE`); reference uses vibrant magenta/pink.
+  2. **Hero headline** — implementation says "Send Love They Can Feel"; reference says "Share the Joy, Book a Session."
+  3. **Hero CTAs** — implementation says "Send a Gift Card" / "I Received a Gift"; reference says "Buy a Gift Card" / "Redeem Gift Card".
+  4. **Hero illustration** — implementation uses `/hero.png` (different asset); reference shows two fantasy characters on a log.
+  5. **Navbar logo** — implementation uses generic "TARE" text + small icon; reference uses hand-drawn "Be Well Tare" bubble logo.
+  6. **Navbar links** — implementation has "FAQ" + "Login" but no "About"; reference has "About" but no "FAQ"/"Login".
+  7. **Night-mode toggle** — implementation has a moon-icon toggle in bottom-left; reference has none.
+- Performed a follow-up VLM check on just the footer area (`/home/z/my-project/download/home-footer-check.png` → `/home/z/my-project/vlm-footer-check.json`) — confirmed the 4-column footer (Shop / Resources / Stay in the Loop + brand column with socials) IS rendering correctly. The previous 6/10 VLM check's "missing footer" finding was inaccurate (likely because the previous screenshot was taken at viewport height without scrolling, so the `whileInView`-animated footer never triggered).
+
+Stage Summary:
+- **Step 1 (smoke test):** ✅ All 5 protected routes correctly render the auth-gate fallback UI for unauthenticated visitors.
+- **Step 2 (TS fixes):** ✅ All 5 pre-existing TypeScript errors in application code are fixed. `tsc --noEmit` reports zero errors in `src/`. The remaining 4 errors are in `examples/` and `skills/` template files unrelated to the app.
+- **Step 3 (VLM check):** ⚠️ Home page fidelity dropped from 6/10 to 2/10. The Hero component (`src/components/site/Hero.tsx`) and the global background (`src/app/globals.css` line 149: `--page-gradient-from: #FFF5EE`) have diverged significantly from the reference design. Restoring fidelity would require: reverting the headline to "Share the Joy, Book a Session.", reverting the CTA labels to "Buy a Gift Card" / "Redeem Gift Card", swapping the hero illustration asset, restoring the magenta background, and restoring the "Be Well Tare" bubble logo in the navbar.

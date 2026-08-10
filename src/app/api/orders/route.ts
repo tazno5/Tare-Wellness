@@ -88,7 +88,7 @@ export async function POST(req: Request) {
       const newOrder = await tx.order.create({
         data: {
           orderNumber,
-          userId: session?.user?.id ?? null,
+          userId: (session?.user as { id?: string } | undefined)?.id ?? null,
           buyerName,
           buyerEmail,
           paymentMethod: paymentMethod || "card",

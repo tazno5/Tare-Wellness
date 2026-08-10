@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Based on the screenshot of the footer area:\n\n(1) **Yes**, there is a multi-column footer with the following sections:\n*   **SHOP**: Gift Cards, Redeem a Card\n*   **RESOURCES**: How It Works, About, Privacy Policy, Terms & Conditions, FAQ\n*   **STAY IN THE LOOP**: Contact Us\n\n(2) **Yes**, there are social media icons for Instagram, Twitter (X), and an Email/Contact icon located below the brand description on the left side.\n\n(3) **Visible text and content includes:**\n*   **Brand Info:** \"TARE Be well.\" logo, \"Tare means love in Ijaw. This is how we send it.\"\n*   **Copyright:** \"© 2026 Tare Wellness Enterprise Ltd. All rights reserved.\"\n*   **Buttons (above footer):** \"Send a Gift Card\" and \"I Received a Gift\"\n*   **Navigation:** Links for \"Gift Cards\", \"Redeem\", \"How It Works\", \"FAQ\", \"Login\", and \"Send a Gift\".",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1786356450,
+  "id": "202608101807264d32123dd42743fa",
+  "model": "glm-5v-turbo",
+  "object": "chat.completion",
+  "request_id": "202608101807264d32123dd42743fa",
+  "usage": {
+    "completion_tokens": 223,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 2582,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "total_tokens": 2805
+  }
+}
