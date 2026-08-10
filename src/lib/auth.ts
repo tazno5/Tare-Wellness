@@ -61,5 +61,21 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
-  secret: process.env.NEXTAUTH_SECRET || "tare-wellness-dev-secret-change-in-production",
+  // In production, require NEXTAUTH_SECRET to be set explicitly. Falling back
+  // to a hardcoded string in production would let anyone forge session tokens.
+  secret: (() => {
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret) {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(
+          "NEXTAUTH_SECRET must be set in production. Run `openssl rand -base64 32` and add it to .env.",
+        );
+      }
+      console.warn(
+        "WARNING: NEXTAUTH_SECRET not set — using insecure dev fallback. Do NOT use in production.",
+      );
+      return "tare-wellness-dev-secret-change-in-production";
+    }
+    return secret;
+  })(),
 };

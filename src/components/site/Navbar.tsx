@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, User, LogOut, Wallet, ChevronDown } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -20,6 +21,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout, redemption } = useStore();
   const { toast } = useToast();
 
@@ -47,10 +49,19 @@ export default function Navbar() {
     return "relative font-sans text-sm font-semibold text-[#F10897] underline decoration-[#E8B6D5] decoration-2 underline-offset-4";
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Sign out of NextAuth first — this clears the JWT session cookie.
+    // Pass `redirect: false` so we control navigation ourselves.
+    try {
+      await signOut({ redirect: false });
+    } catch {
+      // Ignore signOut errors — we still want to clear local state below.
+    }
+    // Clear Zustand store so the client UI updates immediately.
     logout();
     setProfileOpen(false);
     toast({ title: "Signed out", description: "You've been logged out successfully." });
+    router.push("/");
   };
 
   return (

@@ -62,10 +62,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Generate booking number
-    const bookingNumber = `BK-2026-${Math.abs(
-      (userId + Date.now()).split("").reduce((s, c) => s + c.charCodeAt(0), 0) * 7919,
-    ).toString().padStart(6, "0").slice(0, 6)}`;
+    // Generate booking number — timestamp + random chars for uniqueness
+    // (same pattern as generateOrderNumber in /api/orders/route.ts).
+    // Old code used a deterministic sum that collided for same-user same-ms.
+    const ts = Date.now().toString(36).toUpperCase().slice(-6);
+    const rand = Math.random().toString(36).toUpperCase().slice(2, 6);
+    const bookingNumber = `BK-2026-${ts}${rand}`;
 
     // Generate meeting URL
     const meetingId = Math.random().toString(36).slice(2, 10);

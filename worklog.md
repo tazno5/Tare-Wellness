@@ -253,3 +253,63 @@ Stage Summary:
   3. `src/app/api/orders/route.ts` `generateRedemptionCode()` — produced colliding redemption codes (deterministic hash, no entropy).
   4. `src/app/login/page.tsx` + `src/app/layout.tsx` — login flow never actually set the NextAuth session cookie (manual fetch to credentials endpoint with empty CSRF). Fixed by using `signIn()` from `next-auth/react` and wrapping the app in `<SessionProvider>`.
 
+---
+Task ID: production-readiness
+Agent: Super Z (main)
+Task: Production-readiness pass — (1) fix booking-number collision bug, (2) verify logout flow clears NextAuth session, (3) test email sending, (4) document required env vars + fix NEXTAUTH_SECRET security issue.
+
+Work Log:
+
+### #1 — Booking number collision bug (FIXED ✅)
+- `src/app/api/bookings/route.ts` lines 66–68 had the same broken pattern as the order-number generator we fixed earlier: deterministic sum of `(userId + Date.now()).split("").reduce(...)` × 7919 → same number for same-user same-millisecond.
+- Replaced with the same pattern used in `generateOrderNumber()`: `BK-2026-` + last 6 chars of `Date.now().toString(36)` + 4 random chars from `Math.random().toString(36)`.
+- Verified by signing in → booking a session → `POST /api/bookings 201` with no collision error in dev.log.
+- `npx tsc --noEmit` clean.
+
+### #2 — Logout flow (BUG FOUND & FIXED ✅)
+- Inspected `src/components/site/Navbar.tsx` `handleLogout` — it only called `logout()` from the Zustand store, which clears local state but does NOT clear the NextAuth JWT session cookie. After "logout", a page refresh would re-authenticate the user from the still-valid cookie.
+- Fixed by:
+  - Importing `signOut` from `next-auth/react`.
+  - Importing `useRouter` from `next/navigation`.
+  - Making `handleLogout` async: calls `signOut({ redirect: false })` first (clears cookie), then `logout()` (clears Zustand), then `router.push("/")`.
+- Verified end-to-end:
+  - Before logout: `GET /api/auth/me` returns `{user: {id, name, email}}`.
+  - Clicked profile button → "Sign Out" → redirected to `/` → auth gate bounced to `/login?callbackUrl=/book-session`.
+  - After logout: `GET /api/auth/me` returns `{user: null}`. ✅ Session cookie properly cleared.
+- `npx tsc --noEmit` clean.
+
+### #3 — Email sending (VERIFIED ✅, stub confirmed)
+- Inspected `src/app/api/email/send/route.ts` — it's a deliberate stub: builds the email HTML (subject, gift card details, redemption code, personal note, "Redeem Now" CTA) but only `console.log`s it instead of sending via a real provider. TODO at line 105 shows the intended Resend integration.
+- Triggered the API directly via `fetch('/api/email/send', { method: 'POST', body: JSON.stringify({ orderItemId }) })` using a real orderItemId from the DB.
+- API returned 200 with `{ success: true, sentTo, orderItemId, message: "Email queued for delivery" }`.
+- Dev log showed `📧 Email sent to: sarah@email.com` — confirms the stub fires correctly.
+- **No actual email is delivered.** This is a deliberate stub, not a bug. The API contract is correct and ready for a real email provider (Resend/SendGrid) to be wired in via the commented-out code at lines 105–113.
+- The email send is automatically triggered after order creation (in `src/app/api/orders/route.ts` line 147–152, fire-and-forget `fetch` call).
+
+### #4 — Environment variables & NEXTAUTH_SECRET security fix (DONE ✅)
+- Scanned codebase for `process.env.*` usage. Found 4 references:
+  - `DATABASE_URL` (Prisma) — set in `.env`
+  - `NEXTAUTH_SECRET` (JWT signing) — **was falling back to hardcoded dev string** ⚠️ critical security issue
+  - `NEXTAUTH_URL` (callback URLs) — was falling back to `http://localhost:3000`
+  - `RESEND_API_KEY` (email) — referenced in commented-out code only
+- Created `/home/z/my-project/.env.example` documenting all required env vars with comments explaining each one, including how to generate `NEXTAUTH_SECRET` via `openssl rand -base64 32`.
+- **Security fix in `src/lib/auth.ts`:** The old code was:
+  ```ts
+  secret: process.env.NEXTAUTH_SECRET || "tare-wellness-dev-secret-change-in-production"
+  ```
+  This meant that if `NEXTAUTH_SECRET` wasn't set in production, the app would silently fall back to a publicly-known string — anyone could forge session tokens. Fixed with an IIFE that:
+  - Throws an explicit error if `NODE_ENV === "production"` and no secret is set (fail-fast).
+  - Logs a warning in dev mode if no secret is set.
+  - Returns the dev fallback only in dev mode.
+- Generated a real dev secret via `openssl rand -base64 32` and added it to `.env` along with `NEXTAUTH_URL=http://localhost:3000`.
+- Verified `next build` passes with the new fail-fast check (because the secret is now set in `.env`).
+- Verified dev server starts cleanly with no warnings.
+
+Stage Summary:
+- **#1 (booking number collision):** ✅ Fixed. Same pattern as the order-number fix. Verified with a real booking that returned 201.
+- **#2 (logout flow):** ✅ Fixed. `handleLogout` now calls `signOut()` from `next-auth/react` before clearing Zustand state. Verified the session cookie is actually cleared via `/api/auth/me`.
+- **#3 (email sending):** ✅ Verified. API stub works correctly (returns 200, logs the email content). No real email is sent — deliberate stub ready for Resend integration when the team is ready.
+- **#4 (env vars):** ✅ Documented in `.env.example`. Fixed critical `NEXTAUTH_SECRET` security issue — production now fails fast if the secret isn't set, instead of silently falling back to a publicly-known string.
+- **Final build:** ✅ `npx next build` passes, 25 routes generated, zero errors.
+- **Final typecheck:** ✅ `npx tsc --noEmit` reports zero errors in `src/`.
+
