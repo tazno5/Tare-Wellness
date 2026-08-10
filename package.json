@@ -11,7 +11,10 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
-    "seed": "npx tsx scripts/seed.ts"
+    "seed": "npx tsx --env-file=.env scripts/seed.ts"
+  },
+  "prisma": {
+    "seed": "npx tsx --env-file=.env scripts/seed.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
