@@ -68,3 +68,35 @@ The core hero visual identity (background color, headline font, CTAs, illustrati
 > **Different:** Background texture (gradient vs. flat), body text (longer in implementation), logo format (badge vs. plain text), added UI components (New Experience tag, trust badges, N toggle).
 >
 > **Bugs:** Critical missing footer section, navbar logo asset error, icon mismatch on Send a Gift button, content drift on sub-headline.
+
+---
+Task ID: fix-11
+Agent: Super Z (main)
+Task: Fix #11 — Add 'Confirm delete' modal for removing recipients on /recipient-details
+
+Work Log:
+- Verified `/home/z/my-project/src/app/recipient-details/page.tsx` already contains the confirm-delete modal:
+  - `deleteTarget` state at line 120 holds `{ uid, name } | null`
+  - Each recipient list row's trash button (line 611) sets `deleteTarget` instead of deleting directly
+  - `<AlertDialog>` at lines 669–696 renders with title "Remove {name}?", description "This will delete all details entered for this recipient. This action can't be undone.", a "Keep" cancel button, and a "Remove" confirm button that calls `handleDelete(deleteTarget.uid)` and clears state
+- No code changes required — fix is already complete.
+
+Stage Summary:
+- Fix #11 already implemented in the recipient-details page.
+- The AlertDialog pattern uses shadcn/ui `alert-dialog` primitive, with branded pink (#F10897) styling consistent with the rest of the page.
+
+---
+Task ID: fix-13
+Agent: Super Z (main)
+Task: Fix #13 — Add auth gate on /book-session (redirect logged-out users to /login)
+
+Work Log:
+- Read `/home/z/my-project/src/app/book-session/page.tsx` and confirmed the page already had a "soft" auth gate (lines 352–362) that conditionally rendered an inline sign-in prompt when `!user`, but did NOT actually redirect to /login.
+- Added a `useEffect` immediately after the page-gradient effect (lines 183–191) that calls `router.replace("/login?callbackUrl=/book-session")` whenever `user` becomes null.
+- Kept the existing inline sign-in UI as a brief fallback so users with slow JS or reduced-motion preferences still see something useful during the redirect window.
+- Verified `router` was already destructured from `useRouter()` at the top of the component (line 152).
+- Ran `npx tsc --noEmit` — no new errors introduced by this change. All TS errors shown are pre-existing in unrelated files (orders route, checkout, order-confirmation, examples/, skills/).
+
+Stage Summary:
+- Fix #13 implemented: logged-out users visiting `/book-session` are now hard-redirected to `/login?callbackUrl=/book-session`, and after signing in they will be returned to the booking page.
+- The inline fallback UI remains for accessibility during the brief redirect window.

@@ -180,6 +180,16 @@ export default function BookSessionPage() {
     };
   }, []);
 
+  // Auth gate: hard-redirect logged-out users to /login with a callbackUrl
+  // so they return here after signing in. The inline fallback UI below still
+  // renders during the brief redirect window for users with slow JS or
+  // reduced-motion preferences.
+  useEffect(() => {
+    if (!user) {
+      router.replace("/login?callbackUrl=/book-session");
+    }
+  }, [user, router]);
+
   // On any selection change, write booking details to the store
   useEffect(() => {
     const session = SESSION_TYPES.find((s) => s.id === sessionType)!;

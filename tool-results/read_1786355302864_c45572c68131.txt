@@ -1,0 +1,1029 @@
+     1→"use client";
+     2→
+     3→import { Suspense, useEffect, useMemo, useState } from "react";
+     4→import { useSearchParams, useRouter } from "next/navigation";
+     5→import Link from "next/link";
+     6→import Image from "next/image";
+     7→import { motion } from "framer-motion";
+     8→import {
+     9→  ArrowLeft,
+    10→  ArrowRight,
+    11→  Check,
+    12→  ChevronLeft,
+    13→  ChevronRight,
+    14→  Trash2,
+    15→  Gift,
+    16→  Mail,
+    17→  Clock,
+    18→  Sparkles,
+    19→  User,
+    20→  Send,
+    21→} from "lucide-react";
+    22→import { useStore, type RecipientData } from "@/lib/store";
+    23→import {
+    24→  AlertDialog,
+    25→  AlertDialogAction,
+    26→  AlertDialogCancel,
+    27→  AlertDialogContent,
+    28→  AlertDialogDescription,
+    29→  AlertDialogFooter,
+    30→  AlertDialogHeader,
+    31→  AlertDialogTitle,
+    32→} from "@/components/ui/alert-dialog";
+    33→import {
+    34→  Select,
+    35→  SelectContent,
+    36→  SelectItem,
+    37→  SelectTrigger,
+    38→  SelectValue,
+    39→} from "@/components/ui/select";
+    40→import { Switch } from "@/components/ui/switch";
+    41→import { useToast } from "@/hooks/use-toast";
+    42→
+    43→const CARD_LOOKUP: Record<
+    44→  string,
+    45→  { title: string; price: number; sessions: number; gradient: string }
+    46→> = {
+    47→  one: {
+    48→    title: "Seed — One Session",
+    49→    price: 20000,
+    50→    sessions: 1,
+    51→    gradient: "from-[#E8D5F2] via-[#F5E3F0] to-[#FBD7E3]",
+    52→  },
+    53→  two: {
+    54→    title: "Root — Two Sessions",
+    55→    price: 39000,
+    56→    sessions: 2,
+    57→    gradient: "from-[#FFE0C2] via-[#FFD1DC] to-[#FDC4D6]",
+    58→  },
+    59→  three: {
+    60→    title: "Grove — Three Sessions",
+    61→    price: 57000,
+    62→    sessions: 3,
+    63→    gradient: "from-[#D6C7F2] via-[#E0CBF0] to-[#F0CFE6]",
+    64→  },
+    65→};
+    66→
+    67→const OCCASIONS = [
+    68→  "Just Because",
+    69→  "Birthday",
+    70→  "Anniversary",
+    71→  "Thank You",
+    72→  "Thinking of You",
+    73→  "Congratulations",
+    74→  "Get Well Soon",
+    75→  "New Beginnings",
+    76→];
+    77→
+    78→const INSPIRATION_PILLS = [
+    79→  "You deserve rest.",
+    80→  "Take a moment for you.",
+    81→  "This is your time.",
+    82→  "Breathe. You've got this.",
+    83→  "Sending you peace.",
+    84→];
+    85→
+    86→const STEPS = [
+    87→  { label: "Gift Card", href: "/gift-cards" },
+    88→  { label: "Details", href: "/recipient-details" },
+    89→  { label: "Recipient", href: "/recipient-details" },
+    90→  { label: "Review", href: "/cart-review" },
+    91→  { label: "Checkout", href: "/checkout" },
+    92→];
+    93→
+    94→const container = {
+    95→  hidden: { opacity: 0 },
+    96→  show: {
+    97→    opacity: 1,
+    98→    transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+    99→  },
+   100→};
+   101→
+   102→const itemUp = {
+   103→  hidden: { opacity: 0, y: 18 },
+   104→  show: {
+   105→    opacity: 1,
+   106→    y: 0,
+   107→    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+   108→  },
+   109→};
+   110→
+   111→function RecipientDetailsContent() {
+   112→  const searchParams = useSearchParams();
+   113→  const router = useRouter();
+   114→  const { toast } = useToast();
+   115→  const { recipients, updateRecipient, confirmRecipient, deleteRecipient } =
+   116→    useStore();
+   117→
+   118→  const [activeIndex, setActiveIndex] = useState(0);
+   119→  const [hydrated, setHydrated] = useState(false);
+   120→  const [deleteTarget, setDeleteTarget] = useState<{ uid: string; name: string } | null>(null);
+   121→
+   122→  // Wait for the persisted store to hydrate from localStorage before rendering.
+   123→  // This prevents a flash of the empty state (recipients: []) on hard refresh.
+   124→  useEffect(() => {
+   125→    // useStore.persist.hasHydrated() is true once the persisted state is loaded.
+   126→    const unsub = useStore.persist.onFinishHydration(() => setHydrated(true));
+   127→    if (useStore.persist.hasHydrated()) setHydrated(true);
+   128→    return () => unsub();
+   129→  }, []);
+   130→
+   131→  // Set the locked-in page gradient — both in render (useMemo) and useEffect for hydration safety
+   132→  useMemo(() => {
+   133→    if (typeof document === "undefined") return;
+   134→    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+   135→    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
+   136→  }, []);
+   137→  useEffect(() => {
+   138→    document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
+   139→    document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
+   140→    return () => {
+   141→      document.body.style.removeProperty("--page-gradient-from");
+   142→      document.body.style.removeProperty("--page-gradient-to");
+   143→    };
+   144→  }, []);
+   145→
+   146→  // Safety: reset activeIndex to 0 if recipients list changes identity
+   147→  // (e.g., user went back to gift-cards and re-proceeded with a different cart).
+   148→  // This ensures we never point at a stale index.
+   149→  const recipientsKey = recipients.map((r) => r.uid).join(",");
+   150→  useEffect(() => {
+   151→    setActiveIndex(0);
+   152→  }, [recipientsKey]);
+   153→
+   154→  // Cart string for forward navigation (preserve across flow)
+   155→  const cartParam = searchParams.get("cart") ?? "";
+   156→  const totalParam = searchParams.get("total") ?? "";
+   157→  const forwardQuery = useMemo(() => {
+   158→    const q = new URLSearchParams();
+   159→    if (cartParam) q.set("cart", cartParam);
+   160→    if (totalParam) q.set("total", totalParam);
+   161→    const r = recipients
+   162→      .map((r) => `${r.uid}:${r.cardId}:${r.name || "_"}:${r.email || "_"}`)
+   163→      .join(",");
+   164→    if (r) q.set("recipients", r);
+   165→    return q.toString();
+   166→  }, [cartParam, totalParam, recipients]);
+   167→
+   168→  const allConfirmed =
+   169→    recipients.length > 0 && recipients.every((r) => r.confirmed);
+   170→
+   171→  // Clamp the active slide index when the recipients list shrinks.
+   172→  // Derived during render so we never call setState inside an effect.
+   173→  const safeActiveIndex = Math.min(
+   174→    activeIndex,
+   175→    Math.max(0, recipients.length - 1),
+   176→  );
+   177→  const current = recipients[safeActiveIndex];
+   178→
+   179→  const goToSlide = (next: number) => {
+   180→    if (next < 0 || next > recipients.length - 1) return;
+   181→    setActiveIndex(next);
+   182→  };
+   183→
+   184→  const handleConfirm = (uid: string) => {
+   185→    // Read the LATEST state from the store to avoid stale closure issues.
+   186→    const currentRecipients = useStore.getState().recipients;
+   187→    const r = currentRecipients.find((x) => x.uid === uid);
+   188→    if (!r) return false;
+   189→    if (!r.name.trim() || !r.email.trim()) {
+   190→      toast({
+   191→        title: "Almost there",
+   192→        description: "Please add a name and email before confirming.",
+   193→      });
+   194→      return false;
+   195→    }
+   196→    confirmRecipient(uid);
+   197→    toast({
+   198→      title: "Details confirmed",
+   199→      description: `${r.name}'s gift is ready to send.`,
+   200→    });
+   201→    return true;
+   202→  };
+   203→
+   204→  // "Next Recipient" — validates + confirms current, then advances to next slide.
+   205→  // Accepts fromIndex so each slide's button uses its own index.
+   206→  const handleNextRecipient = (fromIndex: number) => {
+   207→    const currentRecipients = useStore.getState().recipients;
+   208→    const r = currentRecipients[fromIndex];
+   209→    if (!r) return;
+   210→    const ok = handleConfirm(r.uid);
+   211→    if (!ok) return;
+   212→    const nextIdx = fromIndex + 1;
+   213→    if (nextIdx <= currentRecipients.length - 1) {
+   214→      setTimeout(() => goToSlide(nextIdx), 250);
+   215→    }
+   216→  };
+   217→
+   218→  // "Confirm & Proceed" — validates + confirms the LAST recipient, then navigates to cart review.
+   219→  const handleConfirmAndProceed = (fromIndex: number) => {
+   220→    const currentRecipients = useStore.getState().recipients;
+   221→    const r = currentRecipients[fromIndex];
+   222→    if (!r) return;
+   223→    const ok = handleConfirm(r.uid);
+   224→    if (!ok) return;
+   225→    // After confirming the last recipient, all should be confirmed.
+   226→    // Use a tiny delay so the store update flushes before navigating.
+   227→    setTimeout(() => {
+   228→      const latest = useStore.getState().recipients;
+   229→      if (latest.length > 0 && latest.every((r) => r.confirmed)) {
+   230→        router.push(`/cart-review?${forwardQuery}`);
+   231→      } else {
+   232→        toast({
+   233→          title: "Almost there",
+   234→          description: "Some recipients still need confirmed details.",
+   235→        });
+   236→      }
+   237→    }, 100);
+   238→  };
+   239→
+   240→  const handleDelete = (uid: string) => {
+   241→    deleteRecipient(uid);
+   242→    toast({
+   243→      title: "Recipient removed",
+   244→      description: "The gift summary has been updated.",
+   245→    });
+   246→  };
+   247→
+   248→  const handleContinue = () => {
+   249→    if (!allConfirmed) {
+   250→      toast({
+   251→        title: "Confirm all recipients",
+   252→        description: "Each recipient needs confirmed details before review.",
+   253→      });
+   254→      return;
+   255→    }
+   256→    router.push(`/cart-review?${forwardQuery}`);
+   257→  };
+   258→
+   259→  const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
+   260→
+   261→  return (
+   262→    <main className="relative flex flex-1 flex-col">
+   263→      {/* Decorative blooms */}
+   264→      <div
+   265→        aria-hidden
+   266→        className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-[#B5E1C3]/25 blur-3xl"
+   267→      />
+   268→      <div
+   269→        aria-hidden
+   270→        className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
+   271→      />
+   272→
+   273→      {/* ============ HERO ============ */}
+   274→      <section className="relative w-full overflow-hidden px-5 pb-8 pt-6 sm:px-8 sm:pb-12 lg:px-12">
+   275→        <div className="relative mx-auto flex w-full max-w-6xl flex-col items-center text-center">
+   276→          <motion.div
+   277→            initial={{ opacity: 0, y: -10 }}
+   278→            animate={{ opacity: 1, y: 0 }}
+   279→            transition={{ duration: 0.5 }}
+   280→            className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-[0_4px_15px_rgba(78, 0, 48, 0.08)]"
+   281→          >
+   282→            <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
+   283→            <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
+   284→              Step 3 · Recipient Details
+   285→            </span>
+   286→          </motion.div>
+   287→
+   288→          <motion.h1
+   289→            initial={{ opacity: 0, y: 20 }}
+   290→            animate={{ opacity: 1, y: 0 }}
+   291→            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+   292→            className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-[#F10897] sm:text-5xl lg:text-6xl"
+   293→          >
+   294→            Tell us who&apos;s receiving care.
+   295→          </motion.h1>
+   296→
+   297→          <motion.p
+   298→            initial={{ opacity: 0, y: 20 }}
+   299→            animate={{ opacity: 1, y: 0 }}
+   300→            transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+   301→            className="mt-4 max-w-xl font-sans text-[15px] leading-relaxed text-maroon/85 sm:text-[17px]"
+   302→          >
+   303→            One slide per recipient. Add their name, choose the occasion, write
+   304→            a note if you like, and confirm.
+   305→          </motion.p>
+   306→
+   307→          {/* Hero image */}
+   308→          <motion.div
+   309→            initial={{ opacity: 0, scale: 0.94, y: 24 }}
+   310→            animate={{ opacity: 1, scale: 1, y: 0 }}
+   311→            transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+   312→            className="relative mt-6 aspect-[534/500] w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[360px]"
+   313→          >
+   314→            <div
+   315→              aria-hidden
+   316→              className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl"
+   317→            />
+   318→            <Image
+   319→              src="/hero-recipient.png"
+   320→              alt="Tare Wellness — sharing a moment of care"
+   321→              fill
+   322→              priority
+   323→              sizes="(max-width: 640px) 70vw, (max-width: 1024px) 320px, 360px"
+   324→              className="hero-shadow relative animate-float-slow object-contain"
+   325→            />
+   326→          </motion.div>
+   327→
+   328→          {/* 5-step stepper */}
+   329→          <motion.div
+   330→            initial={{ opacity: 0, y: 16 }}
+   331→            animate={{ opacity: 1, y: 0 }}
+   332→            transition={{ duration: 0.6, delay: 0.3 }}
+   333→            className="mt-6 w-full max-w-3xl"
+   334→          >
+   335→            <Stepper steps={STEPS} active={2} />
+   336→          </motion.div>
+   337→        </div>
+   338→      </section>
+   339→
+   340→      {/* ============ HYDRATION GUARD / EMPTY STATE ============ */}
+   341→      {!hydrated ? (
+   342→        <section className="relative w-full px-5 pb-32 pt-6 sm:px-8 lg:px-12">
+   343→          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-12">
+   344→            <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blush text-[#F10897]">
+   345→              <span className="h-6 w-6 animate-spin rounded-full border-2 border-maroon/30 border-t-maroon" />
+   346→            </div>
+   347→            <h2 className="mt-4 font-fraunces text-2xl font-bold text-maroon">
+   348→              Loading your gifts…
+   349→            </h2>
+   350→            <p className="mt-2 font-sans text-sm text-maroon/70">
+   351→              One moment while we gather your recipient details.
+   352→            </p>
+   353→          </div>
+   354→        </section>
+   355→      ) : recipients.length === 0 ? (
+   356→        <section className="relative w-full px-5 pb-32 pt-6 sm:px-8 lg:px-12">
+   357→          <div className="mx-auto w-full max-w-2xl rounded-3xl bg-white/85 p-8 text-center shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-12">
+   358→            <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-blush text-[#F10897]">
+   359→              <Gift className="h-6 w-6" strokeWidth={2.5} />
+   360→            </div>
+   361→            <h2 className="mt-4 font-fraunces text-2xl font-bold text-maroon">
+   362→              No recipients yet
+   363→            </h2>
+   364→            <p className="mt-2 font-sans text-sm text-maroon/70">
+   365→              Choose a gift card first — we&apos;ll create a recipient slide for
+   366→              every card in your cart.
+   367→            </p>
+   368→            <Link
+   369→              href="/gift-cards"
+   370→              className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
+   371→            >
+   372→              <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+   373→              Back to Gift Cards
+   374→            </Link>
+   375→          </div>
+   376→        </section>
+   377→      ) : (
+   378→        <>
+   379→          {/* ============ CAROUSEL FORM + PREVIEW ============ */}
+   380→          <section className="relative w-full px-5 pb-32 pt-2 sm:px-8 lg:px-12">
+   381→            <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
+   382→              {/* LEFT: Carousel form (locked width) */}
+   383→              <motion.div
+   384→                variants={container}
+   385→                initial="hidden"
+   386→                animate="show"
+   387→                className="mx-auto flex w-full max-w-lg flex-col gap-4"
+   388→              >
+   389→                {/* Slide nav header */}
+   390→                <motion.div
+   391→                  variants={itemUp}
+   392→                  className="flex w-full items-center justify-between overflow-hidden rounded-2xl bg-white/80 p-3 shadow-[0_8px_30px_rgba(78, 0, 48, 0.08)] backdrop-blur-sm"
+   393→                >
+   394→                  <button
+   395→                    type="button"
+   396→                    onClick={() => goToSlide(safeActiveIndex - 1)}
+   397→                    disabled={safeActiveIndex === 0}
+   398→                    aria-label="Previous recipient"
+   399→                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blush text-[#F10897] transition-all hover:bg-blush/70 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+   400→                  >
+   401→                    <ChevronLeft className="h-5 w-5" strokeWidth={2.5} />
+   402→                  </button>
+   403→                  <div className="flex items-center gap-2">
+   404→                    <span className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   405→                      Recipient
+   406→                    </span>
+   407→                    <span className="font-fraunces text-base font-bold text-maroon">
+   408→                      {safeActiveIndex + 1}{" "}
+   409→                      <span className="text-maroon/50">/ {recipients.length}</span>
+   410→                    </span>
+   411→                  </div>
+   412→                  <button
+   413→                    type="button"
+   414→                    onClick={() => goToSlide(safeActiveIndex + 1)}
+   415→                    disabled={safeActiveIndex === recipients.length - 1}
+   416→                    aria-label="Next recipient"
+   417→                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blush text-[#F10897] transition-all hover:bg-blush/70 active:scale-90 disabled:cursor-not-allowed disabled:opacity-40"
+   418→                  >
+   419→                    <ChevronRight className="h-5 w-5" strokeWidth={2.5} />
+   420→                  </button>
+   421→                </motion.div>
+   422→
+   423→                {/* Dot indicators */}
+   424→                <div className="flex flex-wrap items-center justify-center gap-1.5">
+   425→                  {recipients.map((r, i) => (
+   426→                    <button
+   427→                      key={r.uid}
+   428→                      type="button"
+   429→                      onClick={() => goToSlide(i)}
+   430→                      aria-label={`Go to recipient ${i + 1}`}
+   431→                      className={`h-2 rounded-full transition-all duration-300 ${
+   432→                        i === safeActiveIndex
+   433→                          ? "w-7 bg-[#F10897]"
+   434→                          : r.confirmed
+   435→                            ? "w-2 bg-[#4E0030]/60"
+   436→                            : "w-2 bg-maroon/25"
+   437→                      }`}
+   438→                    />
+   439→                  ))}
+   440→                </div>
+   441→
+   442→                {/* Slide content — CSS transform carousel track (locked dimensions) */}
+   443→                <div className="relative w-full min-h-[580px] overflow-hidden rounded-3xl sm:min-h-[560px]">
+   444→                  <div
+   445→                    className="flex transition-transform duration-[400ms] ease-in-out"
+   446→                    style={{
+   447→                      transform: `translateX(-${safeActiveIndex * 100}%)`,
+   448→                    }}
+   449→                  >
+   450→                    {recipients.map((r, i) => (
+   451→                      <div
+   452→                        key={r.uid}
+   453→                        className="w-full shrink-0"
+   454→                        aria-hidden={i !== safeActiveIndex}
+   455→                      >
+   456→                        <RecipientSlide
+   457→                          recipient={r}
+   458→                          recipientNumber={i + 1}
+   459→                          totalRecipients={recipients.length}
+   460→                          isFirst={i === 0}
+   461→                          isLast={i === recipients.length - 1}
+   462→                          onBack={() => goToSlide(i - 1)}
+   463→                          onNextRecipient={() => handleNextRecipient(i)}
+   464→                          onConfirmAndProceed={() => handleConfirmAndProceed(i)}
+   465→                          onUpdate={(patch) => updateRecipient(r.uid, patch)}
+   466→                        />
+   467→                      </div>
+   468→                    ))}
+   469→                  </div>
+   470→                </div>
+   471→              </motion.div>
+   472→
+   473→              {/* RIGHT: Sticky Preview + Gift summary (hero illustration removed) */}
+   474→              <motion.div
+   475→                variants={container}
+   476→                initial="hidden"
+   477→                animate="show"
+   478→                className="flex flex-col gap-6 lg:sticky lg:top-28"
+   479→              >
+   480→                {/* Live Card Preview */}
+   481→                <motion.div
+   482→                  variants={itemUp}
+   483→                  className="rounded-3xl bg-white/80 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
+   484→                >
+   485→                  <div className="flex items-center justify-between">
+   486→                    <h3 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+   487→                      Live Card Preview
+   488→                    </h3>
+   489→                    <span className="inline-flex items-center gap-1 rounded-full bg-blush px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-[#F10897]">
+   490→                      <span className="h-1.5 w-1.5 rounded-full bg-[#F10897] animate-pulse" />
+   491→                      Live
+   492→                    </span>
+   493→                  </div>
+   494→
+   495→                  {current ? (
+   496→                    <div className="mt-4">
+   497→                      <div
+   498→                        className={`relative flex aspect-[5/3] flex-col justify-between overflow-hidden rounded-2xl bg-gradient-to-br ${
+   499→                          CARD_LOOKUP[current.cardId]?.gradient ??
+   500→                          "from-[#FFF5EE] to-[#F5E8DC]"
+   501→                        } p-5 shadow-[0_10px_30px_rgba(78, 0, 48, 0.18)]`}
+   502→                      >
+   503→                        <div className="flex items-start justify-between">
+   504→                          <div className="flex items-center gap-2">
+   505→                            <Image
+   506→                              src="/logo.png"
+   507→                              alt="Tare logo"
+   508→                              width={28}
+   509→                              height={28}
+   510→                              className="h-7 w-7 object-contain drop-shadow-[0_2px_4px_rgba(78, 0, 48, 0.2)]"
+   511→                            />
+   512→                            <div>
+   513→                              <p className="font-fraunces text-lg font-bold text-maroon sm:text-xl">
+   514→                                Tare Gift Card
+   515→                              </p>
+   516→                              <p className="mt-0.5 font-sans text-[10px] font-bold uppercase tracking-[0.22em] text-maroon/70">
+   517→                                {CARD_LOOKUP[current.cardId]?.title ?? "Gift"}
+   518→                              </p>
+   519→                            </div>
+   520→                          </div>
+   521→                          <span className="rounded-full bg-white/70 px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-maroon">
+   522→                            {current.occasion}
+   523→                          </span>
+   524→                        </div>
+   525→                        <div className="space-y-1">
+   526→                          <p className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon/60">
+   527→                            For
+   528→                          </p>
+   529→                          <p className="font-fraunces text-xl font-bold text-maroon sm:text-2xl">
+   530→                            {current.name || "Their name"}
+   531→                          </p>
+   532→                          {current.note ? (
+   533→                            <p className="mt-1 max-w-[90%] font-fraunces text-xs italic text-maroon/80">
+   534→                              &ldquo;{current.note}&rdquo;
+   535→                            </p>
+   536→                          ) : null}
+   537→                        </div>
+   538→                        <div className="flex items-end justify-between">
+   539→                          <span className="font-sans text-[10px] font-medium text-maroon/70">
+   540→                            {current.email || "they@example.com"}
+   541→                          </span>
+   542→                          <span className="font-sans text-base font-extrabold text-maroon">
+   543→                            {formatPrice(CARD_LOOKUP[current.cardId]?.price ?? 0)}
+   544→                          </span>
+   545→                        </div>
+   546→                      </div>
+   547→                      <p className="mt-3 text-center font-sans text-xs text-maroon/60">
+   548→                        Updates instantly as you type.
+   549→                      </p>
+   550→                    </div>
+   551→                  ) : (
+   552→                    <p className="mt-4 font-sans text-sm text-maroon/60">
+   553→                      No recipient selected.
+   554→                    </p>
+   555→                  )}
+   556→                </motion.div>
+   557→
+   558→                {/* Dark Gift Summary */}
+   559→                <motion.div
+   560→                  variants={itemUp}
+   561→                  className="rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(78, 0, 48, 0.30)] sm:p-6"
+   562→                >
+   563→                  <div className="flex items-center justify-between">
+   564→                    <h3 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
+   565→                      Gift Summary
+   566→                    </h3>
+   567→                    <span className="rounded-full bg-white/15 px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-white">
+   568→                      {recipients.length}{" "}
+   569→                      {recipients.length === 1 ? "Gift" : "Gifts"}
+   570→                    </span>
+   571→                  </div>
+   572→
+   573→                  <ul className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin]">
+   574→                    {recipients.map((r, i) => {
+   575→                      const c = CARD_LOOKUP[r.cardId];
+   576→                      return (
+   577→                        <li
+   578→                          key={r.uid}
+   579→                          className={`flex items-center gap-3 rounded-2xl bg-white/10 p-3 transition-colors ${
+   580→                            i === safeActiveIndex ? "ring-2 ring-[#F10897]" : ""
+   581→                          }`}
+   582→                        >
+   583→                          <button
+   584→                            type="button"
+   585→                            onClick={() => goToSlide(i)}
+   586→                            className="flex flex-1 items-center gap-3 text-left"
+   587→                            aria-label={`Edit ${r.name || "recipient"}`}
+   588→                          >
+   589→                            <div
+   590→                              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${
+   591→                                c?.gradient ?? "from-[#FFF5EE] to-[#F5E8DC]"
+   592→                              } font-sans text-xs font-bold text-maroon`}
+   593→                            >
+   594→                              {(r.name || "?").charAt(0).toUpperCase()}
+   595→                            </div>
+   596→                            <div className="min-w-0 flex-1">
+   597→                              <p className="truncate font-sans text-sm font-bold text-white">
+   598→                                {r.name || `Recipient ${i + 1}`}
+   599→                              </p>
+   600→                              <p className="truncate font-sans text-[11px] text-blush/80">
+   601→                                {c?.title ?? "Gift"} ·{" "}
+   602→                                {r.confirmed ? "Confirmed" : "Draft"}
+   603→                              </p>
+   604→                            </div>
+   605→                            {r.confirmed && (
+   606→                              <Check className="h-4 w-4 text-[#F10897]" strokeWidth={2.5} />
+   607→                            )}
+   608→                          </button>
+   609→                          <button
+   610→                            type="button"
+   611→                            onClick={() => setDeleteTarget({ uid: r.uid, name: r.name || `Recipient ${i + 1}` })}
+   612→                            aria-label={`Delete ${r.name || "recipient"}`}
+   613→                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:bg-[#F10897] active:scale-90"
+   614→                          >
+   615→                            <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+   616→                          </button>
+   617→                        </li>
+   618→                      );
+   619→                    })}
+   620→                  </ul>
+   621→
+   622→                  <div className="mt-4 flex items-center justify-between border-t border-white/15 pt-4">
+   623→                    <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-blush/80">
+   624→                      {allConfirmed ? "All confirmed" : "Confirm to continue"}
+   625→                    </span>
+   626→                    <span className="font-fraunces text-xl font-bold text-white">
+   627→                      {formatPrice(
+   628→                        recipients.reduce(
+   629→                          (sum, r) =>
+   630→                            sum + (CARD_LOOKUP[r.cardId]?.price ?? 0),
+   631→                          0,
+   632→                        ),
+   633→                      )}
+   634→                    </span>
+   635→                  </div>
+   636→                </motion.div>
+   637→              </motion.div>
+   638→            </div>
+   639→          </section>
+   640→
+   641→          {/* ============ BOTTOM NAV ============ */}
+   642→          <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
+   643→            <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-between">
+   644→              <Link
+   645→                href="/gift-cards"
+   646→                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95 sm:w-auto"
+   647→              >
+   648→                <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+   649→                Gift Card
+   650→              </Link>
+   651→              <button
+   652→                type="button"
+   653→                onClick={handleContinue}
+   654→                disabled={!allConfirmed}
+   655→                className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+   656→              >
+   657→                Continue to Review
+   658→                <ArrowRight
+   659→                  className="h-4 w-4 transition-transform group-hover:translate-x-1"
+   660→                  strokeWidth={2.5}
+   661→                />
+   662→              </button>
+   663→            </div>
+   664→          </section>
+   665→        </>
+   666→      )}
+   667→
+   668→      {/* ============ DELETE CONFIRMATION MODAL ============ */}
+   669→      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+   670→        <AlertDialogContent className="rounded-3xl border-0 bg-white p-6 shadow-[0_18px_50px_rgba(78,0,48,0.20)] sm:p-8">
+   671→          <AlertDialogHeader>
+   672→            <AlertDialogTitle className="font-fraunces text-xl font-bold text-[#4E0030]">
+   673→              Remove {deleteTarget?.name}?
+   674→            </AlertDialogTitle>
+   675→            <AlertDialogDescription className="font-sans text-sm text-[#4E0030]/70">
+   676→              This will delete all details entered for this recipient. This action can&apos;t be undone.
+   677→            </AlertDialogDescription>
+   678→          </AlertDialogHeader>
+   679→          <AlertDialogFooter className="mt-2">
+   680→            <AlertDialogCancel className="rounded-full border-[0.3px] border-[#F10897] font-sans text-sm font-semibold text-[#F10897] hover:bg-[#E8B6D5]/15">
+   681→              Keep
+   682→            </AlertDialogCancel>
+   683→            <AlertDialogAction
+   684→              onClick={() => {
+   685→                if (deleteTarget) {
+   686→                  handleDelete(deleteTarget.uid);
+   687→                  setDeleteTarget(null);
+   688→                }
+   689→              }}
+   690→              className="rounded-full bg-[#F10897] font-sans text-sm font-semibold text-white hover:bg-[#d4007d]"
+   691→            >
+   692→              Remove
+   693→            </AlertDialogAction>
+   694→          </AlertDialogFooter>
+   695→        </AlertDialogContent>
+   696→      </AlertDialog>
+   697→    </main>
+   698→  );
+   699→}
+   700→
+   701→/* ============ Recipient Slide Form ============ */
+   702→function RecipientSlide({
+   703→  recipient,
+   704→  recipientNumber,
+   705→  totalRecipients,
+   706→  isFirst,
+   707→  isLast,
+   708→  onBack,
+   709→  onNextRecipient,
+   710→  onConfirmAndProceed,
+   711→  onUpdate,
+   712→}: {
+   713→  recipient: RecipientData;
+   714→  recipientNumber: number;
+   715→  totalRecipients: number;
+   716→  isFirst: boolean;
+   717→  isLast: boolean;
+   718→  onBack: () => void;
+   719→  onNextRecipient: () => void;
+   720→  onConfirmAndProceed: () => void;
+   721→  onUpdate: (patch: Partial<RecipientData>) => void;
+   722→}) {
+   723→  const isConfirmed = recipient.confirmed;
+   724→
+   725→  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+   726→    e.preventDefault();
+   727→    // Form submit (Enter key) → same as the primary action button.
+   728→    // If last recipient → Confirm & Proceed, else → Next Recipient.
+   729→    if (isLast) {
+   730→      onConfirmAndProceed();
+   731→    } else {
+   732→      onNextRecipient();
+   733→    }
+   734→  };
+   735→
+   736→  return (
+   737→    <form
+   738→      onSubmit={handleSubmit}
+   739→      className="flex min-h-[560px] flex-col space-y-4 rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
+   740→    >
+   741→      {/* Recipient header — "Recipient X of Y" (fixed height to prevent jitter) */}
+   742→      <div className="flex h-12 w-full items-center justify-between overflow-hidden">
+   743→        <div className="inline-flex min-w-0 items-center gap-2">
+   744→          <div className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blush text-[#F10897]">
+   745→            <User className="h-4 w-4" strokeWidth={2.5} />
+   746→          </div>
+   747→          <div className="flex min-w-0 flex-col">
+   748→            <span className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon/60">
+   749→              Recipient {recipientNumber} of {totalRecipients}
+   750→            </span>
+   751→            <span className="truncate font-fraunces text-lg font-bold text-maroon">
+   752→              {recipient.name || "New Recipient"}
+   753→            </span>
+   754→          </div>
+   755→        </div>
+   756→        {isConfirmed && (
+   757→          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#F10897] px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white">
+   758→            <Check className="h-3 w-3" strokeWidth={2.5} />
+   759→            Confirmed
+   760→          </span>
+   761→        )}
+   762→      </div>
+   763→
+   764→      {/* Name */}
+   765→      <div>
+   766→        <label
+   767→          htmlFor={`name-${recipient.uid}`}
+   768→          className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   769→        >
+   770→          Recipient Name <span className="text-[#F10897]">*</span>
+   771→        </label>
+   772→        <input
+   773→          id={`name-${recipient.uid}`}
+   774→          type="text"
+   775→          required
+   776→          value={recipient.name}
+   777→          onChange={(e) => onUpdate({ name: e.target.value })}
+   778→          placeholder="e.g. Adaobi Okafor"
+   779→          className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#C7B2E2] focus:outline-none focus:ring-2 focus:ring-[#C7B2E2]/40"
+   780→        />
+   781→      </div>
+   782→
+   783→      {/* Email */}
+   784→      <div>
+   785→        <label
+   786→          htmlFor={`email-${recipient.uid}`}
+   787→          className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   788→        >
+   789→          Recipient Email <span className="text-[#F10897]">*</span>
+   790→        </label>
+   791→        <div className="relative mt-2">
+   792→          <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
+   793→          <input
+   794→            id={`email-${recipient.uid}`}
+   795→            type="email"
+   796→            required
+   797→            value={recipient.email}
+   798→            onChange={(e) => onUpdate({ email: e.target.value })}
+   799→            placeholder="they@example.com"
+   800→            className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#C7B2E2] focus:outline-none focus:ring-2 focus:ring-[#C7B2E2]/40"
+   801→          />
+   802→        </div>
+   803→      </div>
+   804→
+   805→      {/* Occasion */}
+   806→      <div>
+   807→        <label className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70">
+   808→          Occasion
+   809→        </label>
+   810→        <Select
+   811→          value={recipient.occasion}
+   812→          onValueChange={(v) => onUpdate({ occasion: v })}
+   813→        >
+   814→          <SelectTrigger
+   815→            className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-maroon focus:border-[#C7B2E2] focus:ring-[#C7B2E2]/40"
+   816→            aria-label="Occasion"
+   817→          >
+   818→            <SelectValue placeholder="Choose an occasion" />
+   819→          </SelectTrigger>
+   820→          <SelectContent className="rounded-2xl">
+   821→            {OCCASIONS.map((o) => (
+   822→              <SelectItem key={o} value={o} className="font-sans text-sm">
+   823→                {o}
+   824→              </SelectItem>
+   825→            ))}
+   826→          </SelectContent>
+   827→        </Select>
+   828→      </div>
+   829→
+   830→      {/* Delivery mode toggle */}
+   831→      <div className="flex items-center justify-between rounded-2xl border border-maroon/15 bg-blush/40 p-4">
+   832→        <div className="flex items-start gap-3">
+   833→          <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-maroon shadow-sm">
+   834→            {recipient.deliveryMode === "now" ? (
+   835→              <Send className="h-4 w-4" strokeWidth={2.5} />
+   836→            ) : (
+   837→              <Clock className="h-4 w-4" strokeWidth={2.5} />
+   838→            )}
+   839→          </div>
+   840→          <div>
+   841→            <p className="font-sans text-sm font-bold text-maroon">
+   842→              {recipient.deliveryMode === "now"
+   843→                ? "Send immediately"
+   844→                : "Schedule for later"}
+   845→            </p>
+   846→            <p className="font-sans text-xs text-maroon/70">
+   847→              {recipient.deliveryMode === "now"
+   848→                ? "We'll email them as soon as you check out."
+   849→                : "Choose a delivery date at checkout."}
+   850→            </p>
+   851→          </div>
+   852→        </div>
+   853→        <Switch
+   854→          checked={recipient.deliveryMode === "schedule"}
+   855→          onCheckedChange={(checked) =>
+   856→            onUpdate({ deliveryMode: checked ? "schedule" : "now" })
+   857→          }
+   858→          aria-label="Toggle delivery mode"
+   859→          className="data-[state=checked]:bg-[#F10897] data-[state=unchecked]:bg-maroon/20"
+   860→        />
+   861→      </div>
+   862→
+   863→      {/* Personal note */}
+   864→      <div>
+   865→        <label
+   866→          htmlFor={`note-${recipient.uid}`}
+   867→          className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+   868→        >
+   869→          Personal Note
+   870→        </label>
+   871→        <textarea
+   872→          id={`note-${recipient.uid}`}
+   873→          rows={3}
+   874→          value={recipient.note}
+   875→          onChange={(e) => onUpdate({ note: e.target.value })}
+   876→          placeholder="A word from you..."
+   877→          className="mt-2 w-full rounded-2xl border border-maroon/15 bg-white px-4 py-3 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#C7B2E2] focus:outline-none focus:ring-2 focus:ring-[#C7B2E2]/40"
+   878→        />
+   879→        <div className="mt-3 flex flex-wrap gap-2">
+   880→          {INSPIRATION_PILLS.map((pill) => (
+   881→            <button
+   882→              key={pill}
+   883→              type="button"
+   884→              onClick={() => onUpdate({ note: pill })}
+   885→              className="rounded-full bg-blush px-3 py-1.5 font-sans text-[11px] font-semibold text-[#F10897] transition-all hover:bg-blush-dark hover:scale-105 active:scale-95"
+   886→            >
+   887→              {pill}
+   888→            </button>
+   889→          ))}
+   890→        </div>
+   891→      </div>
+   892→
+   893→      {/* Smart action buttons */}
+   894→      <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
+   895→        {/* Back button — secondary, only shown if not the first recipient */}
+   896→        {!isFirst ? (
+   897→          <button
+   898→            type="button"
+   899→            onClick={onBack}
+   900→            className="inline-flex items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-5 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-sm transition-all duration-200 hover:bg-[#E8B6D5]/15 active:scale-95 sm:w-auto"
+   901→          >
+   902→            <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
+   903→            Back
+   904→          </button>
+   905→        ) : null}
+   906→
+   907→        {/* Primary action: "Next Recipient" or "Confirm & Proceed" */}
+   908→        {isLast ? (
+   909→          <button
+   910→            type="submit"
+   911→            className="group inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#F10897] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(241,8,151,0.35)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#d4007d] active:scale-95"
+   912→          >
+   913→            <Check className="h-4 w-4" strokeWidth={2.5} />
+   914→            Confirm &amp; Proceed
+   915→            <ArrowRight
+   916→              className="h-4 w-4 transition-transform group-hover:translate-x-1"
+   917→              strokeWidth={2.5}
+   918→            />
+   919→          </button>
+   920→        ) : (
+   921→          <button
+   922→            type="submit"
+   923→            className="group inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#F10897] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#d4007d] active:scale-95"
+   924→          >
+   925→            {isConfirmed ? (
+   926→              <>
+   927→                <Check className="h-4 w-4" strokeWidth={2.5} />
+   928→                Next Recipient
+   929→              </>
+   930→            ) : (
+   931→              <>
+   932→                Next Recipient
+   933→                <ArrowRight
+   934→                  className="h-4 w-4 transition-transform group-hover:translate-x-1"
+   935→                  strokeWidth={2.5}
+   936→                />
+   937→              </>
+   938→            )}
+   939→          </button>
+   940→        )}
+   941→      </div>
+   942→
+   943→      {/* Hint text — pinned to bottom with mt-auto so buttons stay aligned */}
+   944→      {!isLast && (
+   945→        <p className="mt-auto pt-2 text-center font-sans text-[11px] text-maroon/55">
+   946→          We&rsquo;ll save this recipient and move to the next one.
+   947→        </p>
+   948→      )}
+   949→      {isLast && (
+   950→        <p className="mt-auto pt-2 text-center font-sans text-[11px] text-maroon/55">
+   951→          This is the last recipient — confirm to review your order.
+   952→        </p>
+   953→      )}
+   954→    </form>
+   955→  );
+   956→}
+   957→
+   958→/* ============ Stepper ============ */
+   959→function Stepper({
+   960→  steps,
+   961→  active,
+   962→}: {
+   963→  steps: { label: string; href: string }[];
+   964→  active: number;
+   965→}) {
+   966→  return (
+   967→    <ol className="flex items-start justify-between gap-1 rounded-2xl bg-white/70 p-3 shadow-[0_8px_30px_rgba(78, 0, 48, 0.08)] backdrop-blur-sm">
+   968→      {steps.map((step, i) => {
+   969→        const isDone = i < active;
+   970→        const isActive = i === active;
+   971→        return (
+   972→          <li
+   973→            key={step.label}
+   974→            className="relative flex flex-1 flex-col items-center gap-2 text-center"
+   975→          >
+   976→            {/* Connector line — absolute, centered on the circle's vertical center */}
+   977→            {i > 0 && (
+   978→              <span
+   979→                className={`absolute top-[13px] right-1/2 h-0.5 w-full ${
+   980→                  isDone || isActive ? "bg-[#F10897]" : "bg-maroon/15"
+   981→                }`}
+   982→                aria-hidden
+   983→              />
+   984→            )}
+   985→            {/* Circle (number/check) — centered above the label */}
+   986→            <span
+   987→              className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-sans text-[11px] font-bold leading-none transition-colors ${
+   988→                isActive
+   989→                  ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
+   990→                  : isDone
+   991→                    ? "bg-[#4E0030] text-white"
+   992→                    : "bg-maroon/10 text-maroon/60"
+   993→              }`}
+   994→            >
+   995→              {isDone ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : i + 1}
+   996→            </span>
+   997→            {/* Label — centered directly under the circle */}
+   998→            <span
+   999→              className={`font-sans text-[10px] font-bold uppercase leading-tight tracking-[0.1em] ${
+  1000→                isActive
+  1001→                  ? "text-[#F10897]"
+  1002→                  : isDone
+  1003→                    ? "text-maroon"
+  1004→                    : "text-maroon/50"
+  1005→              }`}
+  1006→            >
+  1007→              {step.label}
+  1008→            </span>
+  1009→          </li>
+  1010→        );
+  1011→      })}
+  1012→    </ol>
+  1013→  );
+  1014→}
+  1015→
+  1016→export default function RecipientDetailsPage() {
+  1017→  return (
+  1018→    <Suspense
+  1019→      fallback={
+  1020→        <div className="flex flex-1 items-center justify-center font-sans text-maroon">
+  1021→          Loading…
+  1022→        </div>
+  1023→      }
+  1024→    >
+  1025→      <RecipientDetailsContent />
+  1026→    </Suspense>
+  1027→  );
+  1028→}
+  1029→
