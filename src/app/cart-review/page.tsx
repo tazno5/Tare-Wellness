@@ -78,7 +78,7 @@ function CartReviewContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { recipients, cart } = useStore();
+  const { recipients, cart, user } = useStore();
 
   // Set gradient — render + useEffect
   useMemo(() => {
@@ -94,6 +94,13 @@ function CartReviewContent() {
       document.body.style.removeProperty("--page-gradient-to");
     };
   }, []);
+
+  // Auth gate: hard-redirect logged-out users to /login with a callbackUrl
+  useEffect(() => {
+    if (!user) {
+      router.replace("/login?callbackUrl=/cart-review");
+    }
+  }, [user, router]);
 
   // Parse cart + recipients from search params (fallback to store)
   const { cartItems, recipientRows } = useMemo(() => {
@@ -190,8 +197,21 @@ function CartReviewContent() {
         className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
       />
 
-      {/* Empty state: no cart data */}
-      {cartItems.length === 0 ? (
+      {/* ============ AUTH GATE (fallback during redirect) ============ */}
+      {!user ? (
+        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
+            <Lock className="h-10 w-10 text-white" strokeWidth={2} />
+          </div>
+          <h2 className="font-fraunces text-3xl font-bold text-[#4E0030]">Sign in to review your cart</h2>
+          <p className="mt-3 max-w-sm font-sans text-sm text-[#4E0030]/70">
+            You&apos;ll need an account to review your recipients. Redirecting you to sign in…
+          </p>
+          <Link href="/login?callbackUrl=/cart-review" className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.03] hover:bg-[#d4007d]">
+            Sign In / Sign Up <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+          </Link>
+        </section>
+      ) : cartItems.length === 0 ? (
         <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
             <Gift className="h-10 w-10 text-white" strokeWidth={2} />

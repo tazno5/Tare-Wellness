@@ -100,3 +100,27 @@ Work Log:
 Stage Summary:
 - Fix #13 implemented: logged-out users visiting `/book-session` are now hard-redirected to `/login?callbackUrl=/book-session`, and after signing in they will be returned to the booking page.
 - The inline fallback UI remains for accessibility during the brief redirect window.
+
+---
+Task ID: fix-13-extend
+Agent: Super Z (main)
+Task: Extend auth-gate pattern to remaining protected routes (/checkout, /cart-review, /order-confirmation, /booking-confirmation)
+
+Work Log:
+- Read all 4 protected pages to understand existing structure (each is a client component using `useRouter`).
+- Applied identical pattern to each page:
+  1. Pulled `user` from `useStore()` (alongside existing destructured state).
+  2. Added a `useEffect` that calls `router.replace("/login?callbackUrl=<current-page>")` when `user` is null.
+  3. Added an inline `<Lock>` + "Sign in to …" fallback UI branch above each page's existing empty-state UI, so users see something meaningful during the brief redirect window.
+- Per-page notes:
+  - `/checkout` — added `user` to destructure (line 84), redirect effect at lines 103–108, fallback UI at lines 296–336 (nested before existing `cartItems.length === 0` branch). `Lock` and `User` icons were already imported.
+  - `/cart-review` — added `user` to destructure (line 81), redirect effect at lines 98–103, fallback UI at lines 200–228 (nested before existing empty-cart branch). `Lock` was already imported.
+  - `/order-confirmation` — added `user` to destructure (line 122), moved `orderId` declaration above the auth-gate effect (so the effect can include the `?id=` in the callbackUrl), redirect effect at lines 155–163, fallback UI at lines 335–362. Added `Lock` to lucide-react imports.
+  - `/booking-confirmation` — added `useRouter` import, `user` to destructure, redirect effect, fallback UI at lines 122–141. Added `Lock` and `User` to lucide-react imports.
+- Verified dev server boots clean and all 5 protected routes (`/book-session`, `/checkout`, `/cart-review`, `/order-confirmation`, `/booking-confirmation`) return HTTP 200 with no compile errors in `dev.log`.
+- `tsc --noEmit` reports only pre-existing errors in unrelated code areas; none of the new auth-gate code introduces type errors.
+
+Stage Summary:
+- All 5 protected routes now hard-redirect logged-out users to `/login?callbackUrl=<original-path>` and return them to that path after sign-in.
+- The inline `<Lock>` fallback UI shows during the brief redirect window for accessibility.
+- Pre-existing TypeScript errors (in `/api/orders`, `/order-confirmation` downstream code, `/checkout` recipient payload shape) are still present but unrelated to this task — they would need to be fixed separately before `next build` succeeds for production.

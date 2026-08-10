@@ -81,7 +81,7 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { recipients } = useStore();
+  const { recipients, user } = useStore();
   const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">("card");
   const [submitting, setSubmitting] = useState(false);
 
@@ -99,6 +99,13 @@ function CheckoutContent() {
       document.body.style.removeProperty("--page-gradient-to");
     };
   }, []);
+
+  // Auth gate: hard-redirect logged-out users to /login with a callbackUrl
+  useEffect(() => {
+    if (!user) {
+      router.replace("/login?callbackUrl=/checkout");
+    }
+  }, [user, router]);
 
   // Parse cart + recipients
   const { cartItems, recipientRows } = useMemo(() => {
@@ -286,8 +293,27 @@ function CheckoutContent() {
         className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
       />
 
-      {/* ============ EMPTY CART STATE ============ */}
-      {cartItems.length === 0 ? (
+      {/* ============ AUTH GATE (fallback during redirect) ============ */}
+      {!user ? (
+        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
+          <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(78,0,48,0.10)]">
+            <Lock className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />
+          </div>
+          <h2 className="mt-4 font-fraunces text-2xl font-bold text-[#4E0030]">
+            Sign in to check out
+          </h2>
+          <p className="mt-2 max-w-sm font-sans text-sm text-[#4E0030]/70">
+            You&apos;ll need an account to complete your purchase. Redirecting you to sign in…
+          </p>
+          <Link
+            href="/login?callbackUrl=/checkout"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78,0,48,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
+          >
+            <User className="h-4 w-4" strokeWidth={2.5} />
+            Sign In / Sign Up
+          </Link>
+        </section>
+      ) : cartItems.length === 0 ? (
         <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
           <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(78,0,48,0.10)]">
             <Gift className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />

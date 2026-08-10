@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Check, Copy, CalendarClock, Video, Bell, Leaf, MapPin, ArrowRight, Heart, Mail, MessageSquare, Sparkles, PartyPopper, Clock } from "lucide-react";
+import { Check, Copy, CalendarClock, Video, Bell, Leaf, MapPin, ArrowRight, Heart, Mail, MessageSquare, Sparkles, PartyPopper, Clock, Lock, User } from "lucide-react";
 import { useStore } from "@/lib/store";
 
 const container = {
@@ -64,13 +65,21 @@ function formatDate(iso: string | null): string {
 }
 
 export default function BookingConfirmationPage() {
-  const { booking } = useStore();
+  const { booking, user } = useStore();
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
     document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
   }, []);
+
+  // Auth gate: hard-redirect logged-out users to /login with a callbackUrl
+  useEffect(() => {
+    if (!user) {
+      router.replace("/login?callbackUrl=/booking-confirmation");
+    }
+  }, [user, router]);
 
   const meetingUrl = "https://wa.me/2349036530892";
 
@@ -110,8 +119,27 @@ export default function BookingConfirmationPage() {
         className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
       />
 
-      {/* ============ EMPTY STATE (no booking data) ============ */}
-      {!hasBooking ? (
+      {/* ============ AUTH GATE (fallback during redirect) ============ */}
+      {!user ? (
+        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
+          <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(78,0,48,0.10)]">
+            <Lock className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />
+          </div>
+          <h2 className="mt-4 font-fraunces text-2xl font-bold text-[#4E0030]">
+            Sign in to view your booking
+          </h2>
+          <p className="mt-2 max-w-sm font-sans text-sm text-[#4E0030]/70">
+            You&apos;ll need an account to view this booking. Redirecting you to sign in…
+          </p>
+          <Link
+            href="/login?callbackUrl=/booking-confirmation"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78,0,48,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
+          >
+            <User className="h-4 w-4" strokeWidth={2.5} />
+            Sign In / Sign Up
+          </Link>
+        </section>
+      ) : !hasBooking ? (
         <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
           <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(78,0,48,0.10)]">
             <CalendarClock className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />

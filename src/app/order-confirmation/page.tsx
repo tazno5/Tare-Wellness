@@ -17,6 +17,7 @@ import {
   HelpCircle,
   Heart,
   ShieldCheck,
+  Lock,
   Clock,
   ArrowLeft,
   ArrowRight,
@@ -119,7 +120,7 @@ function OrderConfirmationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { recipients, addDemoCode, clearDemoCodes, clearCart, clearRecipients } = useStore();
+  const { recipients, addDemoCode, clearDemoCodes, clearCart, clearRecipients, user } = useStore();
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
   const [hasMounted, setHasMounted] = useState(false);
   const [confirmIndex, setConfirmIndex] = useState(0);
@@ -151,6 +152,17 @@ function OrderConfirmationContent() {
 
   // Fetch real order data from API if we have an order ID
   const orderId = searchParams.get("id");
+
+  // Auth gate: hard-redirect logged-out users to /login with a callbackUrl
+  useEffect(() => {
+    if (!user) {
+      const callbackUrl = orderId
+        ? `/order-confirmation?id=${orderId}`
+        : "/order-confirmation";
+      router.replace(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+    }
+  }, [user, router, orderId]);
+
   useEffect(() => {
     if (orderId) {
       fetch(`/api/orders/${orderId}`)
@@ -321,8 +333,21 @@ function OrderConfirmationContent() {
       <div aria-hidden className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-[#C7B2E2]/20 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />
 
-      {/* Empty state: no order data */}
-      {receipts.length === 0 && !apiOrder ? (
+      {/* ============ AUTH GATE (fallback during redirect) ============ */}
+      {!user ? (
+        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
+            <Lock className="h-10 w-10 text-white" strokeWidth={2} />
+          </div>
+          <h2 className="font-fraunces text-3xl font-bold text-[#4E0030]">Sign in to view your order</h2>
+          <p className="mt-3 max-w-sm font-sans text-sm text-[#4E0030]/70">
+            You&apos;ll need an account to view this order. Redirecting you to sign in…
+          </p>
+          <Link href={`/login?callbackUrl=${encodeURIComponent(orderId ? `/order-confirmation?id=${orderId}` : "/order-confirmation")}`} className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.03] hover:bg-[#d4007d]">
+            Sign In / Sign Up <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+          </Link>
+        </section>
+      ) : receipts.length === 0 && !apiOrder ? (
         <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
             <Gift className="h-10 w-10 text-white" strokeWidth={2} />
