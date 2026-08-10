@@ -21,6 +21,16 @@ import {
 } from "lucide-react";
 import { useStore, type RecipientData } from "@/lib/store";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -107,6 +117,7 @@ function RecipientDetailsContent() {
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [hydrated, setHydrated] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ uid: string; name: string } | null>(null);
 
   // Wait for the persisted store to hydrate from localStorage before rendering.
   // This prevents a flash of the empty state (recipients: []) on hard refresh.
@@ -597,7 +608,7 @@ function RecipientDetailsContent() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDelete(r.uid)}
+                            onClick={() => setDeleteTarget({ uid: r.uid, name: r.name || `Recipient ${i + 1}` })}
                             aria-label={`Delete ${r.name || "recipient"}`}
                             className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:bg-[#F10897] active:scale-90"
                           >
@@ -653,6 +664,36 @@ function RecipientDetailsContent() {
           </section>
         </>
       )}
+
+      {/* ============ DELETE CONFIRMATION MODAL ============ */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent className="rounded-3xl border-0 bg-white p-6 shadow-[0_18px_50px_rgba(78,0,48,0.20)] sm:p-8">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-fraunces text-xl font-bold text-[#4E0030]">
+              Remove {deleteTarget?.name}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="font-sans text-sm text-[#4E0030]/70">
+              This will delete all details entered for this recipient. This action can&apos;t be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-2">
+            <AlertDialogCancel className="rounded-full border-[0.3px] border-[#F10897] font-sans text-sm font-semibold text-[#F10897] hover:bg-[#E8B6D5]/15">
+              Keep
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteTarget) {
+                  handleDelete(deleteTarget.uid);
+                  setDeleteTarget(null);
+                }
+              }}
+              className="rounded-full bg-[#F10897] font-sans text-sm font-semibold text-white hover:bg-[#d4007d]"
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }

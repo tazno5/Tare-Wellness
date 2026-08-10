@@ -151,7 +151,7 @@ const MONTH_NAMES = [
 export default function BookSessionPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { booking, setBooking, redemption } = useStore();
+  const { booking, setBooking, redemption, user } = useStore();
 
   const [viewMonth, setViewMonth] = useState(() => {
     const now = new Date();
@@ -338,6 +338,29 @@ export default function BookSessionPage() {
         aria-hidden
         className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
       />
+
+      {/* ============ AUTH GATE ============ */}
+      {!user ? (
+        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
+          <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(78,0,48,0.10)]">
+            <HeartHandshake className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />
+          </div>
+          <h2 className="mt-4 font-fraunces text-2xl font-bold text-[#4E0030]">
+            Sign in to book your session
+          </h2>
+          <p className="mt-2 max-w-sm font-sans text-sm text-[#4E0030]/70">
+            You&apos;ll need an account to book a session. It only takes a moment.
+          </p>
+          <Link
+            href="/login?callbackUrl=/book-session"
+            className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78,0,48,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
+          >
+            <User className="h-4 w-4" strokeWidth={2.5} />
+            Sign In / Sign Up
+          </Link>
+        </section>
+      ) : (
+      <>
 
       {/* ============ HERO ============ */}
       <section className="relative w-full overflow-hidden px-5 pb-6 pt-6 sm:px-8 sm:pb-10 lg:px-12">
@@ -744,6 +767,8 @@ export default function BookSessionPage() {
           </Link>
         </div>
       </section>
+      </>
+      )}
     </main>
   );
 }
