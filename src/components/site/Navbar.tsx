@@ -6,7 +6,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, User, LogOut, Wallet, ChevronDown } from "lucide-react";
+import { Menu, X, User, LogOut, Wallet, ChevronDown, ShoppingBag, Calendar, Gift } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 
@@ -22,7 +22,7 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, redemption } = useStore();
+  const { user, logout, redemption, cart, totalQty } = useStore();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -81,6 +81,20 @@ export default function Navbar() {
           ); })}
         </ul>
         <div className="flex items-center gap-3">
+          {/* Cart icon — shows item count badge, links to cart-review */}
+          <Link
+            href="/cart-review"
+            aria-label={`Cart with ${totalQty} item${totalQty === 1 ? "" : "s"}`}
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/15 backdrop-blur-sm transition-all hover:bg-white/25 active:scale-95"
+          >
+            <ShoppingBag className="h-5 w-5 text-maroon" strokeWidth={2.5} />
+            {totalQty > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#F10897] px-1.5 font-sans text-[10px] font-bold text-white shadow-sm">
+                {totalQty > 9 ? "9+" : totalQty}
+              </span>
+            )}
+          </Link>
+
           {/* Auth state: Logged in → profile dropdown, Logged out → Login button */}
           {user ? (
             <div className="relative hidden md:block">
@@ -118,8 +132,14 @@ export default function Navbar() {
                       </div>
                     )}
                     {/* Menu items */}
-                    <Link href="/book-session" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2.5 font-sans text-sm font-medium text-[#4E0030] transition-colors hover:bg-blush/40">
-                      <User className="h-4 w-4" strokeWidth={2.5} />My Bookings
+                    <Link href="/account" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2.5 font-sans text-sm font-medium text-[#4E0030] transition-colors hover:bg-blush/40">
+                      <User className="h-4 w-4" strokeWidth={2.5} />My Account
+                    </Link>
+                    <Link href="/account?tab=bookings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2.5 font-sans text-sm font-medium text-[#4E0030] transition-colors hover:bg-blush/40">
+                      <Calendar className="h-4 w-4" strokeWidth={2.5} />My Bookings
+                    </Link>
+                    <Link href="/account?tab=orders" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 rounded-xl px-3 py-2.5 font-sans text-sm font-medium text-[#4E0030] transition-colors hover:bg-blush/40">
+                      <Gift className="h-4 w-4" strokeWidth={2.5} />My Orders
                     </Link>
                     <button type="button" onClick={handleLogout} className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 font-sans text-sm font-medium text-[#4E0030] transition-colors hover:bg-blush/40">
                       <LogOut className="h-4 w-4" strokeWidth={2.5} />Sign Out
@@ -164,6 +184,11 @@ export default function Navbar() {
               ); })}
             </motion.ul>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="px-5 pt-6 space-y-3 sm:px-8">
+              {/* Mobile cart link */}
+              <Link href="/cart-review" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/15 px-6 py-3 font-sans text-sm font-semibold text-maroon backdrop-blur-sm transition-all hover:bg-white/25">
+                <ShoppingBag className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                <span>Cart{totalQty > 0 ? ` (${totalQty})` : ""}</span>
+              </Link>
               {user ? (
                 <>
                   <div className="flex items-center gap-3 rounded-2xl bg-white/15 px-4 py-3 backdrop-blur-sm">
@@ -175,6 +200,9 @@ export default function Navbar() {
                       )}
                     </div>
                   </div>
+                  <Link href="/account" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-6 py-3 font-sans text-sm font-semibold text-[#F10897] shadow-sm transition-all hover:bg-[#E8B6D5]/15">
+                    <User className="h-4 w-4 shrink-0" strokeWidth={2.5} /><span>My Account</span>
+                  </Link>
                   <button onClick={() => { handleLogout(); setOpen(false); }} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-6 py-3 font-sans text-sm font-semibold text-[#F10897] shadow-sm transition-all hover:bg-[#E8B6D5]/15">
                     <LogOut className="h-4 w-4 shrink-0" strokeWidth={2.5} /><span>Sign Out</span>
                   </button>
