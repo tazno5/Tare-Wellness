@@ -275,7 +275,7 @@ function OrderConfirmationContent() {
 
     const total = expanded.length;
     return expanded.map((e) => ({ ...e, total }));
-  }, [searchParams, recipients]);
+  }, [searchParams, recipients, apiOrder]);
 
   // Store demo codes in Zustand so the Redeem page can validate them
   useEffect(() => {

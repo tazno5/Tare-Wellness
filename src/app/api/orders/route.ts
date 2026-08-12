@@ -17,21 +17,35 @@ function generateRedemptionCode(seed: string): string {
   // Generate 16 random chars from a 32-char alphabet (no ambiguous chars).
   // Excludes 0/O/1/I to avoid confusion when read aloud.
   const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  // Mix the seed into a PRNG state so different recipients in the same
-  // millisecond still get distinct codes, but the call is still seedable.
-  let n = 0;
+
+  // Build a high-entropy 32-bit seed from multiple sources:
+  // - the input seed (recipient email, order number, etc.)
+  // - Date.now() (millisecond timestamp)
+  // - Math.random() (browser/Node PRNG)
+  // - performance.now() sub-millisecond entropy when available
+  let seedHash = 0;
   for (let i = 0; i < seed.length; i++) {
-    n = (n * 31 + seed.charCodeAt(i)) >>> 0;
+    seedHash = (Math.imul(seedHash, 31) + seed.charCodeAt(i)) >>> 0;
   }
-  // Add high-resolution time + Math.random for true entropy
-  n = (n ^ Date.now() ^ (Math.random() * 0xffffffff) >>> 0) >>> 0;
+  const timeEntropy = Date.now() >>> 0;
+  const randEntropy = (Math.random() * 0x100000000) >>> 0;
+  const perfEntropy =
+    typeof performance !== "undefined" && performance.now
+      ? (performance.now() * 1000) >>> 0
+      : 0;
+
+  // XOR all sources together to mix entropy
+  let state = (seedHash ^ timeEntropy ^ randEntropy ^ perfEntropy) >>> 0;
+  // Ensure state is never 0 (LCG would stick at 0)
+  if (state === 0) state = 0x12345678;
+
   let code = "";
   for (let i = 0; i < 4; i++) {
     if (i > 0) code += "-";
     for (let j = 0; j < 4; j++) {
-      // Stir n each iteration so consecutive chars are not correlated
-      n = (n * 1103515245 + 12345 + i * 7919 + j * 31) >>> 0;
-      code += charset[n % charset.length];
+      // 32-bit LCG (Numerical Recipes constants) — full period, good mixing
+      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+      code += charset[state % charset.length];
     }
   }
   return code;
