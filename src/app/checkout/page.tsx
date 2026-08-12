@@ -81,7 +81,7 @@ function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
-  const { recipients, user } = useStore();
+  const { recipients, user, clearCart, clearRecipients } = useStore();
   const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">("card");
   const [submitting, setSubmitting] = useState(false);
 
@@ -259,6 +259,10 @@ function CheckoutContent() {
 
       if (res.ok) {
         const order = await res.json();
+        // Clear the cart + recipients — purchase is complete, the items are
+        // now associated with the order in the DB, not the user's session cart.
+        clearCart();
+        clearRecipients();
         toast({
           title: "Payment successful!",
           description: `Order ${order.orderNumber} confirmed.`,

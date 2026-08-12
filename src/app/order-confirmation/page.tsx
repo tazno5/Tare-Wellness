@@ -21,6 +21,7 @@ import {
   Clock,
   ArrowLeft,
   ArrowRight,
+  Package,
 } from "lucide-react";
 import {
   Accordion,
@@ -716,10 +717,17 @@ function OrderConfirmationContent() {
       {/* ============ BOTTOM NAV ============ */}
       <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <Link
+            href="/account?tab=orders"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95 sm:w-auto"
+          >
+            <Package className="h-4 w-4" strokeWidth={2.5} />
+            View My Orders
+          </Link>
           <button
             type="button"
             onClick={handleSendAnother}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95 sm:w-auto"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95 sm:w-auto"
           >
             <Gift className="h-4 w-4" strokeWidth={2.5} />
             Send Another Gift
