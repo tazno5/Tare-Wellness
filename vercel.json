@@ -4,17 +4,5 @@
   "buildCommand": "next build",
   "devCommand": "next dev",
   "installCommand": "bun install",
-  "regions": ["fra1"],
-  "env": {
-    "NEXTAUTH_URL": "https://your-domain.com"
-  },
-  "build": {
-    "env": [
-      "DATABASE_URL",
-      "NEXTAUTH_SECRET",
-      "NEXTAUTH_URL",
-      "RESEND_API_KEY",
-      "EMAIL_FROM"
-    ]
-  }
+  "regions": ["fra1"]
 }
