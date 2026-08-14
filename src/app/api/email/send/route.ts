@@ -1,37 +1,48 @@
 import { NextResponse } from "next/server";
-import { BrevoClient } from "@getbrevo/brevo";
+import nodemailer from "nodemailer";
 import { db } from "@/lib/db";
 
 // POST /api/email/send — Send gift card email to recipient
 // Called automatically after order creation, or manually to resend
 //
-// Email provider: Brevo (https://brevo.com)
-// Requires BREVO_API_KEY in env. If not set, falls back to console.log
-// so the app still works in dev without a real email provider.
+// Email provider: Gmail SMTP
+// Requires GMAIL_USER + GMAIL_APP_PASSWORD in env.
+// - GMAIL_USER: your Gmail address (e.g. mumtaz.sidiai@gmail.com)
+// - GMAIL_APP_PASSWORD: 16-character Google App Password
+//   (generate at https://myaccount.google.com/apppasswords)
 //
-// Sender email must be a verified sender in your Brevo account
-// (https://app.brevo.com/settings/senders). Configure via EMAIL_FROM env
-// var — format: "Display Name <email@domain.com>".
+// If env vars are not set, falls back to console.log so the app
+// still works in dev without a Gmail account configured.
+//
+// Note: Gmail SMTP has a 500-email/day sending limit. Good for soft
+// launch / testing. Migrate to Brevo or Resend with a custom domain
+// for production scale.
 
-// Lazily instantiate the Brevo client so we don't crash on import
-// when BREVO_API_KEY is missing (dev environments).
-let _brevo: BrevoClient | null = null;
-function getBrevo(): BrevoClient | null {
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) return null;
-  if (!_brevo) _brevo = new BrevoClient({ apiKey });
-  return _brevo;
+// Lazily instantiate the Nodemailer transporter so we don't crash on
+// import when env vars are missing (dev environments).
+let _transporter: nodemailer.Transporter | null = null;
+function getTransporter(): nodemailer.Transporter | null {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) return null;
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user, pass },
+    });
+  }
+  return _transporter;
 }
 
-// Parse "Display Name <email@domain.com>" format from EMAIL_FROM env var.
-// Falls back to safe defaults if not set or malformed.
+// Sender email — defaults to GMAIL_USER if not explicitly set.
+// Format: "Display Name <email@domain.com>" (parsed) or just the email.
 function parseSender(): { name: string; email: string } {
-  const raw = process.env.EMAIL_FROM || "Tare Wellness <hello@bewelltare.com>";
+  const user = process.env.GMAIL_USER || "noreply@example.com";
+  const raw = process.env.EMAIL_FROM || `Tare Wellness <${user}>`;
   const match = raw.match(/^(.*?)\s*<([^>]+)>\s*$/);
   if (match) {
     return { name: match[1].trim() || "Tare Wellness", email: match[2].trim() };
   }
-  // No name part — just an email
   return { name: "Tare Wellness", email: raw.trim() };
 }
 
@@ -126,30 +137,29 @@ export async function POST(req: Request) {
       </div>
     `;
 
-    // Send via Brevo if API key is configured, otherwise log to console
-    // (so dev environments without BREVO_API_KEY still work).
-    const brevo = getBrevo();
+    // Send via Gmail SMTP if env vars are configured, otherwise log to console
+    // (so dev environments without GMAIL_USER still work).
+    const transporter = getTransporter();
 
-    if (brevo) {
+    if (transporter) {
       try {
         const sender = parseSender();
-        const response = await brevo.transactionalEmails.sendTransacEmail({
-          sender: { name: sender.name, email: sender.email },
-          to: [{ email: orderItem.recipientEmail }],
+        const info = await transporter.sendMail({
+          from: `${sender.name} <${sender.email}>`,
+          to: orderItem.recipientEmail,
           subject: emailSubject,
-          htmlContent: emailHtml,
-          tags: ["gift-card", "transactional"],
+          html: emailHtml,
         });
 
         return NextResponse.json({
           success: true,
           sentTo: orderItem.recipientEmail,
           orderItemId: orderItem.id,
-          emailId: response?.messageId ?? null,
-          message: "Email queued for delivery",
+          emailId: info.messageId,
+          message: "Email sent via Gmail SMTP",
         });
       } catch (sendError) {
-        console.error("Brevo send exception:", sendError);
+        console.error("Gmail SMTP send exception:", sendError);
         // Don't fail the order — email is best-effort. Return success
         // with a warning so the client can show the redemption code
         // even if the email didn't go through.
@@ -165,10 +175,10 @@ export async function POST(req: Request) {
       }
     }
 
-    // Dev fallback — no BREVO_API_KEY configured. Log to console so
+    // Dev fallback — no GMAIL_USER configured. Log to console so
     // developers can see the email content during local testing.
     if (process.env.NODE_ENV !== "production") {
-      console.log("📧 [DEV] Email not sent — BREVO_API_KEY not set.");
+      console.log("📧 [DEV] Email not sent — GMAIL_USER not set.");
       console.log(`   To: ${orderItem.recipientEmail}`);
       console.log(`   Subject: ${emailSubject}`);
       console.log(`   Redemption code: ${orderItem.redemption.code}`);
