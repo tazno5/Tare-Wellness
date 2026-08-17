@@ -19,12 +19,6 @@ import {
   Headphones,
   Clock,
 } from "lucide-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 
 const container = {
   hidden: { opacity: 0 },
@@ -62,7 +56,7 @@ const TIMELINE = [
   {
     icon: <Ticket className="h-5 w-5" strokeWidth={2.5} />,
     title: "Redeem the Gift",
-    body: "They enter their code on Tare and unlock session credit — no pressure, no expiration.",
+    body: "They enter their code on Tare and unlock session credit.",
   },
   {
     icon: <CalendarCheck className="h-5 w-5" strokeWidth={2.5} />,
@@ -72,22 +66,7 @@ const TIMELINE = [
   {
     icon: <HeartHandshake className="h-5 w-5" strokeWidth={2.5} />,
     title: "Begin the Journey",
-    body: "They meet their therapist over video. The work begins — gently, on their own terms.",
-  },
-];
-
-const FAQS = [
-  {
-    q: "Does the gift card expire?",
-    a: "Never. Tare gift cards carry no expiration date. Your recipient can redeem it tomorrow, next month, or whenever the moment feels right.",
-  },
-  {
-    q: "Can I choose a specific therapist?",
-    a: "You gift the credit — they choose the therapist. We'll show them options based on what they need, and they decide who feels like the right fit.",
-  },
-  {
-    q: "Is it completely confidential?",
-    a: "Yes. What happens in their session stays between them and their therapist. You'll only know what they choose to share with you.",
+    body: "Their wellness specialist will contact them to initiate the experience.",
   },
 ];
 
@@ -265,43 +244,6 @@ export default function HowItWorksPage() {
             </motion.li>
           ))}
         </motion.ol>
-      </section>
-
-      {/* ============ FAQ ============ */}
-      <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6 }}
-          className="mx-auto w-full max-w-3xl rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-8"
-        >
-          <div className="text-center">
-            <span className="inline-flex items-center gap-2 rounded-full bg-blush px-4 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-[#F10897]">
-              <Sparkles className="h-3 w-3" strokeWidth={2.5} />
-              Good to know
-            </span>
-            <h2 className="mt-4 font-fraunces text-2xl font-bold text-maroon sm:text-3xl">
-              Questions you might have.
-            </h2>
-          </div>
-          <Accordion type="single" collapsible className="mt-5">
-            {FAQS.map((faq, i) => (
-              <AccordionItem
-                key={faq.q}
-                value={`item-${i}`}
-                className="border-maroon/10"
-              >
-                <AccordionTrigger className="font-sans text-sm font-bold text-maroon hover:no-underline">
-                  {faq.q}
-                </AccordionTrigger>
-                <AccordionContent className="font-sans text-sm leading-relaxed text-maroon/75">
-                  {faq.a}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </motion.div>
       </section>
 
       {/* ============ COMMITTED TO QUALITY ============ */}
