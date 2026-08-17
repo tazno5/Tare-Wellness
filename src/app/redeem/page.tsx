@@ -144,24 +144,27 @@ export default function RedeemPage() {
     setSubmitting(true);
 
     // 1. Check demo codes in Zustand/localStorage FIRST (for mock checkout codes)
-    const demoMatch = demoCodes.find(
-      (dc) => dc.code.replace(/-/g, "") === rawCode,
-    );
+    // MEDIUM #4: Demo codes only work in dev mode — prevents fake redemptions in production
+    if (process.env.NODE_ENV !== "production") {
+      const demoMatch = demoCodes.find(
+        (dc) => dc.code.replace(/-/g, "") === rawCode,
+      );
 
-    if (demoMatch) {
-      // Demo code found — validate locally without hitting the API
-      setRedemption({
-        code: demoMatch.code,
-        creditBalance: demoMatch.creditAmount,
-        redeemed: true,
-      });
+      if (demoMatch) {
+        // Demo code found — validate locally without hitting the API
+        setRedemption({
+          code: demoMatch.code,
+          creditBalance: demoMatch.creditAmount,
+          redeemed: true,
+        });
 
-      toast({
-        title: "Gift redeemed!",
-        description: `₦${demoMatch.creditAmount.toLocaleString()} credit applied — ${demoMatch.cardTitle}.`,
-      });
-      setSubmitting(false);
-      return;
+        toast({
+          title: "Gift redeemed! (Demo mode)",
+          description: `₦${demoMatch.creditAmount.toLocaleString()} credit applied — ${demoMatch.cardTitle}.`,
+        });
+        setSubmitting(false);
+        return;
+      }
     }
 
     // 2. No demo match — try the real API (for real backend-issued codes)
@@ -175,6 +178,16 @@ export default function RedeemPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        // Differentiate error messages based on status code
+        if (res.status === 404) {
+          throw new Error("Code not found — check the code from your gift email and try again.");
+        }
+        if (res.status === 409) {
+          throw new Error("This gift card has already been redeemed.");
+        }
+        if (res.status === 410) {
+          throw new Error("This gift card has expired.");
+        }
         throw new Error(data.error || "Invalid code");
       }
 
@@ -190,8 +203,8 @@ export default function RedeemPage() {
       });
     } catch (error) {
       toast({
-        title: "Invalid code",
-        description: "This code wasn't found. Check the code from your gift email and try again.",
+        title: "Could not redeem",
+        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {

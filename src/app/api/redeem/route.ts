@@ -49,19 +49,32 @@ export async function POST(req: Request) {
       );
     }
 
-    // If user is logged in, apply the credit to their account
+    // If user is logged in, apply the credit to their account.
+    // CRITICAL #2: Use a conditional updateMany (atomic) to prevent
+    // double-redemption race conditions. Only updates if status is
+    // still "active" — if another request already redeemed it, the
+    // count will be 0 and we return 409.
     let userId: string | null = null;
     if (session?.user) {
       userId = (session.user as { id: string }).id;
 
-      await db.redemption.update({
-        where: { id: redemption.id },
+      const result = await db.redemption.updateMany({
+        where: { id: redemption.id, status: "active" },
         data: {
           userId,
           status: "redeemed",
           redeemedAt: new Date(),
+          sessionsRemaining: redemption.orderItem.cardSessions,
         },
       });
+
+      if (result.count === 0) {
+        // Another request redeemed it between our read and write
+        return NextResponse.json(
+          { error: "This gift card has already been redeemed" },
+          { status: 409 },
+        );
+      }
     }
 
     return NextResponse.json({
@@ -84,10 +97,22 @@ export async function POST(req: Request) {
   }
 }
 
-// ============ GET /api/redeem — Check code status (no auth required) ============
+// ============ GET /api/redeem — Check code status (auth required) ============
+// HIGH #3: Previously unauthenticated — anyone could enumerate codes.
+// Now requires a valid session. Used by the UI to check code validity
+// before showing the "Redeem" button.
 
 export async function GET(req: Request) {
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
+    }
+
     const url = new URL(req.url);
     const code = url.searchParams.get("code");
 
@@ -120,6 +145,7 @@ export async function GET(req: Request) {
       creditAmount: redemption.creditAmount,
       cardTitle: redemption.orderItem.cardTitle,
       cardSessions: redemption.orderItem.cardSessions,
+      sessionsRemaining: redemption.sessionsRemaining,
       status: redemption.status,
     });
   } catch (error) {

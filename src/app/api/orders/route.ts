@@ -1,7 +1,27 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+
+// ============ Validation (HIGH #4) ============
+
+const recipientSchema = z.object({
+  cardSlug: z.string().min(1).max(50),
+  recipientName: z.string().min(1).max(200),
+  recipientEmail: z.string().email().max(500),
+  occasion: z.string().max(100).default("Just Because"),
+  deliveryMode: z.enum(["now", "schedule"]).default("now"),
+  scheduledFor: z.string().nullable().optional(),
+  personalNote: z.string().max(2000).optional().default(""),
+});
+
+const createOrderSchema = z.object({
+  buyerName: z.string().min(1).max(200),
+  buyerEmail: z.string().email().max(500),
+  paymentMethod: z.enum(["card", "transfer"]).default("card"),
+  recipients: z.array(recipientSchema).min(1).max(20),
+});
 
 // ============ Helpers ============
 
@@ -56,33 +76,39 @@ function generateRedemptionCode(seed: string): string {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    const body = await req.json();
 
-    const { buyerName, buyerEmail, paymentMethod, recipients } = body as {
-      buyerName: string;
-      buyerEmail: string;
-      paymentMethod: string;
-      recipients: {
-        cardSlug: string;
-        recipientName: string;
-        recipientEmail: string;
-        occasion: string;
-        deliveryMode: string;
-        scheduledFor: string | null;
-        personalNote: string;
-      }[];
-    };
-
-    // Validate
-    if (!recipients || recipients.length === 0) {
+    // CRITICAL #1: Require authentication — no guest orders
+    if (!session?.user) {
       return NextResponse.json(
-        { error: "At least one recipient is required" },
-        { status: 400 },
+        { error: "Authentication required to place an order" },
+        { status: 401 },
       );
     }
 
-    // Fetch all gift card types needed
-    const slugs = [...new Set(recipients.map((r) => r.cardSlug))];
+    const userId = (session.user as { id: string }).id;
+
+    // HIGH #4: Validate input with Zod
+    const body = await req.json();
+    const parseResult = createOrderSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid order data",
+          details: parseResult.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
+    const {
+      buyerName,
+      buyerEmail,
+      paymentMethod,
+      recipients: validatedRecipients,
+    } = parseResult.data;
+
+    // Fetch all gift card types needed — server-side price lookup
+    // (never trust client-provided prices)
+    const slugs = [...new Set(validatedRecipients.map((r) => r.cardSlug))];
     const cardTypes = await db.giftCardType.findMany({
       where: { slug: { in: slugs } },
     });
@@ -96,31 +122,34 @@ export async function POST(req: Request) {
 
     const cardMap = new Map(cardTypes.map((c) => [c.slug, c]));
 
-    // Calculate total
-    const totalAmount = recipients.reduce(
+    // Calculate total — server-side, from DB prices (not client)
+    const totalAmount = validatedRecipients.reduce(
       (sum, r) => sum + (cardMap.get(r.cardSlug)?.price ?? 0),
       0,
     );
 
     const orderNumber = generateOrderNumber();
 
-    // Create order first, then items + redemptions in a transaction
+    // Create order first, then items + redemptions in a transaction.
+    // CRITICAL #1: Order starts as "pending" — a separate endpoint
+    // (POST /api/orders/confirm) will mark it "completed" after
+    // payment verification (Paystack webhook).
     const order = await db.$transaction(async (tx) => {
       // 1. Create the order
       const newOrder = await tx.order.create({
         data: {
           orderNumber,
-          userId: (session?.user as { id?: string } | undefined)?.id ?? null,
+          userId,
           buyerName,
           buyerEmail,
           paymentMethod: paymentMethod || "card",
           totalAmount,
-          status: "completed",
+          status: "pending", // CRITICAL #1: pending until payment verified
         },
       });
 
       // 2. Create order items + redemption codes for each recipient
-      for (const r of recipients) {
+      for (const r of validatedRecipients) {
         const card = cardMap.get(r.cardSlug)!;
         const orderItem = await tx.orderItem.create({
           data: {
@@ -137,7 +166,7 @@ export async function POST(req: Request) {
             deliveryMode: r.deliveryMode || "now",
             scheduledFor: r.scheduledFor ? new Date(r.scheduledFor) : null,
             personalNote: r.personalNote || null,
-            confirmed: true,
+            confirmed: false, // CRITICAL #1: not confirmed until payment verified
           },
         });
 
@@ -147,7 +176,9 @@ export async function POST(req: Request) {
             orderItemId: orderItem.id,
             orderId: newOrder.id,
             creditAmount: card.price,
-            status: "active",
+            sessionsRemaining: 0, // 0 until redeemed (set on redeem)
+            sessionsUsed: 0,
+            status: "active", // active = code works, but order must be "completed" for email to send
           },
         });
       }
@@ -163,18 +194,54 @@ export async function POST(req: Request) {
       });
     });
 
-    // Send gift card emails to each recipient (fire and forget, don't block the response)
-    if (order?.orderItems) {
-      for (const item of order.orderItems) {
-        fetch(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/email/send`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderItemId: item.id }),
-        }).catch(() => {}); // Ignore email errors — order is still valid
+    // CRITICAL #1: For now, in demo mode (no Paystack), we auto-confirm
+    // the order. When Paystack is integrated, remove this block and
+    // replace with a redirect to Paystack's checkout page.
+    if (!process.env.PAYSTACK_SECRET_KEY) {
+      // Demo mode — auto-confirm
+      await db.order.update({
+        where: { id: order!.id },
+        data: { status: "completed" },
+      });
+      await db.orderItem.updateMany({
+        where: { orderId: order!.id },
+        data: { confirmed: true },
+      });
+
+      // Re-fetch the updated order
+      const confirmedOrder = await db.order.findUnique({
+        where: { id: order!.id },
+        include: {
+          orderItems: {
+            include: { redemption: true },
+          },
+        },
+      });
+
+      // Send gift card emails (fire and forget, with DB tracking)
+      if (confirmedOrder?.orderItems) {
+        for (const item of confirmedOrder.orderItems) {
+          fetch(
+            `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/email/send`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ orderItemId: item.id }),
+            },
+          ).catch(() => {});
+        }
       }
+
+      return NextResponse.json(confirmedOrder, { status: 201 });
     }
 
-    return NextResponse.json(order, { status: 201 });
+    // Production mode — return order with "pending" status.
+    // Client should redirect to Paystack checkout with the order ID.
+    // Paystack webhook will call POST /api/orders/confirm to complete.
+    return NextResponse.json(
+      { ...order, paymentRequired: true },
+      { status: 202 },
+    );
   } catch (error) {
     console.error("Order creation error:", error);
     return NextResponse.json(

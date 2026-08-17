@@ -335,6 +335,47 @@ function OrderConfirmationContent() {
     router.push("/gift-cards?fresh=1");
   };
 
+  // MEDIUM #2: Resend gift card email to recipient(s)
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const handleResendEmail = async () => {
+    if (!apiOrder?.orderItems?.length) {
+      toast({
+        title: "No order found",
+        description: "We couldn't find the order to resend the email for.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setResendingEmail(true);
+    try {
+      const results = await Promise.all(
+        apiOrder.orderItems.map((item) =>
+          fetch("/api/email/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderItemId: item.id, force: true }),
+          }).then((r) => r.json()),
+        ),
+      );
+      const successCount = results.filter((r) => r.success).length;
+      toast({
+        title: successCount > 0 ? "Email sent!" : "Email failed",
+        description:
+          successCount > 0
+            ? `Gift card email sent to ${successCount} recipient${successCount === 1 ? "" : "s"}.`
+            : "We couldn't send the email. The recipient can still redeem via the code on this page.",
+      });
+    } catch {
+      toast({
+        title: "Email failed",
+        description: "Something went wrong. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setResendingEmail(false);
+    }
+  };
+
   return (
     <main className="relative flex flex-1 flex-col">
       {/* Decorative blooms */}
@@ -739,6 +780,15 @@ function OrderConfirmationContent() {
             <Sparkles className="h-4 w-4" strokeWidth={2.5} />
             Redeem a Card
           </Link>
+          <button
+            type="button"
+            onClick={handleResendEmail}
+            disabled={resendingEmail}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          >
+            <Mail className="h-4 w-4" strokeWidth={2.5} />
+            {resendingEmail ? "Sending..." : "Resend Email"}
+          </button>
         </div>
       </section>
       </>

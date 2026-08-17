@@ -46,7 +46,8 @@ export async function POST(req: Request) {
     }
 
     // Check for scheduling conflicts
-    const existingBooking = await db.booking.findFirst({
+    // 1. User can't have two bookings at the same time
+    const userConflict = await db.booking.findFirst({
       where: {
         userId,
         scheduledDate: new Date(scheduledDate),
@@ -55,9 +56,28 @@ export async function POST(req: Request) {
       },
     });
 
-    if (existingBooking) {
+    if (userConflict) {
       return NextResponse.json(
         { error: "You already have a booking at this time" },
+        { status: 409 },
+      );
+    }
+
+    // 2. MEDIUM #5: Therapist can't have two bookings at the same time
+    // (prevents double-booking the same therapist slot)
+    const resolvedTherapistName = therapistName || "Dr. Sarah Thompson";
+    const therapistConflict = await db.booking.findFirst({
+      where: {
+        therapistName: resolvedTherapistName,
+        scheduledDate: new Date(scheduledDate),
+        scheduledTime,
+        status: "confirmed",
+      },
+    });
+
+    if (therapistConflict) {
+      return NextResponse.json(
+        { error: "This time slot is already booked. Please choose another time." },
         { status: 409 },
       );
     }
@@ -73,16 +93,62 @@ export async function POST(req: Request) {
     const meetingId = Math.random().toString(36).slice(2, 10);
     const meetingUrl = `meet.mindful.com/v/${meetingId}`;
 
-    // If redemption code provided, link it
+    // CRITICAL #3: If redemption code provided, verify it belongs to the user,
+    // has remaining sessions, and decrement sessionsRemaining atomically.
     let redemptionId: string | null = null;
     if (redemptionCode) {
       const redemption = await db.redemption.findUnique({
         where: { code: redemptionCode.toUpperCase() },
+        include: { orderItem: true },
       });
 
-      if (redemption && redemption.status === "redeemed") {
-        redemptionId = redemption.id;
+      if (!redemption) {
+        return NextResponse.json(
+          { error: "Invalid redemption code" },
+          { status: 400 },
+        );
       }
+
+      // Verify the redemption belongs to the current user
+      if (redemption.userId !== userId) {
+        return NextResponse.json(
+          { error: "This gift card does not belong to your account" },
+          { status: 403 },
+        );
+      }
+
+      // Verify there are remaining sessions
+      if (redemption.sessionsRemaining <= 0) {
+        return NextResponse.json(
+          {
+            error: `No sessions remaining on this gift card. Total: ${redemption.orderItem.cardSessions}, Used: ${redemption.sessionsUsed}`,
+          },
+          { status: 409 },
+        );
+      }
+
+      // Atomically decrement sessionsRemaining and increment sessionsUsed.
+      // Only succeeds if sessionsRemaining > 0 (prevents race condition).
+      const decremented = await db.redemption.updateMany({
+        where: {
+          id: redemption.id,
+          sessionsRemaining: { gt: 0 },
+        },
+        data: {
+          sessionsRemaining: { decrement: 1 },
+          sessionsUsed: { increment: 1 },
+        },
+      });
+
+      if (decremented.count === 0) {
+        // Another booking consumed the last session between our read and write
+        return NextResponse.json(
+          { error: "No sessions remaining on this gift card" },
+          { status: 409 },
+        );
+      }
+
+      redemptionId = redemption.id;
     }
 
     // Create the booking
@@ -94,7 +160,7 @@ export async function POST(req: Request) {
         sessionType,
         sessionTitle,
         sessionPrice,
-        therapistName: therapistName || "Dr. Sarah Thompson",
+        therapistName: resolvedTherapistName,
         scheduledDate: new Date(scheduledDate),
         scheduledTime,
         durationMinutes: 50,

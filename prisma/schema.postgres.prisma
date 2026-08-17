@@ -143,6 +143,10 @@ model OrderItem {
   personalNote   String?
   confirmed      Boolean     @default(false)
 
+  // Email delivery tracking (HIGH #1: retry failed sends)
+  emailSent      Boolean     @default(false)
+  emailSentAt    DateTime?
+
   // Relations
   order          Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   giftCardType   GiftCardType @relation(fields: [giftCardTypeId], references: [id])
@@ -159,8 +163,10 @@ model Redemption {
   orderItemId   String     @unique // one redemption per order item
   orderId       String
   userId        String?    // who redeemed it (null until redeemed)
-  status        String     @default("active") // "active" | "redeemed" | "expired"
-  creditAmount  Int        // how much credit this code is worth
+  status        String     @default("active") // "active" | "redeemed" | "expired" | "cancelled"
+  creditAmount  Int        // how much credit this code is worth (total)
+  sessionsRemaining Int   @default(0) // sessions left (decremented on each booking)
+  sessionsUsed     Int    @default(0) // sessions consumed by bookings
   redeemedAt    DateTime?
   createdAt     DateTime   @default(now())
 

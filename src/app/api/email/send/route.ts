@@ -46,10 +46,23 @@ function parseSender(): { name: string; email: string } {
   return { name: "Tare Wellness", email: raw.trim() };
 }
 
+// HIGH #4: HTML-escape user-provided content to prevent XSS in emails.
+// Gift card personalNote, recipientName, buyerName all come from the
+// client and must be escaped before insertion into the email HTML.
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return "";
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { orderItemId } = body as { orderItemId?: string };
+    const { orderItemId, force } = body as { orderItemId?: string; force?: boolean };
 
     if (!orderItemId) {
       return NextResponse.json(
@@ -81,8 +94,22 @@ export async function POST(req: Request) {
       );
     }
 
-    // Build the email content
-    const emailSubject = `You've received a Tare Gift Card from ${orderItem.order.buyerName}!`;
+    // HIGH #1: Skip if email was already successfully sent (idempotency)
+    // unless force=true is passed (for manual resend from the UI)
+    if (orderItem.emailSent && !force) {
+      return NextResponse.json({
+        success: true,
+        sentTo: orderItem.recipientEmail,
+        orderItemId: orderItem.id,
+        emailId: null,
+        message: "Email was already sent previously — skipping",
+      });
+    }
+
+    // Build the email content (HIGH #4: escape all user-provided content)
+    const safeBuyerName = escapeHtml(orderItem.order.buyerName);
+    const safePersonalNote = escapeHtml(orderItem.personalNote);
+    const emailSubject = `You've received a Tare Gift Card from ${safeBuyerName}!`;
     const emailHtml = `
       <div style="font-family: 'Plus Jakarta Sans', sans-serif; max-width: 600px; margin: 0 auto; background: #FFF5EE; padding: 40px 20px;">
         <div style="background: white; border-radius: 24px; padding: 40px; text-align: center;">
@@ -90,7 +117,7 @@ export async function POST(req: Request) {
             You've received a Tare Gift Card!
           </h1>
           <p style="color: #4E0030; opacity: 0.7; font-size: 14px; margin-bottom: 24px;">
-            A moment of care from ${orderItem.order.buyerName}
+            A moment of care from ${safeBuyerName}
           </p>
 
           <div style="background: linear-gradient(135deg, #D6C7F2, #E0CBF0, #F0CFE6); border-radius: 16px; padding: 32px; margin-bottom: 24px;">
@@ -105,10 +132,10 @@ export async function POST(req: Request) {
             </p>
           </div>
 
-          ${orderItem.personalNote ? `
+          ${safePersonalNote ? `
             <div style="background: #FFF5EE; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
               <p style="font-family: 'Fraunces', serif; font-style: italic; color: #4E0030; font-size: 15px; margin: 0;">
-                "${orderItem.personalNote}"
+                "${safePersonalNote}"
               </p>
             </div>
           ` : ""}
@@ -151,6 +178,15 @@ export async function POST(req: Request) {
           html: emailHtml,
         });
 
+        // HIGH #1: Mark email as sent in the DB (for retry tracking)
+        await db.orderItem.update({
+          where: { id: orderItem.id },
+          data: {
+            emailSent: true,
+            emailSentAt: new Date(),
+          },
+        });
+
         return NextResponse.json({
           success: true,
           sentTo: orderItem.recipientEmail,
@@ -160,6 +196,7 @@ export async function POST(req: Request) {
         });
       } catch (sendError) {
         console.error("Gmail SMTP send exception:", sendError);
+        // HIGH #1: Don't mark emailSent = true — the retry cron can pick it up.
         // Don't fail the order — email is best-effort. Return success
         // with a warning so the client can show the redemption code
         // even if the email didn't go through.
