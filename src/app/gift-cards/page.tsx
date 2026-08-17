@@ -201,7 +201,7 @@ function GiftCardPageContent() {
             className="mt-5 max-w-xl font-sans text-[16px] leading-relaxed text-maroon/85 sm:text-[18px]"
           >
             Tare gift cards provide access to premium sessions, curated wellness
-            experiences, and a journey toward inner peace.
+            experiences.
           </motion.p>
 
           {/* Hero image — centered, drop shadow */}
