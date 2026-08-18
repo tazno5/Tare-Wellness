@@ -218,18 +218,27 @@ export async function POST(req: Request) {
         },
       });
 
-      // Send gift card emails (fire and forget, with DB tracking)
+      // Send gift card emails — AWAIT the send (not fire-and-forget).
+      // HIGH #1 fix: fire-and-forget fetch was unreliable on Vercel
+      // serverless — function could be recycled before fetch completed,
+      // causing emails to never be sent. Now we await each send.
+      // The /api/email/send route catches its own errors and returns
+      // success with a warning, so this won't fail the order.
       if (confirmedOrder?.orderItems) {
-        for (const item of confirmedOrder.orderItems) {
-          fetch(
-            `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/email/send`,
-            {
+        const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+        await Promise.all(
+          confirmedOrder.orderItems.map((item) =>
+            fetch(`${baseUrl}/api/email/send`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ orderItemId: item.id }),
-            },
-          ).catch(() => {});
-        }
+            }).catch(() => {
+              // Swallow errors — order is still valid, email is best-effort.
+              // The /api/email/send route marks emailSent=false on failure,
+              // which a future retry cron could pick up.
+            }),
+          ),
+        );
       }
 
       return NextResponse.json(confirmedOrder, { status: 201 });
