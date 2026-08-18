@@ -50,7 +50,7 @@ export default function ContactUsPage() {
         <div aria-hidden className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />
         <div className="relative mx-auto flex w-full max-w-7xl flex-col items-center gap-8 md:flex-row md:gap-12">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="flex-1 text-center md:text-left">
-            <h1 className="font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-[#4E0030] sm:text-5xl lg:text-6xl">We&apos;re Here for You</h1>
+            <h1 className="font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight bg-gradient-to-r from-[#2750D8] to-[#90AAFF] bg-clip-text text-transparent sm:text-5xl lg:text-6xl">We&apos;re Here for You</h1>
             <p className="mt-4 max-w-xl font-sans text-[16px] leading-relaxed text-[#4E0030]/85 sm:text-[18px]">Have a question about gift cards, bookings, or our platform? Our dedicated wellness support team is ready to help. Reach out and we&apos;ll get back to you as soon as possible.</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, scale: 0.94, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }} className="relative aspect-[619/491] w-full max-w-xs sm:max-w-sm lg:max-w-md">

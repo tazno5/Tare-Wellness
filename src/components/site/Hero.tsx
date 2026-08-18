@@ -68,11 +68,11 @@ export default function Hero() {
           {/* Headline — Fraunces serif */}
           <motion.h1
             variants={itemUp}
-            className="font-fraunces text-5xl font-extrabold leading-[1.02] tracking-tight text-[#F10897] sm:text-6xl lg:text-7xl xl:text-8xl"
+            className="font-fraunces text-5xl font-extrabold leading-[1.02] tracking-tight bg-gradient-to-r from-[#2750D8] to-[#90AAFF] bg-clip-text text-transparent sm:text-6xl lg:text-7xl xl:text-8xl"
           >
             Send Love
             <br />
-            <span className="text-[#F10897]/60">They Can Feel</span>
+            <span className="text-[#90AAFF]">They Can Feel</span>
           </motion.h1>
 
           {/* Body copy — Plus Jakarta Sans, exactly 18px */}

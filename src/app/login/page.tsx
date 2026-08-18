@@ -181,7 +181,7 @@ function LoginContent() {
               </button>
             </div>
 
-            <h1 className="mt-6 font-fraunces text-2xl font-bold text-[#4E0030] sm:text-3xl">
+            <h1 className="mt-6 font-fraunces text-2xl font-bold bg-gradient-to-r from-[#2750D8] to-[#90AAFF] bg-clip-text text-transparent sm:text-3xl">
               {mode === "login" ? "Welcome Back" : "Create Account"}
             </h1>
             <p className="mt-1.5 font-sans text-sm text-[#4E0030]/60">

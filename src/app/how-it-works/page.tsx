@@ -138,7 +138,7 @@ export default function HowItWorksPage() {
               </span>
             </div>
 
-            <h1 className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight text-[#F10897] sm:text-5xl lg:text-6xl">
+            <h1 className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight bg-gradient-to-r from-[#2750D8] to-[#90AAFF] bg-clip-text text-transparent sm:text-5xl lg:text-6xl">
               Sending support is easier than you think
             </h1>
 

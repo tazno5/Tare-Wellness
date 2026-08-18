@@ -197,7 +197,7 @@ function AccountContent() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="mt-4 font-fraunces text-3xl font-extrabold text-[#4E0030] sm:text-4xl"
+            className="mt-4 font-fraunces text-3xl font-extrabold bg-gradient-to-r from-[#2750D8] to-[#90AAFF] bg-clip-text text-transparent sm:text-4xl"
           >
             Welcome back, {user.name.split(" ")[0]}
           </motion.h1>
