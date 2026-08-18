@@ -18,11 +18,23 @@ export async function POST(req: Request) {
       );
     }
 
-    const normalizedCode = code.trim().toUpperCase();
+    // Normalize the code: uppercase + strip all non-alphanumeric chars.
+    // User might type "rc3e-vy72-zlbn-58fa", "RC3E VY72 ZLBN 58FA",
+    // or "RC3EVY72ZLBN58FA" — all should match the DB code "RC3E-VY72-ZLBN-58FA".
+    const normalizedCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
 
-    // Find the redemption by code
-    const redemption = await db.redemption.findUnique({
-      where: { code: normalizedCode },
+    // The DB stores codes in "XXXX-XXXX-XXXX-XXXX" format. Reconstruct
+    // the dashed format from the normalized input so the lookup matches.
+    const dashedCode = normalizedCode.replace(/(.{4})(?=.)/g, "$1-");
+
+    // Find the redemption by code (try both dashed and non-dashed formats)
+    const redemption = await db.redemption.findFirst({
+      where: {
+        OR: [
+          { code: dashedCode },
+          { code: normalizedCode },
+        ],
+      },
       include: {
         orderItem: true,
       },
@@ -123,10 +135,17 @@ export async function GET(req: Request) {
       );
     }
 
-    const normalizedCode = code.trim().toUpperCase();
+    // Normalize the code: uppercase + strip all non-alphanumeric chars
+    const normalizedCode = code.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const dashedCode = normalizedCode.replace(/(.{4})(?=.)/g, "$1-");
 
-    const redemption = await db.redemption.findUnique({
-      where: { code: normalizedCode },
+    const redemption = await db.redemption.findFirst({
+      where: {
+        OR: [
+          { code: dashedCode },
+          { code: normalizedCode },
+        ],
+      },
       include: {
         orderItem: true,
       },

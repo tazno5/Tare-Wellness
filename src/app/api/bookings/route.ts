@@ -97,8 +97,17 @@ export async function POST(req: Request) {
     // has remaining sessions, and decrement sessionsRemaining atomically.
     let redemptionId: string | null = null;
     if (redemptionCode) {
-      const redemption = await db.redemption.findUnique({
-        where: { code: redemptionCode.toUpperCase() },
+      // Normalize the code: uppercase + strip non-alphanumeric + try dashed format
+      const normalizedCode = redemptionCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const dashedCode = normalizedCode.replace(/(.{4})(?=.)/g, "$1-");
+
+      const redemption = await db.redemption.findFirst({
+        where: {
+          OR: [
+            { code: dashedCode },
+            { code: normalizedCode },
+          ],
+        },
         include: { orderItem: true },
       });
 
