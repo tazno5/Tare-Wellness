@@ -128,7 +128,7 @@ export default function Hero() {
               className="absolute inset-6 z-[2] rounded-full bg-white/10 blur-2xl"
             />
             <Image
-              src="/hero.png"
+              src="/hero-home.png"
               alt="Tare Wellness Hero Character"
               fill
               priority
