@@ -76,7 +76,7 @@ const PATH_STEPS = [
   },
   {
     title: "Connect",
-    body: "Meet your therapist and begin.",
+    body: "Meet your wellness specialist and begin.",
     icon: <MessageCircle className="h-4 w-4" strokeWidth={2.5} />,
   },
 ];
@@ -525,7 +525,7 @@ export default function RedeemPage() {
                 Safe and Supportive
               </h2>
               <p className="mt-2 max-w-2xl font-sans text-sm leading-relaxed text-blush/85 sm:text-base">
-                Every therapist on Tare is licensed, vetted, and committed to
+                Every professional on Tare is licensed, vetted, and committed to
                 holding space with care. Whatever you bring, you&apos;ll be met
                 with kindness — never judgment.
               </p>
@@ -533,7 +533,7 @@ export default function RedeemPage() {
                 {[
                   { icon: <Lock className="h-3.5 w-3.5" strokeWidth={2.5} />, label: "Private & confidential" },
                   { icon: <Heart className="h-3.5 w-3.5" strokeWidth={2.5} />, label: "Trauma-informed" },
-                  { icon: <Check className="h-3.5 w-3.5" strokeWidth={2.5} />, label: "Licensed therapists" },
+                  { icon: <Check className="h-3.5 w-3.5" strokeWidth={2.5} />, label: "Licensed professionals" },
                 ].map((b) => (
                   <span
                     key={b.label}

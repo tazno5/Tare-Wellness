@@ -32,7 +32,7 @@ type QA = { q: string; a: string; category: Category };
 
 const QUESTIONS: QA[] = [
   {
-    q: "How do therapy gift cards work?",
+    q: "How do Tare wellness gift cards work?",
     a: "You purchase a Tare gift card for one, two, or three sessions. We email it to your recipient with your personalized note. They enter the code on our redeem page to unlock session credit, then book a time that fits their life — no expiration, no pressure.",
     category: "Gift Cards",
   },
@@ -103,7 +103,7 @@ type Tab = (typeof CATEGORIES)[number];
 
 const POPULAR = [
   {
-    q: "How do therapy gift cards work?",
+    q: "How do Tare wellness gift cards work?",
     a: "You buy a card, we email it to them with your note, they redeem the code and book a session whenever they're ready. No expiration, no pressure.",
     tag: "Most asked",
   },

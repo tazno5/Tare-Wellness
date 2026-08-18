@@ -14,7 +14,7 @@ const GLANCE_CARDS = [
   { icon: ShieldCheck, title: "Your Data is Protected" },
   { icon: CreditCard, title: "Secure Payments" },
   { icon: Flag, title: "Responsible Communication" },
-  { icon: Cross, title: "Confidential Therapy Info" },
+  { icon: Cross, title: "Confidential Wellness Info" },
   { icon: Eye, title: "Transparent Practices" },
 ];
 
@@ -25,12 +25,12 @@ const TABS = [
 
 const COLLECTED_INFO = [
   { title: "Personal Identity", description: "Name, email address, and contact information used to create and maintain your account." },
-  { title: "Gift Details", description: "Recipient names and personalized messages for therapy gift cards and wellness packages." },
-  { title: "Booking Data", description: "Information regarding preferred therapy types, schedule availability, and session logs." },
+  { title: "Gift Details", description: "Recipient names and personalized messages for wellness gift cards and care packages." },
+  { title: "Booking Data", description: "Information regarding preferred session types, schedule availability, and session logs." },
 ];
 
 const USAGE_CARDS = [
-  { icon: Truck, title: "Service Delivery", description: "Processing gift cards, delivering digital assets, and ensuring your therapist has the necessary context to help." },
+  { icon: Truck, title: "Service Delivery", description: "Processing gift cards, delivering digital assets, and ensuring your provider has the necessary context to help." },
   { icon: CalendarCheck, title: "Appointments", description: "Managing calendars, sending session reminders, and coordinating between users and mental health professionals." },
   { icon: CreditCard, title: "Secure Payments", description: "We use PCI-compliant processors to handle billing information. We never store full credit card numbers on our servers." },
   { icon: BarChart3, title: "UX Improvement", description: "Aggregated, anonymous data helps us understand how the platform is used so we can improve our digital sanctuary." },
@@ -44,8 +44,8 @@ const SECURITY_BADGES = [
 ];
 
 const PRIVACY_RIGHTS = [
-  { title: "Access & Export Your Data", content: "You have the right to request a copy of all personal data we hold about you. We will provide this in a portable, machine-readable format within 30 days of your request. To export your data, contact our privacy team at privacy@mindfultherapy.com." },
-  { title: "Correction & Deletion", content: "If any information we hold about you is inaccurate or incomplete, you can request a correction at any time from your account settings. You also have the right to request deletion of your data, subject to legal retention requirements for therapy session records." },
+  { title: "Access & Export Your Data", content: "You have the right to request a copy of all personal data we hold about you. We will provide this in a portable, machine-readable format within 30 days of your request. To export your data, contact our privacy team at privacy@tarewellness.com." },
+  { title: "Correction & Deletion", content: "If any information we hold about you is inaccurate or incomplete, you can request a correction at any time from your account settings. You also have the right to request deletion of your data, subject to legal retention requirements for wellness session records." },
   { title: "Communication Preferences", content: "You control how we communicate with you. Manage your email and notification preferences from your account dashboard. You can opt out of marketing communications at any time without affecting essential service notifications like booking confirmations and session reminders." },
 ];
 
@@ -109,7 +109,7 @@ export default function PrivacyPolicyPage() {
               </div>
             </div>
             <div className="space-y-12 p-6 sm:p-8 lg:p-10">
-              <div id="summary" className="scroll-mt-32"><p className="font-sans text-sm leading-relaxed text-[#4E0030]/75 sm:text-base">This Privacy Policy describes how Tare Wellness collects, uses, and protects your personal information when you use our platform to send therapy gift cards, book wellness sessions, and communicate with licensed professionals. By using our services, you agree to the practices described below.</p></div>
+              <div id="summary" className="scroll-mt-32"><p className="font-sans text-sm leading-relaxed text-[#4E0030]/75 sm:text-base">This Privacy Policy describes how Tare Wellness collects, uses, and protects your personal information when you use our platform to send wellness gift cards, book care sessions, and communicate with licensed professionals. By using our services, you agree to the practices described below.</p></div>
               <div id="collection" className="scroll-mt-32">
                 <div className="rounded-2xl bg-white p-6 shadow-[0_8px_30px_rgba(78, 0, 48, 0.08)] sm:p-8">
                   <h3 className="font-fraunces text-xl font-bold text-[#4E0030] sm:text-2xl">Information We Collect</h3>

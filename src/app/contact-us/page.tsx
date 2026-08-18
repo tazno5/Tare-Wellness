@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Mail, MessageCircle, Phone, Send, Check, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const TOPICS = ["General Inquiry", "Gift Cards", "Therapy Bookings", "Technical Support"];
+const TOPICS = ["General Inquiry", "Gift Cards", "Session Bookings", "Technical Support"];
 
 const SUPPORT_CHANNELS = [
   { icon: Mail, title: "Email Support", primary: "help@mindful.com", secondary: "support@bewelltare.com", description: "We aim to respond within 24 hours.", href: "mailto:help@mindful.com" },

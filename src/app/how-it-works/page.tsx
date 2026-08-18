@@ -79,7 +79,7 @@ const QUALITY = [
   {
     icon: <BadgeCheck className="h-5 w-5" strokeWidth={2.5} />,
     title: "Qualified Professionals",
-    body: "Every therapist is licensed, vetted, and committed to trauma-informed care.",
+    body: "Every professional is licensed, vetted, and committed to trauma-informed care.",
   },
   {
     icon: <Mail className="h-5 w-5" strokeWidth={2.5} />,

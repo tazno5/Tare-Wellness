@@ -121,7 +121,7 @@ const FAQS = [
   },
   {
     q: "Are sessions online or in person?",
-    a: "Both options are available. After confirming your booking, your therapist will reach out with details and a secure video link if you choose online.",
+    a: "Both options are available. After confirming your booking, your wellness specialist will reach out with details and a secure video link if you choose online.",
   },
 ];
 
@@ -403,7 +403,7 @@ export default function BookSessionPage() {
             className="mt-4 max-w-xl font-sans text-[15px] leading-relaxed text-maroon/85 sm:text-[17px]"
           >
             Pick a type, choose a time, and we&apos;ll match you with a
-            therapist who fits.
+            professional who fits.
           </motion.p>
 
           {/* Hero image */}

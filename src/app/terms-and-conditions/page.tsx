@@ -11,20 +11,20 @@ import {
 
 const OVERVIEW_CARDS = [
   { icon: Gift, title: "Gift Card Purchases", description: "Terms governing the purchase, delivery, and expiration of digital wellness gifts." },
-  { icon: CalendarCheck, title: "Therapy Session Bookings", description: "Policies for scheduling, rescheduling, and preparing for your sessions." },
+  { icon: CalendarCheck, title: "Session Bookings", description: "Policies for scheduling, rescheduling, and preparing for your sessions." },
   { icon: CreditCard, title: "Payments & Billing", description: "Information on accepted payment methods, subscription billing, and refunds." },
-  { icon: Heart, title: "Therapy Services", description: "Scope of practice, therapist qualifications, and limitations of digital care." },
+  { icon: Heart, title: "Wellness Services", description: "Scope of practice, professional qualifications, and limitations of digital care." },
   { icon: Laptop, title: "Platform Usage", description: "Acceptable use policy, account security, and technical requirements." },
   { icon: PenLine, title: "Rights & Responsibilities", description: "Your rights as a client and our legal disclaimers and limitations of liability." },
 ];
 
-const TABS = ["Acceptance of Terms", "Gift Card Terms", "Purchases & Payments", "Redemption Policies", "Therapy Services", "Booking & Cancellations"];
+const TABS = ["Acceptance of Terms", "Gift Card Terms", "Purchases & Payments", "Redemption Policies", "Wellness Services", "Booking & Cancellations"];
 
 const ACCORDIONS = [
-  { title: "Gift Card Terms", icon: Gift, bullets: ["Mindful Therapy Gift Cards are non-refundable and cannot be redeemed for cash, except where required by law.", "Gift Cards do not expire, and we do not assess any inactivity fees.", "We are not responsible if a Gift Card is lost, stolen, destroyed, or used without your permission."] },
+  { title: "Gift Card Terms", icon: Gift, bullets: ["Tare Wellness Gift Cards are non-refundable and cannot be redeemed for cash, except where required by law.", "Gift Cards do not expire, and we do not assess any inactivity fees.", "We are not responsible if a Gift Card is lost, stolen, destroyed, or used without your permission."] },
   { title: "Purchases & Payments", icon: ShoppingCart, bullets: ["All payments are processed securely through PCI-compliant payment gateways.", "We accept major credit cards (Visa, Mastercard) and bank transfers.", "Prices are listed in Nigerian Naira and include all applicable taxes.", "No processing fees are charged — the price you see is the price you pay."] },
-  { title: "Redemption Policies", icon: Settings, bullets: ["Gift cards are redeemed by entering the unique code at checkout or in your account dashboard.", "Redeemed credit can be applied to any therapist session on our network.", "If a session costs less than the gift card balance, remaining credit stays on the account.", "Gift card credit is non-transferable between accounts."] },
-  { title: "Therapy Sessions", icon: User, bullets: ["All therapists in our network are licensed, vetted, and carefully selected professionals.", "Sessions are conducted via secure video call and are completely confidential.", "Tare Wellness is a platform facilitating connections — we do not provide medical advice directly.", "Therapists operate independently and are solely responsible for their clinical decisions."] },
+  { title: "Redemption Policies", icon: Settings, bullets: ["Gift cards are redeemed by entering the unique code at checkout or in your account dashboard.", "Redeemed credit can be applied to any wellness session on our network.", "If a session costs less than the gift card balance, remaining credit stays on the account.", "Gift card credit is non-transferable between accounts."] },
+  { title: "Wellness Sessions", icon: User, bullets: ["All professionals in our network are licensed, vetted, and carefully selected practitioners.", "Sessions are conducted via secure video call and are completely confidential.", "Tare Wellness is a platform facilitating connections — we do not provide medical advice directly.", "Practitioners operate independently and are solely responsible for their clinical decisions."] },
   { title: "Booking & Cancellation", icon: CalendarX, bullets: ["Sessions can be rescheduled up to 24 hours before the scheduled start time at no charge.", "Cancellations made less than 24 hours before may result in forfeiture of the session credit.", "Late arrivals of more than 15 minutes may be treated as a no-show.", "A secure video link becomes active 10 minutes before your scheduled session."] },
 ];
 
@@ -103,9 +103,9 @@ export default function TermsAndConditionsPage() {
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="rounded-2xl bg-white p-6 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] sm:p-8">
             <div className="flex items-center gap-3 border-l-4 border-[#F10897] pl-4"><h3 className="font-fraunces text-xl font-bold text-[#4E0030] sm:text-2xl">Acceptance of Terms</h3></div>
             <div className="mt-4 space-y-4 pl-4">
-              <p className="font-sans text-sm leading-relaxed text-[#4E0030]/75 sm:text-base">By accessing this website, purchasing a gift card, or booking a therapy session through Tare Wellness, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please do not use our platform or services.</p>
+              <p className="font-sans text-sm leading-relaxed text-[#4E0030]/75 sm:text-base">By accessing this website, purchasing a gift card, or booking a wellness session through Tare Wellness, you agree to be bound by these Terms and Conditions. If you do not agree with any part of these terms, please do not use our platform or services.</p>
               <p className="font-sans text-sm leading-relaxed text-[#4E0030]/75 sm:text-base">Your acceptance is expressly limited to these terms. The company reserves the right to update, modify, or amend these terms at any time. Continued use of the platform after any changes constitutes acceptance of the revised terms.</p>
-              <p className="font-sans text-sm leading-relaxed text-[#4E0030]/75 sm:text-base">These terms apply to all users, including gift card purchasers, recipients, and therapy session attendees. By using our services, you acknowledge that you have read, understood, and agree to be bound by all terms outlined below.</p>
+              <p className="font-sans text-sm leading-relaxed text-[#4E0030]/75 sm:text-base">These terms apply to all users, including gift card purchasers, recipients, and wellness session attendees. By using our services, you acknowledge that you have read, understood, and agree to be bound by all terms outlined below.</p>
             </div>
           </motion.div>
         </div>
