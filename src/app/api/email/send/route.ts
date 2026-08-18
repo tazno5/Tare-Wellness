@@ -149,7 +149,7 @@ export async function POST(req: Request) {
             </p>
           </div>
 
-          <a href="https://tare-wellness.vercel.app/redeem" style="display: inline-block; background: #F10897; color: white; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 15px;">
+          <a href="https://tarewellness.com/redeem" style="display: inline-block; background: #F10897; color: white; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 15px;">
             Redeem Now
           </a>
 
