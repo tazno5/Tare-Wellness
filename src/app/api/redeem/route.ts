@@ -2,11 +2,21 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 // ============ POST /api/redeem — Validate + apply redemption code ============
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting: 10 redemption attempts per minute per IP
+    const { success } = await checkRateLimit(req, "redeem");
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please wait a moment before trying again." },
+        { status: 429 },
+      );
+    }
+
     const session = await getServerSession(authOptions);
     const body = await req.json();
     const { code } = body as { code: string };

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 // ============ Validation (HIGH #4) ============
 
@@ -75,6 +76,15 @@ function generateRedemptionCode(seed: string): string {
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting: 5 orders per minute per IP
+    const { success } = await checkRateLimit(req, "orders");
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait a moment before trying again." },
+        { status: 429 },
+      );
+    }
+
     const session = await getServerSession(authOptions);
 
     // CRITICAL #1: Require authentication — no guest orders

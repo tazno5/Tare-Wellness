@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 // ============ Validation (#4) ============
 
@@ -27,6 +28,15 @@ const SESSION_PRICES: Record<string, { title: string; price: number; duration: n
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting: 5 bookings per minute per IP
+    const { success } = await checkRateLimit(req, "bookings");
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many booking requests. Please wait a moment." },
+        { status: 429 },
+      );
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {

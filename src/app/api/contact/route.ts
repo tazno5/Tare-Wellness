@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { BrevoClient } from "@getbrevo/brevo";
 import { z } from "zod";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 // POST /api/contact — Send contact form message to admin via Brevo
 // Sends an email to the admin (GMAIL_USER or EMAIL_FROM address)
@@ -33,6 +34,15 @@ function escapeHtml(str: string | null | undefined): string {
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting: 3 contact form submissions per minute per IP
+    const { success } = await checkRateLimit(req, "contact");
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many messages. Please wait a moment before sending again." },
+        { status: 429 },
+      );
+    }
+
     const body = await req.json();
     const parseResult = contactSchema.safeParse(body);
     if (!parseResult.success) {

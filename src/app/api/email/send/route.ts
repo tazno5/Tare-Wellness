@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { BrevoClient } from "@getbrevo/brevo";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 // POST /api/email/send — Send gift card email to recipient
 // Called automatically after order creation, or manually to resend
@@ -47,6 +48,15 @@ function escapeHtml(str: string | null | undefined): string {
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting: 5 email sends per minute per IP
+    const { success } = await checkRateLimit(req, "email");
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many email requests. Please wait a moment." },
+        { status: 429 },
+      );
+    }
+
     const body = await req.json();
     const { orderItemId, force } = body as { orderItemId?: string; force?: boolean };
 

@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { checkRateLimit } from "@/lib/ratelimit";
 
 export async function POST(req: Request) {
   try {
+    // Rate limiting: 3 registrations per minute per IP
+    const { success } = await checkRateLimit(req, "register");
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many sign-up attempts. Please wait a moment." },
+        { status: 429 },
+      );
+    }
+
     const { name, email, password } = await req.json();
 
     // Validate input
