@@ -1,7 +1,27 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+
+// ============ Validation (#4) ============
+
+const createBookingSchema = z.object({
+  sessionType: z.enum(["individual", "couples", "family", "wellness"]),
+  sessionTitle: z.string().min(1).max(200),
+  scheduledDate: z.string().min(1).max(100),
+  scheduledTime: z.string().min(1).max(20),
+  therapistName: z.string().max(200).optional().default("Dr. Sarah Thompson"),
+  redemptionCode: z.string().max(20).optional(),
+});
+
+// #3: Server-side session price lookup — never trust client-provided prices
+const SESSION_PRICES: Record<string, { title: string; price: number; duration: number }> = {
+  individual: { title: "One-on-One", price: 20000, duration: 50 },
+  couples: { title: "Together", price: 30000, duration: 60 },
+  family: { title: "Family Circle", price: 40000, duration: 75 },
+  wellness: { title: "Wellness Coaching", price: 15000, duration: 30 },
+};
 
 // ============ POST /api/bookings — Create a booking ============
 
@@ -17,30 +37,55 @@ export async function POST(req: Request) {
     }
 
     const userId = (session.user as { id: string }).id;
+
+    // #4: Validate input with Zod
     const body = await req.json();
+    const parseResult = createBookingSchema.safeParse(body);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        {
+          error: "Invalid booking data",
+          details: parseResult.error.flatten().fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
 
     const {
       sessionType,
       sessionTitle,
-      sessionPrice,
       scheduledDate,
       scheduledTime,
-      therapistName,
+      therapistName: rawTherapistName,
       redemptionCode,
-    } = body as {
-      sessionType: string;
-      sessionTitle: string;
-      sessionPrice: number;
-      scheduledDate: string;
-      scheduledTime: string;
-      therapistName: string;
-      redemptionCode?: string;
-    };
+    } = parseResult.data;
 
-    // Validate required fields
-    if (!sessionType || !scheduledDate || !scheduledTime) {
+    // #3: Look up session price from server-side config, not client
+    const sessionConfig = SESSION_PRICES[sessionType];
+    if (!sessionConfig) {
       return NextResponse.json(
-        { error: "Session type, date, and time are required" },
+        { error: "Invalid session type" },
+        { status: 400 },
+      );
+    }
+    const resolvedSessionPrice = sessionConfig.price;
+    const resolvedSessionTitle = sessionConfig.title;
+    const resolvedDuration = sessionConfig.duration;
+    const resolvedTherapistName = rawTherapistName || "Dr. Sarah Thompson";
+
+    // Validate date is not in the past
+    const bookingDate = new Date(scheduledDate);
+    if (isNaN(bookingDate.getTime())) {
+      return NextResponse.json(
+        { error: "Invalid date format" },
+        { status: 400 },
+      );
+    }
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    if (bookingDate < now) {
+      return NextResponse.json(
+        { error: "Cannot book a session in the past" },
         { status: 400 },
       );
     }
@@ -50,7 +95,7 @@ export async function POST(req: Request) {
     const userConflict = await db.booking.findFirst({
       where: {
         userId,
-        scheduledDate: new Date(scheduledDate),
+        scheduledDate: bookingDate,
         scheduledTime,
         status: "confirmed",
       },
@@ -63,13 +108,11 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. MEDIUM #5: Therapist can't have two bookings at the same time
-    // (prevents double-booking the same therapist slot)
-    const resolvedTherapistName = therapistName || "Dr. Sarah Thompson";
+    // 2. Therapist can't have two bookings at the same time
     const therapistConflict = await db.booking.findFirst({
       where: {
         therapistName: resolvedTherapistName,
-        scheduledDate: new Date(scheduledDate),
+        scheduledDate: bookingDate,
         scheduledTime,
         status: "confirmed",
       },
@@ -82,9 +125,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Generate booking number — timestamp + random chars for uniqueness
-    // (same pattern as generateOrderNumber in /api/orders/route.ts).
-    // Old code used a deterministic sum that collided for same-user same-ms.
+    // Generate booking number
     const ts = Date.now().toString(36).toUpperCase().slice(-6);
     const rand = Math.random().toString(36).toUpperCase().slice(2, 6);
     const bookingNumber = `BK-2026-${ts}${rand}`;
@@ -137,7 +178,6 @@ export async function POST(req: Request) {
       }
 
       // Atomically decrement sessionsRemaining and increment sessionsUsed.
-      // Only succeeds if sessionsRemaining > 0 (prevents race condition).
       const decremented = await db.redemption.updateMany({
         where: {
           id: redemption.id,
@@ -150,7 +190,6 @@ export async function POST(req: Request) {
       });
 
       if (decremented.count === 0) {
-        // Another booking consumed the last session between our read and write
         return NextResponse.json(
           { error: "No sessions remaining on this gift card" },
           { status: 409 },
@@ -160,19 +199,19 @@ export async function POST(req: Request) {
       redemptionId = redemption.id;
     }
 
-    // Create the booking
+    // Create the booking — using server-side price (#3)
     const booking = await db.booking.create({
       data: {
         bookingNumber,
         userId,
         redemptionId,
         sessionType,
-        sessionTitle,
-        sessionPrice,
+        sessionTitle: resolvedSessionTitle,
+        sessionPrice: resolvedSessionPrice,
         therapistName: resolvedTherapistName,
-        scheduledDate: new Date(scheduledDate),
+        scheduledDate: bookingDate,
         scheduledTime,
-        durationMinutes: 50,
+        durationMinutes: resolvedDuration,
         status: "confirmed",
         meetingUrl,
       },

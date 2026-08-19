@@ -796,9 +796,18 @@ function RecipientSlide({
             required
             value={recipient.email}
             onChange={(e) => onUpdate({ email: e.target.value })}
+            onBlur={(e) => e.target.setCustomValidity(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value) ? "" : "Please enter a valid email")}
             placeholder="they@example.com"
-            className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#C7B2E2] focus:outline-none focus:ring-2 focus:ring-[#C7B2E2]/40"
+            aria-invalid={recipient.email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.email)}
+            className={`h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#C7B2E2] focus:outline-none focus:ring-2 focus:ring-[#C7B2E2]/40 ${
+              recipient.email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.email)
+                ? "border-red-400 focus:border-red-400 focus:ring-red-400/20"
+                : ""
+            }`}
           />
+          {recipient.email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.email) && (
+            <p className="mt-1 font-sans text-xs text-red-400">Please enter a valid email address.</p>
+          )}
         </div>
       </div>
 

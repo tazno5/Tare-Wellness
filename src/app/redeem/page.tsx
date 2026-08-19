@@ -202,9 +202,17 @@ export default function RedeemPage() {
         description: data.message || `₦${data.creditAmount.toLocaleString()} credit applied.`,
       });
     } catch (error) {
+      const errMsg = error instanceof Error ? error.message : "Something went wrong. Please try again.";
       toast({
         title: "Could not redeem",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        description: (
+          <span>
+            {errMsg}{" "}
+            <a href="/contact-us" className="font-bold underline text-[#F10897]">
+              Contact support
+            </a>
+          </span>
+        ),
         variant: "destructive",
       });
     } finally {

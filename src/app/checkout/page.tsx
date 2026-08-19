@@ -647,6 +647,40 @@ function CheckoutContent() {
                       <CheckCircle2 className="h-3.5 w-3.5 text-[#F10897]" strokeWidth={2.5} />
                       No transfer fee from your bank.
                     </p>
+                    {/* #9: "I've Made the Transfer" button — creates order as pending */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const form = document.getElementById("checkout-form") as HTMLFormElement;
+                        if (form) {
+                          // Set a hidden flag so the submit handler knows it's a transfer confirmation
+                          const hiddenInput = document.createElement("input");
+                          hiddenInput.type = "hidden";
+                          hiddenInput.name = "transferConfirmed";
+                          hiddenInput.value = "true";
+                          form.appendChild(hiddenInput);
+                          form.requestSubmit();
+                        }
+                      }}
+                      disabled={submitting}
+                      className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_8px_24px_rgba(78,0,48,0.20)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0024] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {submitting ? (
+                        <>
+                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                          Processing…
+                        </>
+                      ) : (
+                        <>
+                          <Building2 className="h-4 w-4" strokeWidth={2.5} />
+                          I&apos;ve Made the Transfer
+                        </>
+                      )}
+                    </button>
+                    <p className="mt-2 text-center font-sans text-[11px] text-maroon/50">
+                      Your gift card is sent the moment we confirm your transfer.
+                    </p>
                   </div>
                 </TabsContent>
               </Tabs>

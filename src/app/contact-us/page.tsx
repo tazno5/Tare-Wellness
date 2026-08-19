@@ -32,15 +32,41 @@ export default function ContactUsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) return;
+    // Basic email validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsLoading(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    setIsLoading(false);
-    setSubmitted(true);
-    toast({
-      title: "Message sent!",
-      description: `We'll respond to ${form.email} within 24 hours.`,
-    });
+    try {
+      // #5: Real API call — sends contact message to admin via Brevo
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || "Failed to send message");
+      }
+      setSubmitted(true);
+      toast({
+        title: "Message sent!",
+        description: `We'll respond to ${form.email} within 24 hours.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Message failed",
+        description: error instanceof Error ? error.message : "Please try again or email us directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
