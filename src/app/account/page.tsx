@@ -164,7 +164,7 @@ function AccountContent() {
   }
 
   return (
-    <main className="relative flex flex-1 flex-col">
+    <main className="relative flex flex-1 flex-col overflow-x-hidden">
       {/* Decorative blooms */}
       <div aria-hidden className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-[#B5E1C3]/25 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />

@@ -1,28 +1,36 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { Home, ArrowRight } from "lucide-react";
 
 export default function NotFound() {
+  const pathname = usePathname();
+
   return (
-    <main className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 sm:px-8 lg:px-12">
+    <main className="relative flex flex-1 flex-col items-center justify-center overflow-x-hidden px-5 py-20 sm:px-8 lg:px-12">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className="text-center"
       >
-        <h1 className="font-fraunces text-7xl font-extrabold tracking-tight text-white drop-shadow-sm sm:text-8xl lg:text-9xl">
+        <h1 className="font-fraunces text-7xl font-extrabold tracking-tight bg-gradient-to-r from-[#2750D8] to-[#90AAFF] bg-clip-text text-transparent drop-shadow-sm sm:text-8xl lg:text-9xl">
           404
         </h1>
-        <h2 className="mt-4 font-fraunces text-2xl font-bold text-white sm:text-3xl">
+        <h2 className="mt-4 font-fraunces text-2xl font-bold text-[#4E0030] sm:text-3xl">
           This page took a wellness break
         </h2>
-        <p className="mx-auto mt-3 max-w-sm font-sans text-sm text-white/80 sm:text-base">
+        <p className="mx-auto mt-3 max-w-sm font-sans text-sm text-[#4E0030]/70 sm:text-base">
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
           Let&apos;s get you back to somewhere peaceful.
         </p>
+        {pathname && (
+          <p className="mt-2 font-mono text-[11px] text-[#4E0030]/40">
+            You tried to visit: {pathname}
+          </p>
+        )}
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/"

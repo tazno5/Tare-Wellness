@@ -259,7 +259,7 @@ function RecipientDetailsContent() {
   const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
 
   return (
-    <main className="relative flex flex-1 flex-col">
+    <main className="relative flex flex-1 flex-col overflow-x-hidden">
       {/* Decorative blooms */}
       <div
         aria-hidden

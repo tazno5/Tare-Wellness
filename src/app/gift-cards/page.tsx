@@ -155,7 +155,7 @@ function GiftCardPageContent() {
   };
 
   return (
-    <main className="relative flex flex-1 flex-col">
+    <main className="relative flex flex-1 flex-col overflow-x-hidden">
       {/* ============ HERO ============ */}
       <section className="relative w-full overflow-hidden px-5 pb-12 pt-10 sm:px-8 sm:pb-16 lg:px-12 lg:pt-16">
         {/* Decorative soft blooms */}

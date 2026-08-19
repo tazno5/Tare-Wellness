@@ -25,7 +25,12 @@ import { useStore } from "@/lib/store";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
-  formatCardNumber, formatExpiry, formatCVV,
+  formatCardNumber,
+  formatExpiry,
+  formatCVV,
+  isValidCardNumber,
+  isValidExpiry,
+  isValidCVV,
 } from "@/lib/validation";
 
 const CARD_LOOKUP: Record<
@@ -84,6 +89,25 @@ function CheckoutContent() {
   const { recipients, user, clearCart, clearRecipients } = useStore();
   const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">("card");
   const [submitting, setSubmitting] = useState(false);
+
+  // #1: Controlled card inputs with formatting
+  const [cardholderName, setCardholderName] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvv, setCvv] = useState("");
+  // #4: Track touched fields for inline validation
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // #4: Inline validation helpers
+  const isCardNumberValid = isValidCardNumber(cardNumber);
+  const isExpiryValid = isValidExpiry(expiry);
+  const isCvvValid = isValidCVV(cvv);
+  const isCardholderValid = cardholderName.trim().length >= 2;
+
+  const markTouched = (field: string) => setTouched((prev) => ({ ...prev, [field]: true }));
+
+  const fieldError = (field: string, isValid: boolean) =>
+    touched[field] && !isValid ? "border-red-400 focus:border-red-400 focus:ring-red-400/20" : "";
 
   // Set gradient — render + useEffect
   useMemo(() => {
@@ -289,7 +313,7 @@ function CheckoutContent() {
   const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
 
   return (
-    <main className="relative flex flex-1 flex-col">
+    <main className="relative flex flex-1 flex-col overflow-x-hidden">
       {/* Decorative blooms */}
       <div
         aria-hidden
@@ -375,6 +399,19 @@ function CheckoutContent() {
             Secure your gift and we&apos;ll send it the moment payment is
             confirmed.
           </motion.p>
+
+          {/* #3: Demo mode banner — visible until Paystack is integrated */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#B5E1C3]/30 px-4 py-2"
+          >
+            <span className="text-base">🧪</span>
+            <p className="font-sans text-xs font-semibold text-[#2d6e4f]">
+              Demo Mode — no real payment charged. Use card <span className="font-mono">4242 4242 4242 4242</span>, any expiry, any CVV.
+            </p>
+          </motion.div>
 
           {/* Hero image */}
           <motion.div
@@ -474,10 +511,16 @@ function CheckoutContent() {
                         id="cardholder"
                         type="text"
                         required
+                        value={cardholderName}
+                        onChange={(e) => setCardholderName(e.target.value)}
+                        onBlur={() => markTouched("cardholder")}
                         placeholder="Name on card"
-                        className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                        className={`h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30 ${fieldError("cardholder", isCardholderValid)}`}
                       />
                     </div>
+                    {touched.cardholder && !isCardholderValid && (
+                      <p className="mt-1 font-sans text-xs text-red-400">Please enter the name on your card.</p>
+                    )}
                   </div>
 
                   <div>
@@ -494,11 +537,17 @@ function CheckoutContent() {
                         type="text"
                         required
                         inputMode="numeric"
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                        onBlur={() => markTouched("cardNumber")}
                         maxLength={19}
                         placeholder="0000 0000 0000 0000"
-                        className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                        className={`h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30 ${fieldError("cardNumber", isCardNumberValid)}`}
                       />
                     </div>
+                    {touched.cardNumber && !isCardNumberValid && cardNumber.length > 0 && (
+                      <p className="mt-1 font-sans text-xs text-red-400">Card number must be 16 digits.</p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -513,10 +562,16 @@ function CheckoutContent() {
                         id="expiry"
                         type="text"
                         required
+                        value={expiry}
+                        onChange={(e) => setExpiry(formatExpiry(e.target.value))}
+                        onBlur={() => markTouched("expiry")}
                         maxLength={5}
                         placeholder="MM/YY"
-                        className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                        className={`mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30 ${fieldError("expiry", isExpiryValid)}`}
                       />
+                      {touched.expiry && !isExpiryValid && expiry.length > 0 && (
+                        <p className="mt-1 font-sans text-xs text-red-400">Invalid date.</p>
+                      )}
                     </div>
                     <div>
                       <label
@@ -529,11 +584,17 @@ function CheckoutContent() {
                         id="cvv"
                         type="text"
                         required
-                        maxLength={4}
                         inputMode="numeric"
+                        value={cvv}
+                        onChange={(e) => setCvv(formatCVV(e.target.value))}
+                        onBlur={() => markTouched("cvv")}
+                        maxLength={4}
                         placeholder="123"
-                        className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                        className={`mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30 ${fieldError("cvv", isCvvValid)}`}
                       />
+                      {touched.cvv && !isCvvValid && cvv.length > 0 && (
+                        <p className="mt-1 font-sans text-xs text-red-400">3-4 digits.</p>
+                      )}
                     </div>
                   </div>
                 </TabsContent>
@@ -546,17 +607,17 @@ function CheckoutContent() {
                       transfer clears (usually within 1 business hour).
                     </p>
                     <div className="mt-3 space-y-2 rounded-xl bg-white/80 p-3 font-sans text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-maroon/60">Bank</span>
-                        <span className="font-bold text-maroon">Tare Bank</span>
+                      <div className="flex justify-between gap-2">
+                        <span className="shrink-0 text-maroon/60">Bank</span>
+                        <span className="truncate font-bold text-maroon">Tare Bank</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-maroon/60">Account Name</span>
-                        <span className="font-bold text-maroon">Tare Wellness Ltd</span>
+                      <div className="flex justify-between gap-2">
+                        <span className="shrink-0 text-maroon/60">Account Name</span>
+                        <span className="truncate font-bold text-maroon">Tare Wellness Ltd</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-maroon/60">Account Number</span>
-                        <span className="font-mono font-bold text-maroon">
+                      <div className="flex justify-between gap-2">
+                        <span className="shrink-0 text-maroon/60">Account Number</span>
+                        <span className="font-mono font-bold text-maroon break-all">
                           0123456789
                         </span>
                       </div>
@@ -873,7 +934,7 @@ function CheckoutContent() {
                 {submitting ? (
                   <>
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                    Processing…
+                    Processing payment & email…
                   </>
                 ) : (
                   <>
@@ -908,7 +969,7 @@ function CheckoutContent() {
             disabled={submitting}
             className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           >
-            {submitting ? "Processing…" : "Complete Purchase"}
+            {submitting ? "Processing payment & email…" : "Complete Purchase"}
             {!submitting && (
               <ArrowRight
                 className="h-4 w-4 transition-transform group-hover:translate-x-1"

@@ -338,7 +338,7 @@ export default function BookSessionPage() {
   };
 
   return (
-    <main className="relative flex flex-1 flex-col">
+    <main className="relative flex flex-1 flex-col overflow-x-hidden">
       {/* Decorative blooms */}
       <div
         aria-hidden
