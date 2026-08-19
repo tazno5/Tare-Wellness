@@ -140,9 +140,9 @@ export async function POST(req: Request) {
     const rand = Math.random().toString(36).toUpperCase().slice(2, 6);
     const bookingNumber = `BK-2026-${ts}${rand}`;
 
-    // Generate meeting URL
-    const meetingId = Math.random().toString(36).slice(2, 10);
-    const meetingUrl = `meet.mindful.com/v/${meetingId}`;
+    // Generate meeting URL — points to WhatsApp contact for session coordination.
+    // The wellness specialist uses WhatsApp to share the video call link at session time.
+    const meetingUrl = "https://wa.me/2349036530892";
 
     // CRITICAL #3: If redemption code provided, verify it belongs to the user,
     // has remaining sessions, and decrement sessionsRemaining atomically.

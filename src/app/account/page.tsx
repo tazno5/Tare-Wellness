@@ -541,10 +541,10 @@ function BookingsTab({
                   <Video className="h-4 w-4 shrink-0 text-white" strokeWidth={2.5} />
                   <div className="min-w-0">
                     <p className="font-sans text-[10px] font-bold uppercase tracking-wide text-white/80">
-                      Join
+                      Join Session
                     </p>
                     <p className="truncate font-sans text-xs font-semibold text-white">
-                      Session link
+                      via WhatsApp
                     </p>
                   </div>
                 </a>
