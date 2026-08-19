@@ -127,6 +127,7 @@ function OrderConfirmationContent() {
   const [confirmIndex, setConfirmIndex] = useState(0);
   const [apiOrder, setApiOrder] = useState<null | {
     orderNumber: string;
+    status: string;
     totalAmount: number;
     orderItems: {
       id: string;
@@ -337,6 +338,7 @@ function OrderConfirmationContent() {
 
   // MEDIUM #2: Resend gift card email to recipient(s)
   const [resendingEmail, setResendingEmail] = useState(false);
+  const [resendResult, setResendResult] = useState<"success" | "error" | null>(null);
   const handleResendEmail = async () => {
     if (!apiOrder?.orderItems?.length) {
       toast({
@@ -347,6 +349,7 @@ function OrderConfirmationContent() {
       return;
     }
     setResendingEmail(true);
+    setResendResult(null);
     try {
       const results = await Promise.all(
         apiOrder.orderItems.map((item) =>
@@ -358,6 +361,8 @@ function OrderConfirmationContent() {
         ),
       );
       const successCount = results.filter((r) => r.success).length;
+      setResendResult(successCount > 0 ? "success" : "error");
+      setTimeout(() => setResendResult(null), 3000);
       toast({
         title: successCount > 0 ? "Email sent!" : "Email failed",
         description:
@@ -366,6 +371,8 @@ function OrderConfirmationContent() {
             : "We couldn't send the email. The recipient can still redeem via the code on this page.",
       });
     } catch {
+      setResendResult("error");
+      setTimeout(() => setResendResult(null), 3000);
       toast({
         title: "Email failed",
         description: "Something went wrong. Please try again later.",
@@ -432,7 +439,7 @@ function OrderConfirmationContent() {
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
-              Order Confirmed
+              {apiOrder?.status === "pending" ? "Awaiting Transfer" : "Order Confirmed"}
             </span>
           </motion.div>
 
@@ -442,8 +449,9 @@ function OrderConfirmationContent() {
             transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight bg-gradient-to-r from-[#2750D8] to-[#90AAFF] bg-clip-text text-transparent sm:text-5xl lg:text-6xl"
           >
-            Your gift is on its way{" "}
-            <span className="text-[#F10897]">&#10084;&#65039;</span>
+            {apiOrder?.status === "pending"
+              ? "Transfer pending"
+              : (<>Your gift is on its way{" "}<span className="text-[#F10897]">&#10084;&#65039;</span></>)}
           </motion.h1>
 
           <motion.p
@@ -452,8 +460,9 @@ function OrderConfirmationContent() {
             transition={{ duration: 0.7, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="mt-4 max-w-xl font-sans text-[15px] leading-relaxed text-maroon/85 sm:text-[17px]"
           >
-            We&apos;ve emailed each recipient their gift card. Keep these
-            receipts for your records.
+            {apiOrder?.status === "pending"
+              ? "We're waiting for your bank transfer to clear. Once confirmed, your gift card will be sent to your recipient automatically."
+              : "We've emailed each recipient their gift card. Keep these receipts for your records."}
           </motion.p>
 
           {/* Order number — from API or from query param (mock mode) */}
@@ -789,6 +798,14 @@ function OrderConfirmationContent() {
             <Mail className="h-4 w-4" strokeWidth={2.5} />
             {resendingEmail ? "Sending..." : "Resend Email"}
           </button>
+          {resendResult === "success" && (
+            <span className="inline-flex items-center gap-1 font-sans text-xs font-bold text-[#2d6e4f]">
+              <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> Sent!
+            </span>
+          )}
+          {resendResult === "error" && (
+            <span className="font-sans text-xs font-bold text-red-400">Failed — try again</span>
+          )}
         </div>
       </section>
       </>

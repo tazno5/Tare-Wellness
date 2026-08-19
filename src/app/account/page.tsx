@@ -318,8 +318,24 @@ function OrdersTab({
 }) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-[#F10897]" strokeWidth={2.5} />
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-2xl bg-white p-5 shadow-[0_4px_15px_rgba(78,0,48,0.06)] sm:p-6">
+            <div className="flex items-start justify-between border-b border-maroon/10 pb-4">
+              <div className="space-y-2">
+                <div className="h-5 w-32 animate-pulse rounded-lg bg-maroon/10" />
+                <div className="h-3 w-24 animate-pulse rounded-lg bg-maroon/10" />
+              </div>
+              <div className="space-y-2 text-right">
+                <div className="h-6 w-20 animate-pulse rounded-lg bg-maroon/10" />
+                <div className="h-4 w-16 animate-pulse rounded-full bg-maroon/10" />
+              </div>
+            </div>
+            <div className="mt-4 space-y-3">
+              <div className="h-16 animate-pulse rounded-xl bg-[#FFF5EE]" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -422,8 +438,26 @@ function BookingsTab({
 }) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-[#F10897]" strokeWidth={2.5} />
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-2xl bg-white p-5 shadow-[0_4px_15px_rgba(78,0,48,0.06)] sm:p-6">
+            <div className="flex items-start justify-between border-b border-maroon/10 pb-4">
+              <div className="space-y-2">
+                <div className="h-5 w-40 animate-pulse rounded-lg bg-maroon/10" />
+                <div className="h-3 w-28 animate-pulse rounded-lg bg-maroon/10" />
+              </div>
+              <div className="space-y-2 text-right">
+                <div className="h-6 w-20 animate-pulse rounded-lg bg-maroon/10" />
+                <div className="h-4 w-16 animate-pulse rounded-full bg-maroon/10" />
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="h-12 animate-pulse rounded-xl bg-[#FFF5EE]" />
+              <div className="h-12 animate-pulse rounded-xl bg-[#FFF5EE]" />
+              <div className="h-12 animate-pulse rounded-xl bg-[#FFF5EE]" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

@@ -295,14 +295,33 @@ function CheckoutContent() {
         return;
       }
 
-      // API returned an error — surface it to the user
+      // API returned an error — surface it to the user with specific messages
       const errData = await res.json().catch(() => null);
-      throw new Error(errData?.error || "Payment failed. Please check your details and try again.");
+      let errorMsg = "Payment failed. Please check your details and try again.";
+
+      if (res.status === 401) {
+        errorMsg = "Please sign in to complete your purchase.";
+      } else if (res.status === 400) {
+        errorMsg = errData?.details
+          ? Object.values(errData.details).flat().join(" ")
+          : "Some details are missing or invalid. Please check your form.";
+      } else if (res.status === 409) {
+        errorMsg = "This creates a duplicate order. Please refresh and try again.";
+      } else if (res.status === 429) {
+        errorMsg = "Too many requests. Please wait a moment and try again.";
+      } else if (res.status >= 500) {
+        errorMsg = "Our servers are having trouble. Please try again in a moment.";
+      } else if (errData?.error) {
+        errorMsg = errData.error;
+      }
+
+      throw new Error(errorMsg);
     } catch (error) {
-      // Show the error — do NOT silently fall through to mock mode
+      // #7: Specific error messages based on failure type
+      const msg = error instanceof Error ? error.message : "Something went wrong. Please try again.";
       toast({
-        title: "Payment failed",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        title: msg.includes("sign in") ? "Authentication required" : "Payment failed",
+        description: msg,
         variant: "destructive",
       });
       setSubmitting(false);
@@ -350,10 +369,12 @@ function CheckoutContent() {
             <Gift className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />
           </div>
           <h2 className="mt-4 font-fraunces text-2xl font-bold text-[#4E0030]">
-            Your cart is empty
+            {searchParams.get("cart") ? "Your cart session has expired" : "Your cart is empty"}
           </h2>
           <p className="mt-2 max-w-sm font-sans text-sm text-[#4E0030]/70">
-            Choose a gift card first, then come back here to check out.
+            {searchParams.get("cart")
+              ? "Your cart data is no longer valid. Please start fresh by choosing a gift card."
+              : "Choose a gift card first, then come back here to check out."}
           </p>
           <Link
             href="/gift-cards"
