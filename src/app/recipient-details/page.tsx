@@ -317,7 +317,7 @@ function RecipientDetailsContent() {
             />
             <Image
               src="/hero-recipient.png"
-              alt="Tare Wellness — sharing a moment of care"
+              alt="Couple sharing pizza while selecting gift card recipient details"
               fill
               priority
               sizes="(max-width: 640px) 70vw, (max-width: 1024px) 320px, 360px"
