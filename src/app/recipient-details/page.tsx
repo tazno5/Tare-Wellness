@@ -317,11 +317,11 @@ function RecipientDetailsContent() {
             />
             <Image
               src="/hero-recipient.png"
-              alt="Couple sharing pizza while selecting gift card recipient details"
+              alt="Couple sharing pizza while filling out TARE gift card recipient details"
               fill
               priority
               sizes="(max-width: 640px) 70vw, (max-width: 1024px) 320px, 360px"
-              className="hero-shadow relative animate-float-slow object-contain"
+              className="hero-shadow relative animate-float-slow object-contain mix-blend-screen"
             />
           </motion.div>
 
