@@ -57,13 +57,46 @@ export default function Hero() {
         className="pointer-events-none absolute left-1/4 top-1/2 h-1.5 w-1.5 rounded-full bg-[#E8B6D5]"
       />
 
-      <div className="relative mx-auto grid w-full max-w-7xl items-center gap-10 lg:grid-cols-2 lg:gap-12">
-        {/* LEFT: Content column */}
+      {/* Centered layout — image on top, text below */}
+      <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center justify-center text-center">
+        {/* Hero image — centered, full illustration visible */}
+        <motion.div
+          variants={itemImage}
+          initial="hidden"
+          animate="show"
+          className="relative aspect-square w-full max-w-[420px] sm:max-w-[480px] lg:max-w-[560px]"
+        >
+          {/* Watercolor liquid morphing background layer (z-1) */}
+          <div aria-hidden className="absolute inset-0 z-[1] overflow-hidden rounded-[3rem]">
+            <div className="absolute inset-0 animate-watercolor-morph">
+              <div className="absolute left-[10%] top-[15%] h-[50%] w-[50%] rounded-full bg-[#C7B2E2]/40 blur-3xl animate-blob-1" />
+              <div className="absolute right-[5%] top-[20%] h-[45%] w-[45%] rounded-full bg-[#B5E1C3]/35 blur-3xl animate-blob-2" />
+              <div className="absolute left-[20%] bottom-[10%] h-[40%] w-[40%] rounded-full bg-[#BCE1F0]/35 blur-3xl animate-blob-3" />
+              <div className="absolute right-[15%] bottom-[15%] h-[35%] w-[35%] rounded-full bg-[#E8B6D5]/30 blur-3xl animate-blob-4" />
+            </div>
+          </div>
+          {/* Foreground image layer (z-3, static) */}
+          <div
+            aria-hidden
+            className="absolute inset-6 z-[2] rounded-full bg-white/10 blur-2xl"
+          />
+          <Image
+            src="/hero-home.png"
+            alt="A Black couple back-to-back using holographic TARE Wellness phones, surrounded by a vibrant watercolor splash"
+            fill
+            priority
+            quality={95}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 480px, 560px"
+            className="hero-shadow relative z-[3] animate-float-slow object-contain"
+          />
+        </motion.div>
+
+        {/* Text content — below the image */}
         <motion.div
           variants={container}
           initial="hidden"
           animate="show"
-          className="order-2 flex flex-col items-center text-center md:items-center md:text-center lg:order-1 lg:items-start lg:text-left"
+          className="mt-8 flex flex-col items-center text-center"
         >
           {/* Headline — Fraunces serif */}
           <motion.h1
@@ -75,7 +108,7 @@ export default function Hero() {
             <span className="text-[#90AAFF]">They Can Feel</span>
           </motion.h1>
 
-          {/* Body copy — Plus Jakarta Sans, exactly 18px */}
+          {/* Body copy */}
           <motion.p
             variants={itemUp}
             className="mt-7 max-w-xl font-sans text-[18px] leading-relaxed text-[#4E0030]/80"
@@ -86,7 +119,7 @@ export default function Hero() {
           {/* Action buttons */}
           <motion.div
             variants={itemUp}
-            className="mt-9 flex w-full flex-col items-center gap-3 sm:flex-row sm:flex-wrap md:justify-center lg:justify-start"
+            className="mt-9 flex w-full flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center"
           >
             <Link
               href="/gift-cards"
@@ -103,39 +136,6 @@ export default function Hero() {
               I Received a Gift{" "}
             </Link>
           </motion.div>
-        </motion.div>
-
-        {/* RIGHT: Visual column */}
-        <motion.div
-          variants={itemImage}
-          initial="hidden"
-          animate="show"
-          className="order-1 flex items-center justify-center lg:order-2"
-        >
-          <div className="relative aspect-square w-full max-w-[460px] sm:max-w-[520px] lg:max-w-[620px]">
-            {/* Watercolor liquid morphing background layer (z-1) */}
-            <div aria-hidden className="absolute inset-0 z-[1] overflow-hidden rounded-[3rem]">
-              <div className="absolute inset-0 animate-watercolor-morph">
-                <div className="absolute left-[10%] top-[15%] h-[50%] w-[50%] rounded-full bg-[#C7B2E2]/40 blur-3xl animate-blob-1" />
-                <div className="absolute right-[5%] top-[20%] h-[45%] w-[45%] rounded-full bg-[#B5E1C3]/35 blur-3xl animate-blob-2" />
-                <div className="absolute left-[20%] bottom-[10%] h-[40%] w-[40%] rounded-full bg-[#BCE1F0]/35 blur-3xl animate-blob-3" />
-                <div className="absolute right-[15%] bottom-[15%] h-[35%] w-[35%] rounded-full bg-[#E8B6D5]/30 blur-3xl animate-blob-4" />
-              </div>
-            </div>
-            {/* Foreground character layer (z-2, static) */}
-            <div
-              aria-hidden
-              className="absolute inset-6 z-[2] rounded-full bg-white/10 blur-2xl"
-            />
-            <Image
-              src="/hero-home.png"
-              alt="Tare Wellness Hero Character"
-              fill
-              priority
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 520px, 620px"
-              className="hero-shadow relative z-[3] animate-float-slow object-contain"
-            />
-          </div>
         </motion.div>
       </div>
     </section>
