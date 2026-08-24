@@ -82,7 +82,7 @@ export default function Hero() {
           />
           <Image
             src="/hero-home.png"
-            alt="A Black couple back-to-back using holographic TARE Wellness phones, surrounded by a vibrant watercolor splash"
+            alt="Black couple standing back to back holding phones displaying holographic TARE Be Well screens"
             fill
             priority
             quality={95}
