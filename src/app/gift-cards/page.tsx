@@ -227,7 +227,7 @@ function GiftCardPageContent() {
             />
             <Image
               src="/hero-giftcards.png"
-              alt="Tare Wellness gift card hero — two characters handing off a vibrant pink TARE Be well gift card"
+              alt="Couple exchanging a pink TARE physical gift card"
               fill
               priority
               sizes="(max-width: 640px) 90vw, (max-width: 1024px) 500px, 576px"
