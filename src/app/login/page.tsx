@@ -134,30 +134,30 @@ function LoginContent() {
         <div aria-hidden className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />
 
         <div className="relative mx-auto flex w-full max-w-md flex-col items-center">
-          {/* Form card (with hero image inside) */}
+          {/* Hero image — floats bare, no card wrapper */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 24 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            className="relative mx-auto aspect-square w-full max-w-[180px] sm:max-w-[200px]"
+          >
+            <Image
+              src="/hero-login.png"
+              alt="Tare Wellness login illustration"
+              fill
+              priority
+              sizes="(max-width: 640px) 80vw, 200px"
+              className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
+            />
+          </motion.div>
+
+          {/* Form card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full rounded-3xl bg-white p-6 shadow-[0_15px_50px_rgba(78, 0, 48, 0.15)] sm:p-8"
+            className="mt-6 w-full rounded-3xl bg-white p-6 shadow-[0_15px_50px_rgba(78, 0, 48, 0.15)] sm:p-8"
           >
-            {/* Hero image inside the card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 24 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-              className="relative mx-auto aspect-square w-full max-w-[180px] sm:max-w-[200px]"
-            >
-            <Image
-                src="/hero-login.png"
-                alt="Tare Wellness login illustration"
-                fill
-                priority
-                sizes="(max-width: 640px) 80vw, 200px"
-                className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
-              />
-            </motion.div>
-
             {/* Tab toggle */}
             <div className="flex rounded-full bg-blush/40 p-1">
               <button
