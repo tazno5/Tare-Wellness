@@ -130,7 +130,7 @@ export default function Hero() {
               priority
               quality={95}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 480px, 560px"
-              className="relative z-[3] animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
+              className="hero-card-glow relative z-[3] animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
             />
           </div>
         </motion.div>
