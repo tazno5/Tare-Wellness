@@ -220,18 +220,13 @@ function GiftCardPageContent() {
                 <div className="absolute right-[15%] bottom-[15%] h-[35%] w-[35%] rounded-full bg-[#E8B6D5]/30 blur-3xl animate-blob-4" />
               </div>
             </div>
-            {/* Foreground character layer (z-2, static) */}
-            <div
-              aria-hidden
-              className="absolute inset-6 z-[2] rounded-full bg-white/10 blur-2xl"
-            />
             <Image
               src="/hero-giftcards.png"
               alt="Couple exchanging a pink TARE physical gift card"
               fill
               priority
               sizes="(max-width: 640px) 90vw, (max-width: 1024px) 500px, 576px"
-              className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
+              className="relative z-[3] animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
             />
             {/* Micro-interaction overlays — GPU-accelerated CSS animations */}
             {/* 1. Steam wisps rising from pizza area (top-right of image) */}

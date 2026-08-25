@@ -123,11 +123,6 @@ export default function Hero() {
                 <div className="absolute right-[15%] bottom-[15%] h-[35%] w-[35%] rounded-full bg-[#E8B6D5]/30 blur-3xl animate-blob-4" />
               </div>
             </div>
-            {/* Foreground image layer (z-3, static) */}
-            <div
-              aria-hidden
-              className="absolute inset-6 z-[2] rounded-full bg-white/10 blur-2xl"
-            />
             <Image
               src="/hero-home.png"
               alt="Black couple standing back to back holding phones displaying holographic TARE Be Well screens"
@@ -135,7 +130,7 @@ export default function Hero() {
               priority
               quality={95}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 480px, 560px"
-              className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
+              className="relative z-[3] animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
             />
           </div>
         </motion.div>
