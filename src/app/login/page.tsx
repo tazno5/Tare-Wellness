@@ -148,14 +148,13 @@ function LoginContent() {
               transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
               className="relative mx-auto aspect-square w-full max-w-[180px] sm:max-w-[200px]"
             >
-              <div aria-hidden className="absolute inset-4 rounded-full bg-[#BCE1F0]/20 blur-2xl" />
-              <Image
+            <Image
                 src="/hero-login.png"
                 alt="Tare Wellness login illustration"
                 fill
                 priority
                 sizes="(max-width: 640px) 80vw, 200px"
-                className="hero-shadow relative animate-float-slow object-contain"
+                className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
               />
             </motion.div>
 

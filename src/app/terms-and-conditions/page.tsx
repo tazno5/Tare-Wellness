@@ -65,8 +65,7 @@ export default function TermsAndConditionsPage() {
             <p className="mt-4 max-w-xl font-sans text-[16px] leading-relaxed text-[#4E0030]/85 sm:text-[18px]">We believe in clear boundaries and understandable agreements. These terms outline our commitment to you and your responsibilities when using our boutique wellness platform.</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, scale: 0.94, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }} className="relative aspect-square w-full max-w-xs sm:max-w-sm lg:max-w-md">
-            <div aria-hidden className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl" />
-            <Image src="/hero-terms.png" alt="A whimsical blue creature sitting at a desk reading a legal contract by lamplight" fill priority sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 400px" className="hero-shadow relative animate-float-slow object-contain" />
+            <Image src="/hero-terms.png" alt="A whimsical blue creature sitting at a desk reading a legal contract by lamplight" fill priority sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 400px" className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]" />
           </motion.div>
         </div>
       </section>

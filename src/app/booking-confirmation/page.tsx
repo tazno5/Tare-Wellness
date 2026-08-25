@@ -170,17 +170,13 @@ export default function BookingConfirmationPage() {
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
             className="relative mt-2 aspect-[1058/734] w-full max-w-[280px] sm:max-w-[340px] lg:max-w-[420px]"
           >
-            <div
-              aria-hidden
-              className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl"
-            />
-            <Image
+          <Image
               src="/hero-booking-confirmation.png"
               alt="A serene whimsical creature resting beneath a glowing checkmark, surrounded by floating spores of light"
               fill
               priority
               sizes="(max-width: 640px) 70vw, (max-width: 1024px) 340px, 420px"
-              className="hero-shadow relative animate-float-slow object-contain"
+              className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
             />
           </motion.div>
 

@@ -441,17 +441,13 @@ function CheckoutContent() {
             transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="relative mt-6 aspect-[534/500] w-full max-w-[260px] sm:max-w-[300px] lg:max-w-[340px]"
           >
-            <div
-              aria-hidden
-              className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl"
-            />
-            <Image
+          <Image
               src="/hero-checkout.png"
               alt="A whimsical creature carefully sealing an envelope with a glowing wax seal"
               fill
               priority
               sizes="(max-width: 640px) 65vw, (max-width: 1024px) 300px, 340px"
-              className="hero-shadow relative animate-float-slow object-contain"
+              className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
             />
           </motion.div>
 

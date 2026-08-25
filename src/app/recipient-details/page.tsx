@@ -311,17 +311,13 @@ function RecipientDetailsContent() {
             transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
             className="relative mt-6 aspect-[534/500] w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[360px]"
           >
-            <div
-              aria-hidden
-              className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl"
-            />
             <Image
               src="/hero-recipient.png"
               alt="Couple sharing pizza while filling out TARE gift card recipient details"
               fill
               priority
               sizes="(max-width: 640px) 70vw, (max-width: 1024px) 320px, 360px"
-              className="hero-shadow relative animate-float-slow object-contain mix-blend-screen"
+              className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
             />
           </motion.div>
 

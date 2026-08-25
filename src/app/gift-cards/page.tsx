@@ -231,7 +231,7 @@ function GiftCardPageContent() {
               fill
               priority
               sizes="(max-width: 640px) 90vw, (max-width: 1024px) 500px, 576px"
-              className="hero-shadow hero-card-glow relative z-[3] animate-float-slow object-contain"
+              className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
             />
             {/* Micro-interaction overlays — GPU-accelerated CSS animations */}
             {/* 1. Steam wisps rising from pizza area (top-right of image) */}

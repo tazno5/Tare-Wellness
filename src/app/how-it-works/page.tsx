@@ -168,17 +168,13 @@ export default function HowItWorksPage() {
             transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="relative order-1 mx-auto aspect-[534/500] w-full max-w-[280px] sm:max-w-[340px] lg:order-2 lg:max-w-[440px]"
           >
-            <div
-              aria-hidden
-              className="absolute inset-6 rounded-full bg-[#BCE1F0]/20 blur-2xl"
-            />
-            <Image
+          <Image
               src="/hero-how-it-works.png"
               alt="A whimsical creature holding a small glowing lantern, guiding a path of light through a soft landscape"
               fill
               priority
               sizes="(max-width: 640px) 70vw, (max-width: 1024px) 340px, 440px"
-              className="hero-shadow relative animate-float-slow object-contain"
+              className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
             />
           </motion.div>
         </div>
