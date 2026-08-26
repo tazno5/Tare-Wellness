@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Gift, CalendarDays } from "lucide-react";
+import { useStore } from "@/lib/store";
 
 // Framer Motion variants — soft fade-in + slight upward drift
 const container = {
@@ -34,6 +36,20 @@ const itemImage = {
 };
 
 export default function Hero() {
+  const router = useRouter();
+  const user = useStore((s) => s.user);
+
+  // Auth-aware "Send a Gift Card" click handler.
+  // - Authenticated: go straight to /gift-cards.
+  // - Unauthenticated: redirect to /login with callbackUrl=/gift-cards.
+  const handleSendGiftCard = () => {
+    if (user) {
+      router.push("/gift-cards");
+    } else {
+      router.push("/login?callbackUrl=/gift-cards");
+    }
+  };
+
   return (
     <section
       id="how-it-works"
@@ -89,13 +105,14 @@ export default function Hero() {
             variants={itemUp}
             className="mt-9 flex w-full flex-col items-center gap-3 sm:flex-row sm:flex-wrap md:justify-center lg:justify-start"
           >
-            <Link
-              href="/gift-cards"
+            <button
+              type="button"
+              onClick={handleSendGiftCard}
               className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-[#F10897] px-7 py-4 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.03] hover:bg-[#d4007d] active:scale-95 sm:text-base"
             >
               <Gift className="h-5 w-5 transition-transform group-hover:rotate-[-8deg]" strokeWidth={2.5} />
               Send a Gift Card
-            </Link>
+            </button>
             <Link
               href="/redeem"
               className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-4 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.03] hover:bg-[#E8B6D5]/15 active:scale-95 sm:text-base"

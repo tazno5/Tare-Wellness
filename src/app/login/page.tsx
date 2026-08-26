@@ -133,31 +133,34 @@ function LoginContent() {
         <div aria-hidden className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-[#B5E1C3]/25 blur-3xl" />
         <div aria-hidden className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />
 
-        <div className="relative mx-auto flex w-full max-w-md flex-col items-center">
-          {/* Hero image — floats bare, no card wrapper */}
+        {/* Auth split card — hero + form embedded in the same card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-[0_15px_50px_rgba(78, 0, 48, 0.15)] md:grid md:grid-cols-2"
+        >
+          {/* LEFT: Hero image column (inside the card, but its immediate wrapper has no card styling) */}
           <motion.div
             initial={{ opacity: 0, scale: 0.94, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mx-auto aspect-square w-full max-w-[180px] sm:max-w-[200px]"
+            className="relative flex items-center justify-center bg-[#FFF5EE] p-6 sm:p-10 lg:p-12"
           >
-            <Image
-              src="/hero-login.png"
-              alt="Man wearing black t-shirt holding TARE Be Well gift card"
-              fill
-              priority
-              sizes="(max-width: 640px) 80vw, 200px"
-              className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
-            />
+            <div className="relative aspect-square w-full max-w-[180px] sm:max-w-[240px] lg:max-w-[300px]">
+              <Image
+                src="/hero-login.png"
+                alt="Man wearing black t-shirt holding TARE Be Well gift card"
+                fill
+                priority
+                sizes="(max-width: 768px) 60vw, 300px"
+                className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
+              />
+            </div>
           </motion.div>
 
-          {/* Form card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-6 w-full rounded-3xl bg-white p-6 shadow-[0_15px_50px_rgba(78, 0, 48, 0.15)] sm:p-8"
-          >
+          {/* RIGHT: Auth form column */}
+          <div className="p-6 sm:p-8 lg:p-10">
             {/* Tab toggle */}
             <div className="flex rounded-full bg-blush/40 p-1">
               <button
@@ -302,11 +305,13 @@ function LoginContent() {
                 {mode === "login" ? "Sign up" : "Sign in"}
               </button>
             </p>
-          </motion.div>
+          </div>
+        </motion.div>
 
+        <div className="mt-6 text-center">
           <Link
             href="/"
-            className="mt-6 font-sans text-sm font-medium text-[#4E0030]/60 transition-colors hover:text-[#4E0030]"
+            className="font-sans text-sm font-medium text-[#4E0030]/60 transition-colors hover:text-[#4E0030]"
           >
             ← Back to home
           </Link>

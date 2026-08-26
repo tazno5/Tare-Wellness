@@ -64,6 +64,21 @@ export default function Navbar() {
     router.push("/");
   };
 
+  // Auth-aware "Send a Gift" click handler.
+  // - If the user is logged in: go straight to /gift-cards.
+  // - If not: redirect to /login with callbackUrl=/gift-cards so they land back
+  //   on the gift-cards page after authenticating. From there, the normal
+  //   /recipient-details flow continues (which the gift-cards page itself
+  //   navigates to after the user picks cards).
+  const handleSendGift = () => {
+    setOpen(false);
+    if (user) {
+      router.push("/gift-cards");
+    } else {
+      router.push("/login?callbackUrl=/gift-cards");
+    }
+  };
+
   return (
     <header className="fixed top-0 left-0 w-full z-50">
       <div className="absolute inset-0 -z-10 backdrop-blur-md bg-transparent shadow-[0_8px_30px_rgba(0,0,0,0.12)]" />
@@ -154,7 +169,7 @@ export default function Navbar() {
             </Link>
           )}
 
-          <Link href="/gift-cards" className="hidden items-center justify-center gap-2 rounded-full bg-[#F10897] px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#d4007d] active:scale-95 md:inline-flex"><span>Send a Gift</span></Link>
+          <button type="button" onClick={handleSendGift} className="hidden items-center justify-center gap-2 rounded-full bg-[#F10897] px-5 py-2.5 font-sans text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:scale-[1.03] hover:bg-[#d4007d] active:scale-95 md:inline-flex"><span>Send a Gift</span></button>
 
           <button type="button" aria-label="Open menu" aria-expanded={open} onClick={() => setOpen(true)} className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-maroon/10 text-maroon transition-colors hover:bg-maroon/20 md:hidden">
             <Menu className="h-5 w-5" strokeWidth={2.5} />
@@ -212,7 +227,7 @@ export default function Navbar() {
                   <User className="h-5 w-5 shrink-0" strokeWidth={2.5} /><span>Login / Sign Up</span>
                 </Link>
               )}
-              <Link href="/gift-cards" onClick={() => setOpen(false)} className="inline-flex w-full items-center justify-center rounded-full bg-[#F10897] px-6 py-4 font-sans text-base font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95">Send a Gift</Link>
+              <button type="button" onClick={handleSendGift} className="inline-flex w-full items-center justify-center rounded-full bg-[#F10897] px-6 py-4 font-sans text-base font-semibold text-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95">Send a Gift</button>
             </motion.div>
           </motion.div>
         )}

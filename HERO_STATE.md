@@ -102,42 +102,64 @@ sit on a plain section background (not inside a form card or content panel).
 </motion.div>
 ```
 
-## Exceptions / Lifted-Out Variant — Login Page
+## Exceptions / Auth Split Variant — Login Page (and any future auth pages)
 
-When a hero image appears on a page that ALSO contains a form card (e.g., `/login`),
-lift the hero image OUT of the form card and place it as a SIBLING ABOVE the card,
-so the image floats bare on the cream background while the form keeps its white card.
+When a hero image appears on a page that ALSO contains an auth form (e.g., `/login`),
+embed the hero image INSIDE the auth card as the LEFT column of a 2-column split
+layout. On desktop the hero sits left + form sits right; on mobile they stack
+(hero on top, form below) inside the same card.
+
+**Key invariant:** The hero `<Image>`'s *immediate wrapper* (`<div>` around it)
+still follows all the Hard Rules — no `bg-white`, no `shadow-*`, no `border`,
+no card classes. The CARD class (`rounded-3xl bg-white shadow-*`) goes on the
+OUTER container that wraps BOTH the hero column and the form column. The hero
+image's column wrapper may have `bg-[#FFF5EE]` (the page background color) so
+the hero's transparent pixels still blend with the cream page background even
+though it's inside the card visually.
 
 ```tsx
-<div className="relative mx-auto flex w-full max-w-md flex-col items-center">
-  {/* Hero image — floats bare, no card wrapper */}
+{/* Auth split card — hero + form embedded in the same card */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+  className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-[0_15px_50px_rgba(78, 0, 48, 0.15)] md:grid md:grid-cols-2"
+>
+  {/* LEFT: Hero image column (inside the card, immediate wrapper has no card styling) */}
   <motion.div
     initial={{ opacity: 0, scale: 0.94, y: 24 }}
     animate={{ opacity: 1, scale: 1, y: 0 }}
     transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-    className="relative mx-auto aspect-square w-full max-w-[180px] sm:max-w-[200px]"
+    className="relative flex items-center justify-center bg-[#FFF5EE] p-6 sm:p-10 lg:p-12"
   >
-    <Image
-      src="/hero-login.png"
-      alt="Tare Wellness login illustration"
-      fill
-      priority
-      sizes="(max-width: 640px) 80vw, 200px"
-      className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
-    />
+    <div className="relative aspect-square w-full max-w-[180px] sm:max-w-[240px] lg:max-w-[300px]">
+      <Image
+        src="/hero-login.png"
+        alt="Man wearing black t-shirt holding TARE Be Well gift card"
+        fill
+        priority
+        sizes="(max-width: 768px) 60vw, 300px"
+        className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
+      />
+    </div>
   </motion.div>
 
-  {/* Form card (hero image lifted OUT, no longer nested inside) */}
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-    className="mt-6 w-full rounded-3xl bg-white p-6 shadow-[0_15px_50px_rgba(78, 0, 48, 0.15)] sm:p-8"
-  >
+  {/* RIGHT: Auth form column */}
+  <div className="p-6 sm:p-8 lg:p-10">
     {/* form fields go here */}
-  </motion.div>
-</div>
+  </div>
+</motion.div>
 ```
+
+**Note on rule #1 ("no card div behind the image"):** This variant technically
+places the hero inside the card boundary, BUT the immediate wrapper around the
+`<Image>` (the inner `<div>` with `aspect-square`) still has no card styling —
+only `relative`, `aspect-square`, `w-full`, `max-w-*`. The cream `bg-[#FFF5EE]`
+on the hero column wrapper is the same as the page background, so visually
+the hero's transparent pixels blend seamlessly with the page background even
+though the column itself is part of the white card. This is the only allowed
+deviation from the strict "hero must float on page background" rule, and it
+only applies to auth-flow pages where the hero + form must read as one unit.
 
 ## Accessibility
 
@@ -159,7 +181,7 @@ so the image floats bare on the cream background while the form keeps its white 
 - [ ] `priority` is set on the `<Image>`
 - [ ] `alt` text is descriptive and specific
 - [ ] On home + gift-cards only: `hero-card-glow relative z-[3]` added, watercolor morphing layer present
-- [ ] On pages with form cards (login, etc.): hero image is lifted OUT of the form card and placed as a sibling above it
+- [ ] On auth pages (login, etc.): hero image is embedded in the auth card as the LEFT column of a 2-col split (mobile stacks vertically). The hero's *immediate wrapper* still has no card styling — only `relative aspect-square w-full max-w-*`. The outer card class (`rounded-3xl bg-white shadow-*`) goes on the container that wraps both the hero column and form column.
 
 ## Pages Currently Using Each Variant
 
@@ -167,7 +189,7 @@ so the image floats bare on the cream background while the form keeps its white 
 |---|---|
 | **Standard (bare floating)** | `/recipient-details`, `/redeem`, `/book-session`, `/booking-confirmation`, `/cart-review`, `/checkout`, `/order-confirmation`, `/how-it-works`, `/faq`, `/contact-us`, `/privacy-policy`, `/terms-and-conditions` |
 | **Enhanced (watercolor + glow)** | `/` (home, via `src/components/site/Hero.tsx`), `/gift-cards` |
-| **Lifted-out (form-card sibling)** | `/login` |
+| **Auth Split (hero embedded in auth card, 2-col on desktop)** | `/login` |
 
 When adding a new page, default to the **Standard** variant unless the page has
-specific reasons to use the Enhanced or Lifted-out variant.
+specific reasons to use the Enhanced or Auth Split variant.
