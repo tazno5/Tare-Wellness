@@ -143,7 +143,7 @@ function LoginContent() {
           >
             <Image
               src="/hero-login.png"
-              alt="Tare Wellness login illustration"
+              alt="Man wearing black t-shirt holding TARE Be Well gift card"
               fill
               priority
               sizes="(max-width: 640px) 80vw, 200px"
