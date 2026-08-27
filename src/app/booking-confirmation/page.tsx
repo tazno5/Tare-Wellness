@@ -168,7 +168,7 @@ export default function BookingConfirmationPage() {
             initial={{ opacity: 0, scale: 0.94, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mt-2 aspect-[1058/734] w-full max-w-[280px] sm:max-w-[340px] lg:max-w-[420px]"
+            className="relative mt-2 aspect-[1058/734] w-full max-w-[280px] bg-transparent sm:max-w-[340px] lg:max-w-[420px]"
           >
           <Image
               src="/hero-booking-confirmation.png"

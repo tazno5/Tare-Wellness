@@ -76,7 +76,7 @@ export default function PrivacyPolicyPage() {
             <h1 className="mt-5 font-fraunces text-4xl font-extrabold leading-[1.05] tracking-tight bg-gradient-to-r from-[#2750D8] to-[#90AAFF] bg-clip-text text-transparent sm:text-5xl lg:text-6xl">Your privacy matters to us</h1>
             <p className="mt-4 max-w-xl font-sans text-[16px] leading-relaxed text-[#4E0030]/85 sm:text-[18px]">We are committed to protecting your personal information and maintaining transparency about how your data is collected, used, and stored.</p>
           </motion.div>
-          <motion.div initial={{ opacity: 0, scale: 0.94, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }} className="relative aspect-square w-full max-w-xs sm:max-w-sm lg:max-w-md">
+          <motion.div initial={{ opacity: 0, scale: 0.94, y: 24 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }} className="relative aspect-square w-full max-w-xs bg-transparent sm:max-w-sm lg:max-w-md">
             <Image src="/hero-privacy.png" alt="A whimsical blue creature holding a cardboard box labeled PRIVATE" fill priority sizes="(max-width: 640px) 80vw, (max-width: 1024px) 50vw, 400px" className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]" />
           </motion.div>
         </div>

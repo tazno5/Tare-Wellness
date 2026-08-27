@@ -271,7 +271,7 @@ export default function RedeemPage() {
             initial={{ opacity: 0, scale: 0.94, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mt-6 aspect-[534/500] w-full max-w-[260px] sm:max-w-[300px] lg:max-w-[340px]"
+            className="relative mt-6 aspect-[534/500] w-full max-w-[260px] bg-transparent sm:max-w-[300px] lg:max-w-[340px]"
           >
           <Image
               src="/hero-redeem.png"
