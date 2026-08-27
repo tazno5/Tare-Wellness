@@ -234,7 +234,7 @@ export default function BookingConfirmationPage() {
                   Confirmation No.
                 </p>
                 <p className="font-fraunces text-lg font-extrabold tracking-wide text-maroon sm:text-xl">
-                  BK-2026-004821
+                  {booking.bookingNumber ?? "BK-2026-PENDING"}
                 </p>
               </div>
             </div>

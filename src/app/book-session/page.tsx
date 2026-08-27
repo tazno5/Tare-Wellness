@@ -319,10 +319,26 @@ export default function BookSessionPage() {
         throw new Error(errData?.error || "Booking failed. Please try again.");
       }
 
+      const bookingResponse = await res.json().catch(() => null);
+
       toast({
         title: "Booking confirmed!",
         description: `Your session is booked for ${selectedDate.toLocaleDateString()}.`,
       });
+
+      // Persist the booking number returned by the API so the confirmation
+      // page can display the real BK-2026-XXXXXXXX instead of a hardcoded value.
+      if (bookingResponse?.bookingNumber) {
+        setBooking({
+          sessionType,
+          sessionTitle: session.title,
+          sessionPrice: session.price,
+          selectedDate: selectedDate.toISOString(),
+          selectedTime,
+          therapist: "Your Provider",
+          bookingNumber: bookingResponse.bookingNumber,
+        });
+      }
 
       router.push("/booking-confirmation");
     } catch (error) {

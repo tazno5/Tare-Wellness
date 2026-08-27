@@ -397,3 +397,144 @@ The app is now launch-ready. Remaining manual steps before going live:
 5. Run `npx prisma migrate deploy` + `npx prisma db seed` against production.
 6. Point your domain at the deployment.
 
+
+---
+Task ID: handover-1
+Agent: Super Z (main)
+Task: Project handover — read Tare-Wellness repo from GitHub, understand architecture, acknowledge readiness to continue building.
+
+Work Log:
+- Cloned https://github.com/tazno5/Tare-Wellness.git to /home/z/my-project/Tare-Wellness.
+- Read core config: package.json, tsconfig, tailwind.config, components.json, vercel.json, Dockerfile, Caddyfile.
+- Read all schema/model files: prisma/schema.prisma, prisma/schema.postgres.prisma, prisma/rls-policies.sql.
+- Read auth + data layer: src/lib/auth.ts, src/lib/admin-auth.ts, src/lib/db.ts, src/lib/store.ts, src/lib/ratelimit.ts, src/lib/validation.ts.
+- Read app shell: src/app/layout.tsx, src/app/page.tsx, src/app/globals.css (header), src/components/site/Hero.tsx, src/components/site/Navbar.tsx, src/components/site/Footer.tsx, src/components/providers.tsx.
+- Surveyed all 17 page routes under src/app/ and 15 API routes under src/app/api/.
+- Read planning/spec docs: agent-ctx/6-pages-tare-wellness.md, HERO_STATE.md, DEPLOYMENT.md.
+- Read full prior worklog to understand the build sequence: design verification → 6 flow pages → auth gates → TS fixes → E2E passes → Resend integration → Postgres schema → deployment docs → DB cleanup → hero batch swap → auth interception on "Send a Gift".
+- Confirmed latest commit (HEAD): ebd1ce3 "feat(hero): batch swap hero images on 9 pages (per HERO_STATE.md spec)".
+
+Stage Summary:
+- Repo cloned and architecture fully mapped (see below).
+- Project is a Next.js 16 + React 19 + TS + Tailwind 4 + shadcn/ui + Prisma + NextAuth wellness gift card platform.
+- Build passes (`next build` 25 routes, `tsc --noEmit` clean).
+- End-to-end flows verified in prior worklog: gift card purchase, redeem + book session, auth redirect with callbackUrl.
+- Production readiness is in place: Resend wired (best-effort), PostgreSQL schema variant, Vercel.json + Dockerfile + DEPLOYMENT.md, env vars documented in .env.example.
+- Ready to receive next instruction from user.
+
+---
+Task ID: supabase-wiring
+Agent: Super Z (main)
+Task: Wire Tare-Wellness to live Supabase production DB using user-provided connection strings.
+
+Work Log:
+- User pasted Supabase pooler URLs (transaction pool port 6543, session pool port 5432, region eu-west-2, project ssmxvwkvnfzibfsmdioq).
+- Wrote connection strings to `/home/z/my-project/Tare-Wellness/.env` (project-local) with `pgbouncer=true&connection_limit=1` appended to DATABASE_URL for Prisma+PgBouncer compatibility.
+- Removed quotes from .env values (Node's --env-file parser doesn't strip them, which broke tsx).
+- Also wrote to `/home/z/my-project/.env` (parent) to ensure both bun and node resolve to Supabase regardless of working directory.
+- `prisma migrate status` → "Database schema is up to date!" — both migrations (`20260810165316_init`, `20260817193107_add_email_tracking_and_session_credits`) already applied.
+- Created `scripts/check-db.ts` to verify live query against Supabase.
+- Initial run failed with "URL must start with postgresql://" — root cause: stale OS env var `DATABASE_URL=file:/home/z/my-project/db/custom.db` set in the shell session was shadowing .env. Fix: prefix dev script with `unset DATABASE_URL DIRECT_URL;` in package.json.
+- After unset, `bun scripts/check-db.ts` returned live data: 3 GiftCardType rows, 5 Users, 17 Orders, 17 Redemptions, 4 Bookings.
+- Booted `next dev` and curled `/api/gift-cards` → returned full JSON of 3 gift cards with real Supabase CUIDs and timestamps. Confirms live query path works through the app layer.
+
+Stage Summary:
+- Production DB: Supabase Postgres, project `tare-wellness-prod`, region eu-west-2.
+- Connection: pooled (port 6543) for app + direct (port 5432) for migrations.
+- Migrations: both already applied (init + email-tracking/session-credits).
+- Seed: 3 GiftCardType rows present.
+- Existing live data: 5 users, 17 orders, 17 redemptions, 4 bookings (from prior E2E testing).
+- Dev server boots cleanly against Supabase; `/api/gift-cards` returns real Supabase rows.
+- package.json dev script updated to unset stale OS env vars before next dev.
+- `.env` and parent `/home/z/my-project/.env` both updated to point at Supabase.
+- Ready for next instruction (deploy, feature work, payment provider wiring, etc.).
+
+---
+Task ID: e2e-supabase-verify
+Agent: Super Z (main)
+Task: Run full E2E flows against live Supabase production DB to verify purchase + redeem + book + auth-redirect still work after DB swap.
+
+Work Log:
+
+### Setup
+- Enhanced `scripts/check-db.ts` to print recent orders (with order numbers + redemption codes) and recent bookings (with booking numbers).
+- Captured BEFORE snapshot: 5 users, 17 orders, 17 redemptions, 4 bookings.
+- Started Next.js dev server (needed `setsid` to fully detach from shell session — earlier `nohup ... &` was being killed between bash invocations).
+
+### FLOW 1 — Gift card purchase (verified end-to-end ✅)
+- Walked: `/` → clicked "Send a Gift Card" → auth-interception redirected to `/login?callbackUrl=/gift-cards`.
+- Signed up fresh user `e2e-supabase-1787801839@example.com` → register API created the user in Supabase (id `cmtaz2jtf0000l6q8luaz7cld`), NextAuth `signIn()` set the session cookie, Zustand login() populated the user.
+- Added 1 × Seed card to cart → `/recipient-details` → filled recipient "Taylor Recipient" → `/cart-review` → `/checkout`.
+- Filled demo card form (4242 4242 4242 4242 / 12/30 / 123) and billing info → clicked "Complete Purchase — ₦20,000".
+
+### BUG FOUND & FIXED during FLOW 1 — `Redemption.code` unique constraint failure
+- First purchase attempt returned 500 with `Unique constraint failed on the fields: (code)` at `tx.redemption.create()` in `src/app/api/orders/route.ts:183`.
+- Root cause: the prior `generateRedemptionCode()` used an LCG seeded with `seedHash ^ Date.now() ^ Math.random() ^ performance.now()`. When called in rapid succession, `Date.now()` and `performance.now()` were often identical, and `Math.random()` didn't have enough entropy to differentiate — the LCG produced colliding codes.
+- Created `src/lib/ids.ts` — new shared generators using `node:crypto.randomBytes` (OS CSPRNG). Three functions:
+  - `generateOrderNumber()` → `TG-XXXXXXXX` (8 chars from 36-char alphabet)
+  - `generateRedemptionCode()` → `XXXX-XXXX-XXXX-XXXX` (16 chars from 32-char alphabet, no ambiguous chars)
+  - `generateBookingNumber()` → `BK-2026-XXXXXXXX` (8 chars from 36-char alphabet)
+- Patched `src/app/api/orders/route.ts`:
+  - Removed the inline `generateOrderNumber()` and `generateRedemptionCode()` (45 lines).
+  - Imported both from `@/lib/ids`.
+  - Updated the call site `generateRedemptionCode(\`${orderNumber}-${r.recipientEmail}-${Date.now()}\`)` → `generateRedemptionCode()` (seed is now ignored — true entropy comes from `crypto.randomBytes`).
+- Patched `src/app/api/bookings/route.ts`:
+  - Removed the inline `BK-2026-${ts}${rand}` generator.
+  - Imported `generateBookingNumber()` from `@/lib/ids`.
+- `tsc --noEmit` clean in `src/`.
+- After fix, re-ran the purchase → succeeded.
+- Captured AFTER snapshot: 6 users, 18 orders, 18 redemptions, 4 bookings.
+- New order in Supabase: `TG-66Y3XXLT` | status=completed | ₦200 | buyer=taylor.recipient@example.com | recipient=Taylor Recipient <taylor.recipient@example.com> | redemption code `8T6S-5SX2-DSDF-MQ6Z` | sessionsRemaining=0.
+
+### FLOW 2 — Redeem + book session (verified end-to-end ✅)
+- Visited `/redeem`, entered `8T6S-5SX2-DSDF-MQ6Z`, clicked "Redeem Gift".
+- Page showed "You've received a gift of care!" success state.
+- Verified in Supabase: redemption `8T6S-5SX2-DSDF-MQ6Z`:
+  - status: `active` → `redeemed`
+  - userId: `null` → `cmtaz2jtf0000l6q8luaz7cld` (current user)
+  - redeemedAt: set to 2026-08-27T03:46:14.150Z
+  - creditAmount: 20000 kobo (₦200)
+  - sessionsRemaining: 0 → 1 (matches Seed card's 1 session count)
+- Clicked "Book a Session" → landed on `/book-session`.
+- Picked One-on-One (50 min, ₦20,000) session type.
+- Picked Fri Aug 28 2026, 10:00 AM.
+- Clicked "Confirm My Session" → POST /api/bookings 201 → router.push("/booking-confirmation).
+- Verified in Supabase: new booking `BK-2026-U8E5DE5W` | user=e2e-supabase-1787801839@example.com | type=individual | title=One-on-One | date=2026-08-28 10:00 AM | status=confirmed.
+- AFTER snapshot: 5 bookings (+1 from before).
+
+### BUG FOUND & FIXED during FLOW 2 — Booking-confirmation page showed hardcoded booking number
+- The booking-confirmation page (`src/app/booking-confirmation/page.tsx:237`) had `BK-2026-004821` literally hardcoded — the real `BK-2026-U8E5DE5W` returned by the API was discarded.
+- Two-part fix:
+  1. Added optional `bookingNumber?: string` to `BookingDetails` type in `src/lib/store.ts`.
+  2. In `src/app/book-session/page.tsx`, after the POST `/api/bookings` response, parse the booking object and call `setBooking({ ..., bookingNumber: bookingResponse.bookingNumber })` before navigating.
+  3. In `src/app/booking-confirmation/page.tsx:237`, replaced the hardcoded `BK-2026-004821` with `{booking.bookingNumber ?? "BK-2026-PENDING"}`.
+- `tsc --noEmit` clean in `src/`.
+
+### FLOW 3 — Auth redirect loop (verified for all 5 protected routes ✅)
+- For each of `/book-session`, `/checkout`, `/cart-review`, `/order-confirmation`, `/booking-confirmation`:
+  1. Cleared cookies + localStorage.
+  2. Opened the URL directly.
+  3. Verified the browser was redirected to `/login?callbackUrl=<original-path>`.
+  4. For `/book-session`, additionally signed in and confirmed the browser returned to `/book-session` (callbackUrl respected on both login + signup flows).
+- All 5 routes confirmed:
+  - `/book-session` → `/login?callbackUrl=/book-session`
+  - `/checkout` → `/login?callbackUrl=/checkout`
+  - `/cart-review` → `/login?callbackUrl=/cart-review`
+  - `/order-confirmation` → `/login?callbackUrl=%2Forder-confirmation`
+  - `/booking-confirmation` → `/login?callbackUrl=/booking-confirmation`
+
+### Final state
+- Supabase DB now contains 6 users, 18 orders, 18 redemptions, 5 bookings (all real test data from this E2E pass).
+- `tsc --noEmit` clean in `src/`.
+- All flows verified against the live production database.
+
+Stage Summary:
+- ✅ FLOW 1 (Purchase): Order `TG-66Y3XXLT` created in Supabase with linked OrderItem + Redemption `8T6S-5SX2-DSDF-MQ6Z`.
+- ✅ FLOW 2 (Redeem + Book): Redemption status changed to `redeemed` and linked to user; Booking `BK-2026-U8E5DE5W` created.
+- ✅ FLOW 3 (Auth redirect loop): All 5 protected routes correctly bounce to `/login?callbackUrl=...` and return to the original path after sign-in.
+- 🐛 BUG #1 (Redemption code collision): Fixed by replacing the LCG-based generator with `crypto.randomBytes` in new shared `src/lib/ids.ts`.
+- 🐛 BUG #2 (Hardcoded booking number on confirmation page): Fixed by capturing the API response's `bookingNumber` and writing it to Zustand before navigation.
+- 📁 New files: `src/lib/ids.ts`, `scripts/check-db.ts`, `scripts/check-user.ts`, `scripts/check-redeem.ts`, `scripts/check-active-codes.ts`, `start-dev.sh`.
+- 📁 Modified files: `src/app/api/orders/route.ts`, `src/app/api/bookings/route.ts`, `src/app/book-session/page.tsx`, `src/app/booking-confirmation/page.tsx`, `src/lib/store.ts`.
+- 📁 Screenshots: 24 PNGs in `/home/z/my-project/download/` covering every step of every flow.
+- Ready for next instruction (deploy, payment provider, UI polish, feature work, etc.).

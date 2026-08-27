@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { generateOrderNumber, generateRedemptionCode } from "@/lib/ids";
 
 // ============ Validation (HIGH #4) ============
 
@@ -25,52 +26,9 @@ const createOrderSchema = z.object({
 });
 
 // ============ Helpers ============
-
-function generateOrderNumber(): string {
-  // Use random bytes + timestamp to guarantee uniqueness even when two
-  // orders are placed in the same millisecond. Format: TG-XXXXXXXX (8 chars).
-  const ts = Date.now().toString(36).toUpperCase().slice(-6);
-  const rand = Math.random().toString(36).toUpperCase().slice(2, 6);
-  return `TG-${ts}${rand}`;
-}
-
-function generateRedemptionCode(seed: string): string {
-  // Generate 16 random chars from a 32-char alphabet (no ambiguous chars).
-  // Excludes 0/O/1/I to avoid confusion when read aloud.
-  const charset = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-  // Build a high-entropy 32-bit seed from multiple sources:
-  // - the input seed (recipient email, order number, etc.)
-  // - Date.now() (millisecond timestamp)
-  // - Math.random() (browser/Node PRNG)
-  // - performance.now() sub-millisecond entropy when available
-  let seedHash = 0;
-  for (let i = 0; i < seed.length; i++) {
-    seedHash = (Math.imul(seedHash, 31) + seed.charCodeAt(i)) >>> 0;
-  }
-  const timeEntropy = Date.now() >>> 0;
-  const randEntropy = (Math.random() * 0x100000000) >>> 0;
-  const perfEntropy =
-    typeof performance !== "undefined" && performance.now
-      ? (performance.now() * 1000) >>> 0
-      : 0;
-
-  // XOR all sources together to mix entropy
-  let state = (seedHash ^ timeEntropy ^ randEntropy ^ perfEntropy) >>> 0;
-  // Ensure state is never 0 (LCG would stick at 0)
-  if (state === 0) state = 0x12345678;
-
-  let code = "";
-  for (let i = 0; i < 4; i++) {
-    if (i > 0) code += "-";
-    for (let j = 0; j < 4; j++) {
-      // 32-bit LCG (Numerical Recipes constants) — full period, good mixing
-      state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-      code += charset[state % charset.length];
-    }
-  }
-  return code;
-}
+// Order-number and redemption-code generators are now in `src/lib/ids.ts`.
+// They use `crypto.randomBytes` (OS CSPRNG) so codes never collide, even
+// when two orders are placed in the same call stack.
 
 // ============ POST /api/orders — Create order ============
 
@@ -182,7 +140,7 @@ export async function POST(req: Request) {
 
         await tx.redemption.create({
           data: {
-            code: generateRedemptionCode(`${orderNumber}-${r.recipientEmail}-${Date.now()}`),
+            code: generateRedemptionCode(),
             orderItemId: orderItem.id,
             orderId: newOrder.id,
             creditAmount: card.price,

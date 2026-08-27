@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { generateBookingNumber } from "@/lib/ids";
 
 // ============ Validation (#4) ============
 
@@ -135,10 +136,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Generate booking number
-    const ts = Date.now().toString(36).toUpperCase().slice(-6);
-    const rand = Math.random().toString(36).toUpperCase().slice(2, 6);
-    const bookingNumber = `BK-2026-${ts}${rand}`;
+    // Generate booking number (uses crypto.randomBytes — see src/lib/ids.ts)
+    const bookingNumber = generateBookingNumber();
 
     // Generate meeting URL — points to WhatsApp contact for session coordination.
     // The wellness specialist uses WhatsApp to share the video call link at session time.

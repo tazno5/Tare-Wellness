@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 
 export type CartItem = { cardId: string; title: string; price: number; sessions: number; gradient: string; qty: number; };
 export type RecipientData = { uid: string; cardId: string; name: string; email: string; occasion: string; deliveryMode: "now" | "schedule"; note: string; confirmed: boolean; };
-export type BookingDetails = { sessionType: string; sessionTitle: string; sessionPrice: number; selectedDate: string | null; selectedTime: string; therapist: string; };
+export type BookingDetails = { sessionType: string; sessionTitle: string; sessionPrice: number; selectedDate: string | null; selectedTime: string; therapist: string; bookingNumber?: string };
 export type RedemptionState = { code: string; creditBalance: number; redeemed: boolean; };
 export type User = { id: string; name: string; email: string; } | null;
 
