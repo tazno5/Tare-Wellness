@@ -442,17 +442,9 @@ function CartReviewContent() {
             <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
             Recipient&apos;s Details
           </Link>
-          <button
-            type="button"
-            onClick={handleCheckout}
-            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95 sm:w-auto"
-          >
-            Continue to Checkout
-            <ArrowRight
-              className="h-4 w-4 transition-transform group-hover:translate-x-1"
-              strokeWidth={2.5}
-            />
-          </button>
+          <p className="font-sans text-xs text-maroon/60 sm:text-sm">
+            Everything look good? Use the &ldquo;Continue to Checkout&rdquo; button above.
+          </p>
         </div>
       </section>
       </>

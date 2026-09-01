@@ -98,6 +98,21 @@ function CheckoutContent() {
   // #4: Track touched fields for inline validation
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
+  // Billing name — auto-synced from cardholder name by default (most users
+  // use the same name for both). User can uncheck "Same as cardholder" to
+  // enter a different billing name.
+  const [sameAsCardholder, setSameAsCardholder] = useState(true);
+  const [billingName, setBillingName] = useState("");
+  const [billingEmail, setBillingEmail] = useState("");
+  const [billingStreet, setBillingStreet] = useState("");
+
+  // Auto-populate billingName from cardholderName when sameAsCardholder is true
+  useEffect(() => {
+    if (sameAsCardholder) {
+      setBillingName(cardholderName);
+    }
+  }, [sameAsCardholder, cardholderName]);
+
   // #4: Inline validation helpers
   const isCardNumberValid = isValidCardNumber(cardNumber);
   const isExpiryValid = isValidExpiry(expiry);
@@ -693,20 +708,38 @@ function CheckoutContent() {
 
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <label
-                    htmlFor="billing-name"
-                    className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
-                  >
-                    Full Name <span className="text-[#F10897]">*</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="billing-name"
+                      className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+                    >
+                      Full Name <span className="text-[#F10897]">*</span>
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2 font-sans text-[11px] text-maroon/70 select-none">
+                      <input
+                        type="checkbox"
+                        checked={sameAsCardholder}
+                        onChange={(e) => setSameAsCardholder(e.target.checked)}
+                        className="h-3.5 w-3.5 rounded border-maroon/30 text-[#F10897] focus:ring-[#F10897]/30"
+                      />
+                      Same as cardholder
+                    </label>
+                  </div>
                   <div className="relative mt-2">
                     <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
                     <input
                       id="billing-name"
                       type="text"
                       required
+                      value={billingName}
+                      onChange={(e) => {
+                        // If user manually edits the field, uncheck "Same as cardholder"
+                        if (sameAsCardholder) setSameAsCardholder(false);
+                        setBillingName(e.target.value);
+                      }}
                       placeholder="Your full name"
-                      className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                      className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30 disabled:bg-maroon/5 disabled:text-maroon/60"
+                      disabled={sameAsCardholder}
                     />
                   </div>
                 </div>
@@ -1014,20 +1047,9 @@ function CheckoutContent() {
             <ArrowLeft className="h-4 w-4" strokeWidth={2.5} />
             Cart Review
           </Link>
-          <button
-            type="submit"
-            form="checkout-form"
-            disabled={submitting}
-            className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
-          >
-            {submitting ? "Processing payment & email…" : "Complete Purchase"}
-            {!submitting && (
-              <ArrowRight
-                className="h-4 w-4 transition-transform group-hover:translate-x-1"
-                strokeWidth={2.5}
-              />
-            )}
-          </button>
+          <p className="font-sans text-xs text-maroon/60 sm:text-sm">
+            Ready to complete your purchase? Use the button above.
+          </p>
         </div>
       </section>
       </>

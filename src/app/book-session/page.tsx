@@ -758,13 +758,20 @@ export default function BookSessionPage() {
                 onClick={handleConfirmClick}
                 disabled={!canConfirm || confirming}
                 className={`group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 font-sans text-sm font-semibold transition-all duration-200 ${
-                  confirming ? "cursor-wait bg-white/15 text-white/50" : canConfirm
+                  confirming ? "cursor-wait bg-white/15 text-white/50"
+                    : canConfirm
                     ? "bg-[#F10897] text-white shadow-[0_10px_30px_rgba(241,8,151,0.35)] hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
-                    : "cursor-not-allowed bg-white/15 text-white/50"
+                    : "bg-white/25 text-white/90 border border-white/40 hover:bg-white/35"
                 }`}
               >
                 {confirming ? (<><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />Booking...</>) : (<>Confirm My Session<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={2.5} /></>)}
               </button>
+
+              {!canConfirm && !confirming && (
+                <p className="mt-2 text-center font-sans text-[11px] text-blush/80">
+                  Pick a date and time to confirm
+                </p>
+              )}
 
               <p className="mt-3 text-center font-sans text-[11px] text-blush/70">
                 Plans change. Reschedule up to 24 hours before, free.
