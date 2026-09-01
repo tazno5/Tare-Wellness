@@ -118,7 +118,7 @@ export default function Hero() {
               className="group inline-flex items-center justify-center gap-2.5 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-4 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.03] hover:bg-[#E8B6D5]/15 active:scale-95 sm:text-base"
             >
               <CalendarDays className="h-5 w-5 transition-transform group-hover:scale-110" strokeWidth={2.5} />
-              Redeem Your Card{" "}
+              I Received a Gift{" "}
             </Link>
           </motion.div>
         </motion.div>

@@ -12,7 +12,6 @@ const SHOP_LINKS = [
 
 const RESOURCE_LINKS = [
   { label: "How It Works", href: "/how-it-works" },
-  { label: "About", href: "/faq" },
   { label: "Privacy Policy", href: "/privacy-policy" },
   { label: "Terms & Conditions", href: "/terms-and-conditions" },
   { label: "FAQ", href: "/faq" },
