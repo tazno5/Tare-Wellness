@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, Fraunces } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/providers";
 import ConditionalChrome from "@/components/site/ConditionalChrome";
+import CookieConsent from "@/components/site/CookieConsent";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -76,8 +78,16 @@ export default function RootLayout({
       >
         <Providers>
           <ConditionalChrome>{children}</ConditionalChrome>
+          <CookieConsent />
           <Toaster />
         </Providers>
+        {/* Paystack Inline JS — loaded lazily so it doesn't block page render.
+            Used by /checkout to open the Paystack popup for card payments.
+            Safe to load on every page — it just defines window.PaystackPop. */}
+        <Script
+          src="https://js.paystack.co/v1/inline.js"
+          strategy="lazyOnload"
+        />
       </body>
     </html>
   );

@@ -21,6 +21,10 @@ import {
   Wallet,
   ShoppingBag,
   CheckCircle2,
+  Download,
+  Trash2,
+  AlertTriangle,
+  ShieldCheck,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
@@ -634,6 +638,90 @@ function SettingsTab({
   user: { id: string; name: string; email: string };
   onSignOut: () => void;
 }) {
+  const { toast } = useToast();
+  const router = useRouter();
+  const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+
+  // Download user's data as JSON
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/account/export");
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || "Export failed");
+      }
+      // Trigger browser download
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      // Extract filename from Content-Disposition header, fallback to default
+      const disposition = res.headers.get("Content-Disposition") || "";
+      const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
+      a.download = filenameMatch?.[1] || "tare-wellness-data-export.json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast({
+        title: "Data exported",
+        description: "Your personal data has been downloaded as a JSON file.",
+      });
+    } catch (error) {
+      toast({
+        title: "Export failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Delete the user's account permanently
+  const handleDelete = async () => {
+    if (deleteConfirmText !== "DELETE") {
+      toast({
+        title: "Type DELETE to confirm",
+        description: 'You must type "DELETE" in the confirmation field to proceed.',
+        variant: "destructive",
+      });
+      return;
+    }
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: deleteConfirmText }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || "Deletion failed");
+      }
+      toast({
+        title: "Account deleted",
+        description: "Your personal data has been permanently removed.",
+      });
+      // Sign out + redirect to home
+      await signOut({ redirect: false });
+      onSignOut();
+      router.push("/");
+    } catch (error) {
+      toast({
+        title: "Deletion failed",
+        description: error instanceof Error ? error.message : "Please try again or contact privacy@tarewellness.com.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="rounded-2xl bg-white p-5 shadow-[0_4px_15px_rgba(78,0,48,0.06)] sm:p-6">
@@ -688,6 +776,106 @@ function SettingsTab({
           <LogOut className="h-4 w-4" strokeWidth={2.5} />
           Sign Out
         </button>
+      </div>
+
+      {/* ============ PRIVACY & DATA (NDPA 2023) ============ */}
+      <div className="rounded-2xl bg-white p-5 shadow-[0_4px_15px_rgba(78,0,48,0.06)] sm:p-6">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-[#F10897]" strokeWidth={2.5} />
+          <h3 className="font-fraunces text-lg font-bold text-[#4E0030]">Privacy &amp; Data</h3>
+        </div>
+        <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
+          Your rights under the Nigeria Data Protection Act (NDPA) 2023.
+        </p>
+
+        {/* Download my data */}
+        <div className="mt-4 rounded-xl bg-[#FFF5EE] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="font-sans text-sm font-bold text-[#4E0030]">Download your data</p>
+              <p className="mt-1 font-sans text-xs text-[#4E0030]/65">
+                Get a JSON file with all the personal data we hold about you — orders, bookings, redemptions, and profile info.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exporting}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white border-[0.3px] border-[#F10897] px-4 py-2 font-sans text-xs font-semibold text-[#F10897] transition-all hover:bg-[#E8B6D5]/15 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {exporting ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />Preparing...</>
+              ) : (
+                <><Download className="h-3.5 w-3.5" strokeWidth={2.5} />Download</>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Delete account */}
+        <div className="mt-3 rounded-xl border border-red-200 bg-red-50/50 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1.5 font-sans text-sm font-bold text-red-700">
+                <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2.5} />
+                Delete account
+              </p>
+              <p className="mt-1 font-sans text-xs text-red-700/75">
+                Permanently delete your account and all associated data — orders, bookings, redemptions. This cannot be undone.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(!showDeleteConfirm)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-red-600 px-4 py-2 font-sans text-xs font-semibold text-white transition-all hover:bg-red-700"
+            >
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+              Delete
+            </button>
+          </div>
+
+          {/* Confirmation UI */}
+          {showDeleteConfirm && (
+            <div className="mt-4 rounded-lg bg-white p-4 ring-1 ring-red-200">
+              <p className="font-sans text-xs font-bold text-red-700">⚠️ This action is permanent</p>
+              <p className="mt-2 font-sans text-xs text-[#4E0030]/75">
+                You will lose access to your account, all orders, all bookings, and all gift card redemptions. Type <code className="rounded bg-red-100 px-1.5 py-0.5 font-mono font-bold text-red-700">DELETE</code> to confirm:
+              </p>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="Type DELETE"
+                className="mt-3 h-10 w-full rounded-lg border-2 border-red-200 bg-white px-3 font-mono text-sm font-bold uppercase text-red-700 placeholder:font-sans placeholder:normal-case placeholder:font-normal placeholder:text-[#4E0030]/40 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200"
+              />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting || deleteConfirmText !== "DELETE"}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-5 py-2 font-sans text-xs font-bold uppercase tracking-[0.12em] text-white transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {deleting ? (
+                    <><Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />Deleting...</>
+                  ) : (
+                    <><Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />Permanently Delete</>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(""); }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#4E0030]/20 px-5 py-2 font-sans text-xs font-bold uppercase tracking-[0.12em] text-[#4E0030] transition-all hover:bg-[#FFF5EE]"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <p className="mt-4 font-sans text-[11px] text-[#4E0030]/55">
+          Questions about your data? Email <a href="mailto:privacy@tarewellness.com" className="font-semibold text-[#F10897] hover:underline">privacy@tarewellness.com</a> or read our <Link href="/privacy-policy" className="font-semibold text-[#F10897] hover:underline">Privacy Policy</Link>.
+        </p>
       </div>
 
       <div className="rounded-2xl bg-white p-5 shadow-[0_4px_15px_rgba(78,0,48,0.06)] sm:p-6">
