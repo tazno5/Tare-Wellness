@@ -25,11 +25,13 @@ const itemUp = {
   },
 };
 
+// Per task spec: smooth fade-in + slight upward translation for the image.
+// Complements the glowing, glassmorphic UI elements the illustrated
+// characters are holding — gives a gentle "rising into view" feel.
 const itemImage = {
-  hidden: { opacity: 0, scale: 0.92, y: 30 },
+  hidden: { opacity: 0, y: 20 },
   show: {
     opacity: 1,
-    scale: 1,
     y: 0,
     transition: { duration: 0.9, ease: [0.22, 1, 0.36, 1] as const },
   },
@@ -55,7 +57,8 @@ export default function Hero() {
       id="how-it-works"
       className="relative w-full overflow-hidden px-5 pb-16 pt-6 sm:px-8 sm:pb-20 lg:px-12 lg:pb-28 lg:pt-8"
     >
-      {/* Decorative blurred blooms in the background */}
+      {/* Decorative blurred blooms in the background — kept at original
+          opacity to match the cream page background. */}
       <div
         aria-hidden
         className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-[#C7B2E2]/30 blur-3xl"
@@ -92,7 +95,7 @@ export default function Hero() {
             <span className="text-[#90AAFF]">They Can Feel</span>
           </motion.h1>
 
-          {/* Body copy */}
+          {/* Body copy — readable on the cream page background */}
           <motion.p
             variants={itemUp}
             className="mt-7 max-w-xl font-sans text-[18px] leading-relaxed text-[#4E0030]/80"
@@ -123,7 +126,9 @@ export default function Hero() {
           </motion.div>
         </motion.div>
 
-        {/* RIGHT: Hero image column */}
+        {/* RIGHT: Hero image column.
+            Transparent section background — image floats on the cream
+            page background (its transparent corners blend into cream). */}
         <motion.div
           variants={itemImage}
           initial="hidden"
@@ -131,23 +136,14 @@ export default function Hero() {
           className="order-1 flex items-center justify-center lg:order-2"
         >
           <div className="relative aspect-square w-full max-w-[420px] sm:max-w-[480px] lg:max-w-[560px]">
-            {/* Watercolor liquid morphing background layer (z-1) */}
-            <div aria-hidden className="absolute inset-0 z-[1] overflow-hidden rounded-[3rem]">
-              <div className="absolute inset-0 animate-watercolor-morph">
-                <div className="absolute left-[10%] top-[15%] h-[50%] w-[50%] rounded-full bg-[#C7B2E2]/40 blur-3xl animate-blob-1" />
-                <div className="absolute right-[5%] top-[20%] h-[45%] w-[45%] rounded-full bg-[#B5E1C3]/35 blur-3xl animate-blob-2" />
-                <div className="absolute left-[20%] bottom-[10%] h-[40%] w-[40%] rounded-full bg-[#BCE1F0]/35 blur-3xl animate-blob-3" />
-                <div className="absolute right-[15%] bottom-[15%] h-[35%] w-[35%] rounded-full bg-[#E8B6D5]/30 blur-3xl animate-blob-4" />
-              </div>
-            </div>
             <Image
               src="/hero-home.png"
-              alt="Black couple standing back to back holding phones displaying holographic TARE Be Well screens"
+              alt="Two people holding glowing phones displaying holographic TARE Be Well screens, surrounded by a watercolor splash of purple, green, and teal"
               fill
               priority
               quality={95}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 480px, 560px"
-              className="hero-card-glow relative z-[3] animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
+              className="relative z-[3] animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
             />
           </div>
         </motion.div>
