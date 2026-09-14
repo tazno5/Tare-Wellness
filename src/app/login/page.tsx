@@ -23,9 +23,10 @@ function LoginContent() {
   }
   const safeCallbackUrl = callbackUrl ? rawCallback : "/";
   const { toast } = useToast();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
   const [form, setForm] = useState({ name: "", email: "", password: "" });
 
@@ -49,7 +50,25 @@ function LoginContent() {
     setIsLoading(true);
 
     try {
-      if (mode === "signup") {
+      if (mode === "forgot") {
+        // Password reset request — POST to /api/auth/reset-request
+        const res = await fetch("/api/auth/reset-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          throw new Error(data?.error || "Failed to send reset link");
+        }
+
+        setForgotSent(true);
+        toast({
+          title: "Check your email",
+          description: "If an account exists with that email, we've sent a reset link.",
+        });
+      } else if (mode === "signup") {
         // Call register API to create the user, then sign in via NextAuth
         const res = await fetch("/api/auth/register", {
           method: "POST",
@@ -102,7 +121,6 @@ function LoginContent() {
                 email: userData.user.email ?? form.email,
               });
             } else {
-              // Session not set but signIn didn't error — fall back to form data
               login({ id: `user-${Date.now()}`, name: form.email.split("@")[0], email: form.email });
             }
           } else {
@@ -115,7 +133,9 @@ function LoginContent() {
         toast({ title: "Welcome back!", description: `Signed in as ${form.email}` });
       }
 
-      router.push(safeCallbackUrl);
+      if (mode !== "forgot") {
+        router.push(safeCallbackUrl);
+      }
     } catch (error) {
       toast({
         title: "Authentication failed",
@@ -129,9 +149,9 @@ function LoginContent() {
 
   return (
     <main className="relative flex flex-1 flex-col">
-      <section className="relative w-full overflow-hidden px-5 pb-16 pt-6 sm:px-8 sm:pt-8 lg:px-12 lg:pt-10">
+      <section className="relative flex min-h-[calc(100vh-112px)] w-full items-center justify-center overflow-hidden px-5 py-10 sm:px-8 lg:px-12">
         <div aria-hidden className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-[#B5E1C3]/25 blur-3xl" />
-        <div aria-hidden className="pointer-events-none absolute -right-16 top-32 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />
+        <div aria-hidden className="pointer-events-none absolute -right-16 bottom-10 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />
 
         {/* Auth split card — hero + form embedded in the same card */}
         <motion.div
@@ -161,39 +181,65 @@ function LoginContent() {
 
           {/* RIGHT: Auth form column */}
           <div className="p-6 sm:p-8 lg:p-10">
-            {/* Tab toggle */}
-            <div className="flex rounded-full bg-blush/40 p-1">
-              <button
-                type="button"
-                onClick={() => setMode("login")}
-                className={`flex-1 rounded-full py-2.5 font-sans text-sm font-semibold transition-all duration-200 ${
-                  mode === "login" ? "bg-white text-[#4E0030] shadow-sm" : "text-[#4E0030]/50"
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode("signup")}
-                className={`flex-1 rounded-full py-2.5 font-sans text-sm font-semibold transition-all duration-200 ${
-                  mode === "signup" ? "bg-white text-[#4E0030] shadow-sm" : "text-[#4E0030]/50"
-                }`}
-              >
-                Sign Up
-              </button>
-            </div>
+            {/* Tab toggle — hidden in "forgot" mode */}
+            {mode !== "forgot" && (
+              <div className="flex rounded-full bg-blush/40 p-1">
+                <button
+                  type="button"
+                  onClick={() => setMode("login")}
+                  className={`flex-1 rounded-full py-2.5 font-sans text-sm font-semibold transition-all duration-200 ${
+                    mode === "login" ? "bg-white text-[#4E0030] shadow-sm" : "text-[#4E0030]/50"
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("signup")}
+                  className={`flex-1 rounded-full py-2.5 font-sans text-sm font-semibold transition-all duration-200 ${
+                    mode === "signup" ? "bg-white text-[#4E0030] shadow-sm" : "text-[#4E0030]/50"
+                  }`}
+                >
+                  Sign Up
+                </button>
+              </div>
+            )}
 
-            <h1 className="mt-6 font-fraunces text-2xl font-bold bg-gradient-to-r from-[#2750D8] to-[#90AAFF] bg-clip-text text-transparent sm:text-3xl">
-              {mode === "login" ? "Welcome Back" : "Create Account"}
-            </h1>
-            <p className="mt-1.5 font-sans text-sm text-[#4E0030]/60">
-              {mode === "login"
-                ? "Sign in to access your gift cards and bookings."
-                : "Join Tare Wellness to send and receive care."}
-            </p>
+            {/* Forgot-mode success message */}
+            {mode === "forgot" && forgotSent ? (
+              <div className="py-6 text-center">
+                <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#B5E1C3]/40">
+                  <Check className="h-7 w-7 text-[#2d6e4f]" strokeWidth={2.5} />
+                </div>
+                <h1 className="mt-4 font-fraunces text-2xl font-bold text-[#4E0030]">
+                  Check your email
+                </h1>
+                <p className="mt-2 font-sans text-sm text-[#4E0030]/70">
+                  If an account exists with that email, we&apos;ve sent a link to reset your password. The link expires in 24 hours.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setMode("login"); setForgotSent(false); }}
+                  className="mt-5 inline-flex items-center gap-1.5 font-sans text-sm font-bold text-[#F10897] hover:underline"
+                >
+                  ← Back to sign in
+                </button>
+              </div>
+            ) : (
+              <>
+                <h1 className="mt-6 font-fraunces text-2xl font-bold bg-gradient-to-r from-[#2750D8] to-[#90AAFF] bg-clip-text text-transparent sm:text-3xl">
+                  {mode === "login" ? "Welcome Back" : mode === "signup" ? "Create Account" : "Reset Password"}
+                </h1>
+                <p className="mt-1.5 font-sans text-sm text-[#4E0030]/60">
+                  {mode === "login"
+                    ? "Sign in to access your gift cards and bookings."
+                    : mode === "signup"
+                    ? "Join Tare Wellness to send and receive care."
+                    : "Enter your email and we'll send you a reset link."}
+                </p>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              {mode === "signup" && (
+                <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                  {mode === "signup" && (
                 <div>
                   <label htmlFor="name" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">
                     Full Name
@@ -231,36 +277,43 @@ function LoginContent() {
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="password" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">
-                  Password
-                </label>
-                <div className="relative mt-2">
-                  <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4E0030]/30" strokeWidth={2.5} />
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    minLength={6}
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder="••••••••"
-                    className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-11 font-sans text-sm text-[#4E0030] placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4E0030]/30 transition-colors hover:text-[#4E0030]/60"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={2.5} /> : <Eye className="h-4 w-4" strokeWidth={2.5} />}
-                  </button>
+              {/* Password field — hidden in "forgot" mode */}
+              {mode !== "forgot" && (
+                <div>
+                  <label htmlFor="password" className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">
+                    Password
+                  </label>
+                  <div className="relative mt-2">
+                    <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#4E0030]/30" strokeWidth={2.5} />
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      required
+                      minLength={6}
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      placeholder="••••••••"
+                      className="h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-11 font-sans text-sm text-[#4E0030] placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4E0030]/30 transition-colors hover:text-[#4E0030]/60"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={2.5} /> : <Eye className="h-4 w-4" strokeWidth={2.5} />}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {mode === "login" && (
                 <div className="flex justify-end">
-                  <button type="button" className="font-sans text-xs font-medium text-[#F10897] transition-colors hover:text-[#d4006f]">
+                  <button
+                    type="button"
+                    onClick={() => { setMode("forgot"); setForgotSent(false); }}
+                    className="font-sans text-xs font-medium text-[#F10897] transition-colors hover:text-[#d4006f]"
+                  >
                     Forgot password?
                   </button>
                 </div>
@@ -274,11 +327,11 @@ function LoginContent() {
                 {isLoading ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2.5} />
-                    {mode === "login" ? "Signing in..." : "Creating account..."}
+                    {mode === "login" ? "Signing in..." : mode === "signup" ? "Creating account..." : "Sending..."}
                   </>
                 ) : (
                   <>
-                    {mode === "login" ? "Sign In" : "Create Account"}
+                    {mode === "login" ? "Sign In" : mode === "signup" ? "Create Account" : "Send Reset Link"}
                     <ArrowRight className="h-5 w-5" strokeWidth={2.5} />
                   </>
                 )}
@@ -295,16 +348,35 @@ function LoginContent() {
               </div>
             )}
 
-            <p className="mt-6 text-center font-sans text-xs text-[#4E0030]/50">
-              {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-              <button
-                type="button"
-                onClick={() => setMode(mode === "login" ? "signup" : "login")}
-                className="font-bold text-[#F10897] transition-colors hover:text-[#d4006f]"
-              >
-                {mode === "login" ? "Sign up" : "Sign in"}
-              </button>
-            </p>
+            {/* Switch between login/signup — hidden in "forgot" mode (the
+                "back to sign in" button is shown above in the forgotSent state) */}
+            {mode !== "forgot" && (
+              <p className="mt-6 text-center font-sans text-xs text-[#4E0030]/50">
+                {mode === "login" ? "Don't have an account? " : "Already have an account? "}
+                <button
+                  type="button"
+                  onClick={() => setMode(mode === "login" ? "signup" : "login")}
+                  className="font-bold text-[#F10897] transition-colors hover:text-[#d4006f]"
+                >
+                  {mode === "login" ? "Sign up" : "Sign in"}
+                </button>
+              </p>
+            )}
+
+            {/* "Back to sign in" link — only in "forgot" mode (before success) */}
+            {mode === "forgot" && !forgotSent && (
+              <p className="mt-6 text-center font-sans text-xs text-[#4E0030]/50">
+                <button
+                  type="button"
+                  onClick={() => setMode("login")}
+                  className="font-bold text-[#F10897] transition-colors hover:text-[#d4006f]"
+                >
+                  ← Back to sign in
+                </button>
+              </p>
+            )}
+            </>
+            )}
           </div>
         </motion.div>
 
