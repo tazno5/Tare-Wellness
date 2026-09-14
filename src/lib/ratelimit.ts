@@ -48,6 +48,24 @@ function getRatelimiters(): Record<string, Ratelimit> | null {
         limiter: Ratelimit.slidingWindow(3, "1 m"),
         prefix: "ratelimit:register",
       }),
+      // 3 password reset requests per minute per IP
+      "reset-request": new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(3, "1 m"),
+        prefix: "ratelimit:reset-request",
+      }),
+      // 5 password resets per minute per IP
+      "reset-password": new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(5, "1 m"),
+        prefix: "ratelimit:reset-password",
+      }),
+      // 3 welcome emails per minute per IP
+      "welcome-email": new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(5, "1 m"),
+        prefix: "ratelimit:welcome-email",
+      }),
     };
   }
   return _ratelimiters;
