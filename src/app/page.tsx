@@ -1,8 +1,17 @@
 import Hero from "@/components/site/Hero";
+import JsonLd from "@/components/site/JsonLd";
+import { organizationLd, giftCardProductLd } from "@/lib/structured-data";
 
 export default function Home() {
   return (
     <main className="relative flex flex-1 flex-col">
+      {/* Structured data for Google rich snippets */}
+      <JsonLd data={organizationLd} />
+      {/* Each gift card type as a Product — enables price rich snippets */}
+      {giftCardProductLd.map((product) => (
+        <JsonLd key={product.name} data={product} />
+      ))}
+
       {/* Subtle grain / vignette overlay so the gradient feels alive, not flat */}
       <div
         aria-hidden

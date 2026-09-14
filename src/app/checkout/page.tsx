@@ -280,11 +280,65 @@ function CheckoutContent() {
           personalNote: "",
         })));
 
-    // Generate a mock transaction reference (used as fallback or for display)
-    const mockTxnRef = `TARE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+    // Generate a unique Paystack transaction reference (used as fallback or for display)
+    const txnRef = `TARE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(16).slice(2, 8).toUpperCase()}`;
 
     try {
-      // Try the real API first
+      // ============ PAYSTACK POPUP FLOW (card payments) ============
+      // For card payments: open the Paystack popup → user pays → get reference → POST to /api/orders
+      // For transfer payments: POST directly (no Paystack) — order is created as "pending"
+      let transactionReference: string | null = null;
+
+      if (paymentMethod === "card") {
+        transactionReference = txnRef;
+        const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
+
+        if (!paystackKey) {
+          // Demo mode — skip the popup, POST directly with the generated reference
+          console.log("[checkout] Demo mode — skipping Paystack popup (NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY not set)");
+        } else {
+          // Real Paystack flow — open the popup
+          await new Promise<void>((resolve, reject) => {
+            const PaystackPop = (window as unknown as { PaystackPop?: {
+              setup: (config: unknown) => { openIframe: () => void };
+            } }).PaystackPop;
+
+            if (!PaystackPop) {
+              reject(new Error("Paystack failed to load. Please refresh the page and try again."));
+              return;
+            }
+
+            const handler = PaystackPop.setup({
+              key: paystackKey,
+              email: buyerEmail,
+              amount: total * 100, // Paystack expects kobo (NGN × 100)
+              currency: "NGN",
+              ref: transactionReference,
+              metadata: {
+                custom_fields: [
+                  { display_name: "Buyer Name", variable_name: "buyer_name", value: buyerName },
+                  { display_name: "Order Source", variable_name: "order_source", value: "tarewellness.com" },
+                ],
+              },
+              callback: (response: { reference: string; status: string; trans: string }) => {
+                if (response.status === "success" || response.reference) {
+                  resolve();
+                } else {
+                  reject(new Error("Payment was not successful. Please try again."));
+                }
+              },
+              onClose: () => {
+                reject(new Error("Payment cancelled."));
+              },
+            });
+
+            handler.openIframe();
+          });
+        }
+      }
+
+      // POST to /api/orders — for card payments, include the Paystack reference
+      // so the server can verify the payment before creating the order.
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -292,6 +346,7 @@ function CheckoutContent() {
           buyerName,
           buyerEmail,
           paymentMethod,
+          paystackReference: transactionReference,
           recipients: recipientsPayload,
         }),
       });
@@ -334,11 +389,19 @@ function CheckoutContent() {
     } catch (error) {
       // #7: Specific error messages based on failure type
       const msg = error instanceof Error ? error.message : "Something went wrong. Please try again.";
-      toast({
-        title: msg.includes("sign in") ? "Authentication required" : "Payment failed",
-        description: msg,
-        variant: "destructive",
-      });
+      // Don't show a scary error toast for "Payment cancelled" — it's a user action
+      if (msg === "Payment cancelled.") {
+        toast({
+          title: "Payment cancelled",
+          description: "Your card was not charged. Try again when you're ready.",
+        });
+      } else {
+        toast({
+          title: msg.includes("sign in") ? "Authentication required" : "Payment failed",
+          description: msg,
+          variant: "destructive",
+        });
+      }
       setSubmitting(false);
       return;
     }
@@ -436,18 +499,20 @@ function CheckoutContent() {
             confirmed.
           </motion.p>
 
-          {/* #3: Demo mode banner — visible until Paystack is integrated */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#B5E1C3]/30 px-4 py-2"
-          >
-            <span className="text-base">🧪</span>
-            <p className="font-sans text-xs font-semibold text-[#2d6e4f]">
-              Demo Mode — no real payment charged. Use card <span className="font-mono">4242 4242 4242 4242</span>, any expiry, any CVV.
-            </p>
-          </motion.div>
+          {/* Demo mode banner — only visible when Paystack is NOT configured */}
+          {!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#B5E1C3]/30 px-4 py-2"
+            >
+              <span className="text-base">🧪</span>
+              <p className="font-sans text-xs font-semibold text-[#2d6e4f]">
+                Demo Mode — no real payment charged. Add <span className="font-mono">PAYSTACK_PUBLIC_KEY</span> + <span className="font-mono">PAYSTACK_SECRET_KEY</span> env vars to enable real payments.
+              </p>
+            </motion.div>
+          )}
 
           {/* Hero image */}
           <motion.div
@@ -555,78 +620,32 @@ function CheckoutContent() {
                     )}
                   </div>
 
-                  <div>
-                    <label
-                      htmlFor="card-number"
-                      className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
-                    >
-                      Card Number <span className="text-[#F10897]">*</span>
-                    </label>
-                    <div className="relative mt-2">
-                      <CreditCard className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
-                      <input
-                        id="card-number"
-                        type="text"
-                        required
-                        inputMode="numeric"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                        onBlur={() => markTouched("cardNumber")}
-                        maxLength={19}
-                        placeholder="0000 0000 0000 0000"
-                        className={`h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30 ${fieldError("cardNumber", isCardNumberValid)}`}
-                      />
-                    </div>
-                    {touched.cardNumber && !isCardNumberValid && cardNumber.length > 0 && (
-                      <p className="mt-1 font-sans text-xs text-red-400">Card number must be 16 digits.</p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label
-                        htmlFor="expiry"
-                        className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
-                      >
-                        Expiry <span className="text-[#F10897]">*</span>
-                      </label>
-                      <input
-                        id="expiry"
-                        type="text"
-                        required
-                        value={expiry}
-                        onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                        onBlur={() => markTouched("expiry")}
-                        maxLength={5}
-                        placeholder="MM/YY"
-                        className={`mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30 ${fieldError("expiry", isExpiryValid)}`}
-                      />
-                      {touched.expiry && !isExpiryValid && expiry.length > 0 && (
-                        <p className="mt-1 font-sans text-xs text-red-400">Invalid date.</p>
-                      )}
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="cvv"
-                        className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
-                      >
-                        CVV <span className="text-[#F10897]">*</span>
-                      </label>
-                      <input
-                        id="cvv"
-                        type="text"
-                        required
-                        inputMode="numeric"
-                        value={cvv}
-                        onChange={(e) => setCvv(formatCVV(e.target.value))}
-                        onBlur={() => markTouched("cvv")}
-                        maxLength={4}
-                        placeholder="123"
-                        className={`mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-mono text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30 ${fieldError("cvv", isCvvValid)}`}
-                      />
-                      {touched.cvv && !isCvvValid && cvv.length > 0 && (
-                        <p className="mt-1 font-sans text-xs text-red-400">3-4 digits.</p>
-                      )}
+                  {/* Paystack info panel — replaces the old card-number / expiry / CVV inputs.
+                      Paystack's popup collects those details securely. */}
+                  <div className="rounded-2xl border-2 border-dashed border-[#F10897]/30 bg-[#FCE4EC]/40 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F10897] text-white">
+                        <Lock className="h-4 w-4" strokeWidth={2.5} />
+                      </div>
+                      <div>
+                        <p className="font-sans text-sm font-bold text-maroon">
+                          Pay securely with Paystack
+                        </p>
+                        <p className="mt-1 font-sans text-xs leading-relaxed text-maroon/75">
+                          When you click <strong>Complete Purchase</strong>, a secure Paystack popup will open for you to enter your card details. Your card information never touches our servers — it goes directly to Paystack.
+                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 font-sans text-[10px] font-semibold uppercase tracking-[0.12em] text-maroon/60">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1">
+                            <CreditCard className="h-3 w-3" strokeWidth={2.5} /> Visa
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1">
+                            <CreditCard className="h-3 w-3" strokeWidth={2.5} /> Mastercard
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1">
+                            <CreditCard className="h-3 w-3" strokeWidth={2.5} /> Verve
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </TabsContent>

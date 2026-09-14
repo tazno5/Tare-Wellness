@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { generateOrderNumber, generateRedemptionCode } from "@/lib/ids";
+import { verifyTransaction } from "@/lib/paystack";
 
 // ============ Validation (HIGH #4) ============
 
@@ -22,6 +23,8 @@ const createOrderSchema = z.object({
   buyerName: z.string().min(1).max(200),
   buyerEmail: z.string().email().max(500),
   paymentMethod: z.enum(["card", "transfer"]).default("card"),
+  // Paystack transaction reference — required when paymentMethod === "card".
+  paystackReference: z.string().max(100).optional(),
   recipients: z.array(recipientSchema).min(1).max(20),
 });
 
@@ -71,6 +74,7 @@ export async function POST(req: Request) {
       buyerName,
       buyerEmail,
       paymentMethod,
+      paystackReference,
       recipients: validatedRecipients,
     } = parseResult.data;
 
@@ -96,14 +100,77 @@ export async function POST(req: Request) {
       0,
     );
 
+    // ============ PAYSTACK VERIFICATION ============
+    // For card payments, verify the Paystack transaction BEFORE creating
+    // the order. This prevents users from getting gift cards without paying.
+    //
+    // Flow:
+    //   1. Client opens Paystack popup → user pays → client receives reference
+    //   2. Client POSTs here with { ..., paymentMethod: "card", paystackReference }
+    //   3. We call Paystack's /transaction/verify endpoint with our secret key
+    //   4. If status=success AND amount=totalAmount AND currency=NGN → create order
+    //   5. Otherwise → return 400, no order is created
+    //
+    // In dev (no PAYSTACK_SECRET_KEY), verification is skipped — the order
+    // goes through as "demo mode" so the rest of the flow can be tested.
+    if (paymentMethod === "card") {
+      if (!paystackReference) {
+        return NextResponse.json(
+          { error: "Payment reference is required for card payments" },
+          { status: 400 },
+        );
+      }
+
+      const verification = await verifyTransaction(paystackReference);
+      if (!verification.verified) {
+        return NextResponse.json(
+          {
+            error: "Payment verification failed",
+            details: verification.error,
+          },
+          { status: 400 },
+        );
+      }
+
+      // Amount check — totalAmount is in kobo (NGN × 100), Paystack returns
+      // amount in kobo too. Skip in demo mode (no secret key).
+      const secretKey = process.env.PAYSTACK_SECRET_KEY;
+      const isDemoMode = !secretKey || secretKey === "sk_test_placeholder";
+      if (!isDemoMode && verification.data?.amount !== totalAmount) {
+        return NextResponse.json(
+          {
+            error: "Payment amount mismatch",
+            details: `Expected ₦${(totalAmount / 100).toLocaleString()} but received ₦${((verification.data?.amount ?? 0) / 100).toLocaleString()}`,
+          },
+          { status: 400 },
+        );
+      }
+
+      // Verify customer email matches the buyer email (prevents paying with
+      // someone else's email). Skip in demo mode.
+      if (
+        !isDemoMode &&
+        verification.data?.customerEmail &&
+        verification.data.customerEmail.toLowerCase() !== buyerEmail.toLowerCase()
+      ) {
+        return NextResponse.json(
+          {
+            error: "Payment email mismatch",
+            details: `Payment was made by ${verification.data.customerEmail} but order is for ${buyerEmail}`,
+          },
+          { status: 400 },
+        );
+      }
+    }
+    // For transfer payments, no verification — the merchant manually confirms
+    // receipt of bank transfer before fulfilling the order.
+
     const orderNumber = generateOrderNumber();
 
-    // Create order first, then items + redemptions in a transaction.
-    // CRITICAL #1: Order starts as "pending" — a separate endpoint
-    // (POST /api/orders/confirm) will mark it "completed" after
-    // payment verification (Paystack webhook).
+    // Create order + items + redemptions in a transaction.
+    // For card payments (verified above): order starts as "completed".
+    // For transfer payments: order starts as "pending" until merchant confirms.
     const order = await db.$transaction(async (tx) => {
-      // 1. Create the order
       const newOrder = await tx.order.create({
         data: {
           orderNumber,
@@ -112,11 +179,10 @@ export async function POST(req: Request) {
           buyerEmail,
           paymentMethod: paymentMethod || "card",
           totalAmount,
-          status: "pending", // CRITICAL #1: pending until payment verified
+          status: paymentMethod === "card" ? "completed" : "pending",
         },
       });
 
-      // 2. Create order items + redemption codes for each recipient
       for (const r of validatedRecipients) {
         const card = cardMap.get(r.cardSlug)!;
         const orderItem = await tx.orderItem.create({
@@ -134,7 +200,7 @@ export async function POST(req: Request) {
             deliveryMode: r.deliveryMode || "now",
             scheduledFor: r.scheduledFor ? new Date(r.scheduledFor) : null,
             personalNote: r.personalNote || null,
-            confirmed: false, // CRITICAL #1: not confirmed until payment verified
+            confirmed: paymentMethod === "card",
           },
         });
 
@@ -144,81 +210,35 @@ export async function POST(req: Request) {
             orderItemId: orderItem.id,
             orderId: newOrder.id,
             creditAmount: card.price,
-            sessionsRemaining: 0, // 0 until redeemed (set on redeem)
+            sessionsRemaining: 0,
             sessionsUsed: 0,
-            status: "active", // active = code works, but order must be "completed" for email to send
+            status: "active",
           },
         });
       }
 
-      // 3. Return the full order with relations
       return tx.order.findUnique({
         where: { id: newOrder.id },
-        include: {
-          orderItems: {
-            include: { redemption: true },
-          },
-        },
+        include: { orderItems: { include: { redemption: true } } },
       });
     });
 
-    // CRITICAL #1: For now, in demo mode (no Paystack), we auto-confirm
-    // the order. When Paystack is integrated, remove this block and
-    // replace with a redirect to Paystack's checkout page.
-    if (!process.env.PAYSTACK_SECRET_KEY) {
-      // Demo mode — auto-confirm
-      await db.order.update({
-        where: { id: order!.id },
-        data: { status: "completed" },
-      });
-      await db.orderItem.updateMany({
-        where: { orderId: order!.id },
-        data: { confirmed: true },
-      });
-
-      // Re-fetch the updated order
-      const confirmedOrder = await db.order.findUnique({
-        where: { id: order!.id },
-        include: {
-          orderItems: {
-            include: { redemption: true },
-          },
-        },
-      });
-
-      // Send gift card emails — AWAIT the send (not fire-and-forget).
-      // HIGH #1 fix: fire-and-forget fetch was unreliable on Vercel
-      // serverless — function could be recycled before fetch completed,
-      // causing emails to never be sent. Now we await each send.
-      // The /api/email/send route catches its own errors and returns
-      // success with a warning, so this won't fail the order.
-      if (confirmedOrder?.orderItems) {
-        const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-        await Promise.all(
-          confirmedOrder.orderItems.map((item) =>
-            fetch(`${baseUrl}/api/email/send`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ orderItemId: item.id }),
-            }).catch(() => {
-              // Swallow errors — order is still valid, email is best-effort.
-              // The /api/email/send route marks emailSent=false on failure,
-              // which a future retry cron could pick up.
-            }),
-          ),
-        );
-      }
-
-      return NextResponse.json(confirmedOrder, { status: 201 });
+    // Send gift card emails for completed (card) orders. Transfer orders
+    // wait until the merchant confirms receipt.
+    if (order?.status === "completed" && order.orderItems) {
+      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+      await Promise.all(
+        order.orderItems.map((item) =>
+          fetch(`${baseUrl}/api/email/send`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderItemId: item.id }),
+          }).catch(() => {}),
+        ),
+      );
     }
 
-    // Production mode — return order with "pending" status.
-    // Client should redirect to Paystack checkout with the order ID.
-    // Paystack webhook will call POST /api/orders/confirm to complete.
-    return NextResponse.json(
-      { ...order, paymentRequired: true },
-      { status: 202 },
-    );
+    return NextResponse.json(order, { status: 201 });
   } catch (error) {
     console.error("Order creation error:", error);
     return NextResponse.json(

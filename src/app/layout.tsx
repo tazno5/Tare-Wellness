@@ -29,36 +29,75 @@ const inter = Inter({
   display: "swap",
 });
 
+// Site URL — used for canonical URLs, OpenGraph, sitemap, structured data.
+// Override via NEXT_PUBLIC_SITE_URL env var (set on Vercel). Falls back to
+// the production domain.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.tarewellness.com";
+
 export const metadata: Metadata = {
-  title: "Tare — Give Rest.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Tare — Send Wellness Gift Cards in Nigeria",
+    template: "%s | Tare Wellness",
+  },
   description:
-    "Send a Tare gift card. They pick a session, take their time, and rest. That’s it.",
+    "Send a Tare gift card. They pick a wellness session, take their time, and rest. NGN gift cards for therapy, wellness coaching, and more — delivered instantly.",
   keywords: [
     "Tare",
     "Tare Wellness",
-    "gift card",
-    "redeem",
-    "wellness",
-    "session",
-    "rest",
+    "wellness gift card",
+    "gift card Nigeria",
+    "therapy gift card",
+    "wellness session",
+    "redeem gift card",
+    "send gift card Nigeria",
+    "mental health Nigeria",
+    "wellness coaching",
   ],
   authors: [{ name: "Tare Wellness Enterprise Ltd" }],
+  creator: "Tare Wellness Enterprise Ltd",
+  publisher: "Tare Wellness Enterprise Ltd",
   icons: {
     icon: "/logo.png",
+    apple: "/logo.png",
   },
   openGraph: {
-    title: "Tare — Give Rest.",
+    title: "Tare — Send Wellness Gift Cards in Nigeria",
     description:
-      "Send a Tare gift card. They pick a session, take their time, and rest. That’s it.",
-    url: "https://tarewellness.example.com",
-    siteName: "Tare",
+      "Send a Tare gift card. They pick a wellness session, take their time, and rest. NGN gift cards for therapy, wellness coaching, and more.",
+    url: SITE_URL,
+    siteName: "Tare Wellness",
     type: "website",
+    locale: "en_NG",
+    images: [
+      {
+        url: "/logo.png",
+        width: 512,
+        height: 512,
+        alt: "Tare Wellness logo",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Tare — Give Rest.",
+    title: "Tare — Send Wellness Gift Cards in Nigeria",
     description:
-      "Send a Tare gift card. They pick a session, take their time, and rest. That’s it.",
+      "Send a Tare gift card. They pick a wellness session, take their time, and rest.",
+    images: ["/logo.png"],
+  },
+  alternates: {
+    canonical: SITE_URL,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 };
 
