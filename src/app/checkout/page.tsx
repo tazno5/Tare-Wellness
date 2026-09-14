@@ -363,6 +363,8 @@ function CheckoutContent() {
 
       // POST to /api/orders — for card payments, include the Paystack reference
       // so the server can verify the payment before creating the order.
+      // For transfer payments (ENABLE_PAYSTACK=false), omit paystackReference
+      // entirely (don't send null — keeps the payload clean).
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -370,7 +372,7 @@ function CheckoutContent() {
           buyerName,
           buyerEmail,
           paymentMethod,
-          paystackReference: transactionReference,
+          ...(transactionReference ? { paystackReference: transactionReference } : {}),
           recipients: recipientsPayload,
         }),
       });

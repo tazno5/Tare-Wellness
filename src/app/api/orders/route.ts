@@ -37,8 +37,12 @@ const createOrderSchema = z.object({
   buyerName: z.string().min(1).max(200),
   buyerEmail: z.string().email().max(500),
   paymentMethod: z.enum(["card", "transfer"]).default("card"),
-  // Paystack transaction reference — required when paymentMethod === "card".
-  paystackReference: z.string().max(100).optional(),
+  // Paystack transaction reference — required when paymentMethod === "card"
+  // and ENABLE_PAYSTACK is true. When ENABLE_PAYSTACK is false (bank transfer
+  // flow), this is null — the server skips Paystack verification.
+  // Accept null OR undefined OR a string (Zod's .optional() only allows
+  // undefined, not null — so we use .nullable() + .optional() to cover both).
+  paystackReference: z.string().max(100).nullable().optional(),
   recipients: z.array(recipientSchema).min(1).max(20),
 });
 
