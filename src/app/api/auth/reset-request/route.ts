@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { BrevoClient } from "@getbrevo/brevo";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
 
@@ -52,7 +52,6 @@ function getSiteUrl(): string {
 
 // Generate a random reset token (32 bytes → 64-char hex string)
 function generateResetToken(): string {
-  const { randomBytes } = require("node:crypto");
   return randomBytes(32).toString("hex");
 }
 
