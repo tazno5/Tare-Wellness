@@ -7,6 +7,20 @@ import { checkRateLimit } from "@/lib/ratelimit";
 import { generateOrderNumber, generateRedemptionCode } from "@/lib/ids";
 import { verifyTransaction } from "@/lib/paystack";
 
+// ============================================================
+// FEATURE FLAG: Paystack server-side verification
+// ============================================================
+// When false, the API ignores paystackReference entirely and always
+// creates the order as "pending" (bank transfer flow). The Paystack
+// verification logic remains in the codebase, fully intact, shielded
+// behind this flag — set to true to re-enable Paystack verification.
+//
+// NOTE: The checkout UI has its own ENABLE_PAYSTACK flag at the top
+// of src/app/checkout/page.tsx. Both must be `true` for the full
+// Paystack flow to work.
+const ENABLE_PAYSTACK = false;
+// ============================================================
+
 // ============ Validation (HIGH #4) ============
 
 const recipientSchema = z.object({
@@ -101,8 +115,9 @@ export async function POST(req: Request) {
     );
 
     // ============ PAYSTACK VERIFICATION ============
-    // For card payments, verify the Paystack transaction BEFORE creating
-    // the order. This prevents users from getting gift cards without paying.
+    // For card payments (only when ENABLE_PAYSTACK is true), verify the
+    // Paystack transaction BEFORE creating the order. This prevents users
+    // from getting gift cards without paying.
     //
     // Flow:
     //   1. Client opens Paystack popup → user pays → client receives reference
@@ -113,7 +128,12 @@ export async function POST(req: Request) {
     //
     // In dev (no PAYSTACK_SECRET_KEY), verification is skipped — the order
     // goes through as "demo mode" so the rest of the flow can be tested.
-    if (paymentMethod === "card") {
+    //
+    // When ENABLE_PAYSTACK is false (current setting), this entire block
+    // is skipped — the order is always created as "pending" (bank transfer
+    // flow). The Paystack verification logic is preserved above the flag
+    // check, fully intact — set ENABLE_PAYSTACK = true to re-enable.
+    if (ENABLE_PAYSTACK && paymentMethod === "card") {
       if (!paystackReference) {
         return NextResponse.json(
           { error: "Payment reference is required for card payments" },
@@ -162,14 +182,19 @@ export async function POST(req: Request) {
         );
       }
     }
-    // For transfer payments, no verification — the merchant manually confirms
-    // receipt of bank transfer before fulfilling the order.
+    // For transfer payments (the only flow when ENABLE_PAYSTACK is false),
+    // no verification — the merchant manually confirms receipt of bank
+    // transfer before fulfilling the order.
 
     const orderNumber = generateOrderNumber();
 
     // Create order + items + redemptions in a transaction.
-    // For card payments (verified above): order starts as "completed".
-    // For transfer payments: order starts as "pending" until merchant confirms.
+    // - When ENABLE_PAYSTACK is true + paymentMethod==="card" + payment verified:
+    //   order starts as "completed" (gift card emails fire immediately).
+    // - Otherwise (transfer payments, or ENABLE_PAYSTACK is false):
+    //   order starts as "pending" — merchant manually confirms receipt of
+    //   the bank transfer before marking the order as "completed".
+    const isVerifiedCardPayment = ENABLE_PAYSTACK && paymentMethod === "card";
     const order = await db.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
@@ -179,7 +204,7 @@ export async function POST(req: Request) {
           buyerEmail,
           paymentMethod: paymentMethod || "card",
           totalAmount,
-          status: paymentMethod === "card" ? "completed" : "pending",
+          status: isVerifiedCardPayment ? "completed" : "pending",
         },
       });
 
@@ -200,7 +225,7 @@ export async function POST(req: Request) {
             deliveryMode: r.deliveryMode || "now",
             scheduledFor: r.scheduledFor ? new Date(r.scheduledFor) : null,
             personalNote: r.personalNote || null,
-            confirmed: paymentMethod === "card",
+            confirmed: isVerifiedCardPayment,
           },
         });
 

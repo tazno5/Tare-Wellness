@@ -1,5 +1,22 @@
 "use client";
 
+// ============================================================
+// FEATURE FLAG: Paystack payments
+// ============================================================
+// When false, the checkout UI hides ALL Paystack-related UI (no card
+// tab, no payment selector, no card input fields) and forces the
+// Bank Transfer flow as the only visible payment method.
+//
+// All Paystack UI + API logic remains in the codebase, fully intact,
+// shielded behind this flag. To re-enable Paystack later, set this to
+// `true` and the card-tab UI + Paystack popup will reappear.
+//
+// NOTE: This is a UI flag only. The API route (/api/orders) has its
+// own ENABLE_PAYSTACK constant that controls server-side Paystack
+// verification. Both must be set to `true` to fully re-enable.
+const ENABLE_PAYSTACK = false;
+// ============================================================
+
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -87,7 +104,12 @@ function CheckoutContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { recipients, user, clearCart, clearRecipients } = useStore();
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">("card");
+  // When ENABLE_PAYSTACK is false, force paymentMethod to "transfer" —
+  // the Bank Transfer UI is the only visible option.
+  // When true, default to "card" (the existing behavior).
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">(
+    ENABLE_PAYSTACK ? "card" : "transfer",
+  );
   const [submitting, setSubmitting] = useState(false);
 
   // #1: Controlled card inputs with formatting
@@ -285,11 +307,13 @@ function CheckoutContent() {
 
     try {
       // ============ PAYSTACK POPUP FLOW (card payments) ============
-      // For card payments: open the Paystack popup → user pays → get reference → POST to /api/orders
-      // For transfer payments: POST directly (no Paystack) — order is created as "pending"
+      // For card payments (only possible when ENABLE_PAYSTACK is true):
+      //   open the Paystack popup → user pays → get reference → POST to /api/orders
+      // For transfer payments (the only flow when ENABLE_PAYSTACK is false):
+      //   POST directly (no Paystack) — order is created as "pending"
       let transactionReference: string | null = null;
 
-      if (paymentMethod === "card") {
+      if (ENABLE_PAYSTACK && paymentMethod === "card") {
         transactionReference = txnRef;
         const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY;
 
@@ -499,8 +523,10 @@ function CheckoutContent() {
             confirmed.
           </motion.p>
 
-          {/* Demo mode banner — only visible when Paystack is NOT configured */}
-          {!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY && (
+          {/* Demo mode banner — only visible when Paystack is enabled AND not configured.
+              When ENABLE_PAYSTACK is false (current setting), we're using Bank Transfer
+              only, so this demo-mode banner is irrelevant and hidden. */}
+          {ENABLE_PAYSTACK && !process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -572,148 +598,113 @@ function CheckoutContent() {
                 </span>
               </div>
 
-              <Tabs
-                value={paymentMethod}
-                onValueChange={(v) => setPaymentMethod(v as "card" | "transfer")}
-                className="mt-4"
-              >
-                <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-blush/60 p-1">
-                  <TabsTrigger
-                    value="card"
-                    className="rounded-xl font-sans text-xs font-bold uppercase tracking-[0.12em] data-[state=active]:bg-[#4E0030] data-[state=active]:text-white"
-                  >
-                    <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} />
-                    Card
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="transfer"
-                    className="rounded-xl font-sans text-xs font-bold uppercase tracking-[0.12em] data-[state=active]:bg-[#4E0030] data-[state=active]:text-white"
-                  >
-                    <Building2 className="h-3.5 w-3.5" strokeWidth={2.5} />
-                    Bank Transfer
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="card" className="mt-4 space-y-4">
-                  <div>
-                    <label
-                      htmlFor="cardholder"
-                      className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+              {/* ============================================================ */}
+              {/* PAYMENT METHOD UI                                            */}
+              {/*                                                              */}
+              {/* When ENABLE_PAYSTACK is true: render the Card/Bank Transfer   */}
+              {/* tab selector (existing Paystack flow).                       */}
+              {/*                                                              */}
+              {/* When ENABLE_PAYSTACK is false (current): hide ALL payment    */}
+              {/* selector UI. Render ONLY the Bank Transfer block directly —  */}
+              {/* no tabs, no card option. The Paystack UI is preserved below  */}
+              {/* inside the ENABLE_PAYSTACK conditional — flip the flag to    */}
+              {/* bring it back.                                              */}
+              {/* ============================================================ */}
+              {ENABLE_PAYSTACK ? (
+                <Tabs
+                  value={paymentMethod}
+                  onValueChange={(v) => setPaymentMethod(v as "card" | "transfer")}
+                  className="mt-4"
+                >
+                  <TabsList className="grid w-full grid-cols-2 rounded-2xl bg-blush/60 p-1">
+                    <TabsTrigger
+                      value="card"
+                      className="rounded-xl font-sans text-xs font-bold uppercase tracking-[0.12em] data-[state=active]:bg-[#4E0030] data-[state=active]:text-white"
                     >
-                      Cardholder Name <span className="text-[#F10897]">*</span>
-                    </label>
-                    <div className="relative mt-2">
-                      <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
-                      <input
-                        id="cardholder"
-                        type="text"
-                        required
-                        value={cardholderName}
-                        onChange={(e) => setCardholderName(e.target.value)}
-                        onBlur={() => markTouched("cardholder")}
-                        placeholder="Name on card"
-                        className={`h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30 ${fieldError("cardholder", isCardholderValid)}`}
-                      />
-                    </div>
-                    {touched.cardholder && !isCardholderValid && (
-                      <p className="mt-1 font-sans text-xs text-red-400">Please enter the name on your card.</p>
-                    )}
-                  </div>
+                      <CreditCard className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      Card
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="transfer"
+                      className="rounded-xl font-sans text-xs font-bold uppercase tracking-[0.12em] data-[state=active]:bg-[#4E0030] data-[state=active]:text-white"
+                    >
+                      <Building2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      Bank Transfer
+                    </TabsTrigger>
+                  </TabsList>
 
-                  {/* Paystack info panel — replaces the old card-number / expiry / CVV inputs.
-                      Paystack's popup collects those details securely. */}
-                  <div className="rounded-2xl border-2 border-dashed border-[#F10897]/30 bg-[#FCE4EC]/40 p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F10897] text-white">
-                        <Lock className="h-4 w-4" strokeWidth={2.5} />
+                  <TabsContent value="card" className="mt-4 space-y-4">
+                    <div>
+                      <label
+                        htmlFor="cardholder"
+                        className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon/70"
+                      >
+                        Cardholder Name <span className="text-[#F10897]">*</span>
+                      </label>
+                      <div className="relative mt-2">
+                        <User className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
+                        <input
+                          id="cardholder"
+                          type="text"
+                          required
+                          value={cardholderName}
+                          onChange={(e) => setCardholderName(e.target.value)}
+                          onBlur={() => markTouched("cardholder")}
+                          placeholder="Name on card"
+                          className={`h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30 ${fieldError("cardholder", isCardholderValid)}`}
+                        />
                       </div>
-                      <div>
-                        <p className="font-sans text-sm font-bold text-maroon">
-                          Pay securely with Paystack
-                        </p>
-                        <p className="mt-1 font-sans text-xs leading-relaxed text-maroon/75">
-                          When you click <strong>Complete Purchase</strong>, a secure Paystack popup will open for you to enter your card details. Your card information never touches our servers — it goes directly to Paystack.
-                        </p>
-                        <div className="mt-2 flex flex-wrap items-center gap-2 font-sans text-[10px] font-semibold uppercase tracking-[0.12em] text-maroon/60">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1">
-                            <CreditCard className="h-3 w-3" strokeWidth={2.5} /> Visa
-                          </span>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1">
-                            <CreditCard className="h-3 w-3" strokeWidth={2.5} /> Mastercard
-                          </span>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1">
-                            <CreditCard className="h-3 w-3" strokeWidth={2.5} /> Verve
-                          </span>
+                      {touched.cardholder && !isCardholderValid && (
+                        <p className="mt-1 font-sans text-xs text-red-400">Please enter the name on your card.</p>
+                      )}
+                    </div>
+
+                    {/* Paystack info panel — replaces the old card-number / expiry / CVV inputs.
+                        Paystack's popup collects those details securely. */}
+                    <div className="rounded-2xl border-2 border-dashed border-[#F10897]/30 bg-[#FCE4EC]/40 p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F10897] text-white">
+                          <Lock className="h-4 w-4" strokeWidth={2.5} />
+                        </div>
+                        <div>
+                          <p className="font-sans text-sm font-bold text-maroon">
+                            Pay securely with Paystack
+                          </p>
+                          <p className="mt-1 font-sans text-xs leading-relaxed text-maroon/75">
+                            When you click <strong>Complete Purchase</strong>, a secure Paystack popup will open for you to enter your card details. Your card information never touches our servers — it goes directly to Paystack.
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2 font-sans text-[10px] font-semibold uppercase tracking-[0.12em] text-maroon/60">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1">
+                              <CreditCard className="h-3 w-3" strokeWidth={2.5} /> Visa
+                            </span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1">
+                              <CreditCard className="h-3 w-3" strokeWidth={2.5} /> Mastercard
+                            </span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-white px-2 py-1">
+                              <CreditCard className="h-3 w-3" strokeWidth={2.5} /> Verve
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </TabsContent>
+                  </TabsContent>
 
-                <TabsContent value="transfer" className="mt-4">
-                  <div className="rounded-2xl bg-blush/40 p-4">
-                    <p className="font-sans text-sm text-maroon/80">
-                      You&apos;ll receive an email with our bank details and a
-                      unique reference. Your gift is delivered the moment your
-                      transfer clears (usually within 1 business hour).
-                    </p>
-                    <div className="mt-3 space-y-2 rounded-xl bg-white/80 p-3 font-sans text-sm">
-                      <div className="flex justify-between gap-2">
-                        <span className="shrink-0 text-maroon/60">Bank</span>
-                        <span className="truncate font-bold text-maroon">Tare Bank</span>
-                      </div>
-                      <div className="flex justify-between gap-2">
-                        <span className="shrink-0 text-maroon/60">Account Name</span>
-                        <span className="truncate font-bold text-maroon">Tare Wellness Ltd</span>
-                      </div>
-                      <div className="flex justify-between gap-2">
-                        <span className="shrink-0 text-maroon/60">Account Number</span>
-                        <span className="font-mono font-bold text-maroon break-all">
-                          0123456789
-                        </span>
-                      </div>
-                    </div>
-                    <p className="mt-3 inline-flex items-center gap-1.5 font-sans text-[11px] text-maroon/60">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-[#F10897]" strokeWidth={2.5} />
-                      No transfer fee from your bank.
-                    </p>
-                    {/* #9: "I've Made the Transfer" button — creates order as pending */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const form = document.getElementById("checkout-form") as HTMLFormElement;
-                        if (form) {
-                          // Set a hidden flag so the submit handler knows it's a transfer confirmation
-                          const hiddenInput = document.createElement("input");
-                          hiddenInput.type = "hidden";
-                          hiddenInput.name = "transferConfirmed";
-                          hiddenInput.value = "true";
-                          form.appendChild(hiddenInput);
-                          form.requestSubmit();
-                        }
-                      }}
-                      disabled={submitting}
-                      className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_8px_24px_rgba(78,0,48,0.20)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0024] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      {submitting ? (
-                        <>
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                          Processing…
-                        </>
-                      ) : (
-                        <>
-                          <Building2 className="h-4 w-4" strokeWidth={2.5} />
-                          I&apos;ve Made the Transfer
-                        </>
-                      )}
-                    </button>
-                    <p className="mt-2 text-center font-sans text-[11px] text-maroon/50">
-                      Your gift card is sent the moment we confirm your transfer.
-                    </p>
-                  </div>
-                </TabsContent>
-              </Tabs>
+                  <TabsContent value="transfer" className="mt-4">
+                    <BankTransferBlock submitting={submitting} />
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                // ============================================================
+                // BANK TRANSFER ONLY (ENABLE_PAYSTACK === false)
+                // ============================================================
+                // No payment selector. Show the bank transfer block directly.
+                // The Paystack card-tab UI is preserved above, shielded by
+                // ENABLE_PAYSTACK — flip the flag to bring it back.
+                // ============================================================
+                <div className="mt-4">
+                  <BankTransferBlock submitting={submitting} />
+                </div>
+              )}
             </motion.article>
 
             {/* Billing Information */}
@@ -1074,6 +1065,88 @@ function CheckoutContent() {
       </>
       )}
     </main>
+  );
+}
+
+// ============================================================
+// BANK TRANSFER BLOCK
+// ============================================================
+// Reusable component for the bank transfer checkout section.
+// Renders:
+//   - Bank details card (Bank Name, Account Name, Account Number)
+//   - "I've Made the Transfer" button (submits the form)
+//   - Trust signal copy
+//
+// Used in two contexts:
+//   1. When ENABLE_PAYSTACK is true: rendered inside the "transfer" tab
+//      (user can switch between Card and Bank Transfer)
+//   2. When ENABLE_PAYSTACK is false: rendered directly (no tab selector)
+//      — Bank Transfer is the only visible payment option
+// ============================================================
+function BankTransferBlock({ submitting }: { submitting: boolean }) {
+  return (
+    <div className="rounded-2xl bg-blush/40 p-4 ring-1 ring-maroon/10">
+      <p className="font-sans text-sm text-maroon/80">
+        You&apos;ll receive an email with our bank details and a
+        unique reference. Your gift is delivered the moment your
+        transfer clears (usually within 1 business hour).
+      </p>
+      <div className="mt-3 space-y-2 rounded-xl bg-white/80 p-3 font-sans text-sm ring-1 ring-maroon/15">
+        <div className="flex justify-between gap-2">
+          <span className="shrink-0 text-maroon/60">Bank</span>
+          <span className="truncate font-bold text-maroon">Tare Bank</span>
+        </div>
+        <div className="flex justify-between gap-2">
+          <span className="shrink-0 text-maroon/60">Account Name</span>
+          <span className="truncate font-bold text-maroon">Tare Wellness Ltd</span>
+        </div>
+        <div className="flex justify-between gap-2">
+          <span className="shrink-0 text-maroon/60">Account Number</span>
+          <span className="font-mono font-bold text-maroon break-all">
+            0123456789
+          </span>
+        </div>
+      </div>
+      <p className="mt-3 inline-flex items-center gap-1.5 font-sans text-[11px] text-maroon/60">
+        <CheckCircle2 className="h-3.5 w-3.5 text-[#F10897]" strokeWidth={2.5} />
+        No transfer fee from your bank.
+      </p>
+      {/* "I've Made the Transfer" button — submits the form which
+          creates the order as PENDING (awaiting manual confirmation). */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          const form = document.getElementById("checkout-form") as HTMLFormElement;
+          if (form) {
+            // Set a hidden flag so the submit handler knows it's a transfer confirmation
+            const hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.name = "transferConfirmed";
+            hiddenInput.value = "true";
+            form.appendChild(hiddenInput);
+            form.requestSubmit();
+          }
+        }}
+        disabled={submitting}
+        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#4E0030] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_8px_24px_rgba(78,0,48,0.20)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#3a0024] active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {submitting ? (
+          <>
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+            Processing…
+          </>
+        ) : (
+          <>
+            <Building2 className="h-4 w-4" strokeWidth={2.5} />
+            I&apos;ve Made the Transfer
+          </>
+        )}
+      </button>
+      <p className="mt-2 text-center font-sans text-[11px] text-maroon/50">
+        Your gift card is sent the moment we confirm your transfer.
+      </p>
+    </div>
   );
 }
 

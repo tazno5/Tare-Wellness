@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Package,
+  Building2,
 } from "lucide-react";
 import {
   Accordion,
@@ -496,6 +497,19 @@ function OrderConfirmationContent() {
         </div>
       </section>
 
+      {/* ============ BANK TRANSFER INSTRUCTIONS (PENDING ORDERS ONLY) ============ */}
+      {/* When the order status is "pending" (Bank Transfer flow), show a
+          prominent card with the total amount due, bank account details,
+          and the Order Reference to use as the transfer narration/memo.
+          Includes copy-to-clipboard buttons for Account Number + Order Reference. */}
+      {apiOrder?.status === "pending" && (
+        <BankTransferInstructions
+          orderNumber={apiOrder?.orderNumber ?? searchParams.get("orderNumber") ?? ""}
+          totalAmountKobo={apiOrder?.totalAmount ?? 0}
+          toast={toast}
+        />
+      )}
+
       {/* ============ RECEIPT CARDS ============ */}
       <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
         <motion.div
@@ -807,6 +821,186 @@ function OrderConfirmationContent() {
       </>
       )}
     </main>
+  );
+}
+
+// ============================================================
+// BANK TRANSFER INSTRUCTIONS
+// ============================================================
+// Shown on the order-confirmation page when the order status is "pending"
+// (i.e., the user is in the Bank Transfer flow and hasn't paid yet).
+//
+// Displays:
+//   - Total amount due (in NGN, formatted)
+//   - Bank account details (Bank Name, Account Name, Account Number)
+//   - Order Reference (TARE-XXXXXX) with copy-to-clipboard
+//   - Instruction: use the Order Reference as the transfer narration/memo
+//
+// Copy-to-clipboard buttons for Account Number + Order Reference so
+// the user can paste them into their banking app without typos.
+// ============================================================
+function BankTransferInstructions({
+  orderNumber,
+  totalAmountKobo,
+  toast,
+}: {
+  orderNumber: string;
+  totalAmountKobo: number;
+  toast: (props: { title: string; description?: string; variant?: "default" | "destructive" }) => void;
+}) {
+  const [copiedAccount, setCopiedAccount] = useState(false);
+  const [copiedRef, setCopiedRef] = useState(false);
+
+  const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
+  const amountNaira = totalAmountKobo / 100;
+
+  // Bank details — same as shown on the checkout page BankTransferBlock.
+  // In a future iteration, these could be env-var configurable or fetched
+  // from /api/admin/settings. For now, hardcoded per spec.
+  const bankName = "Tare Bank";
+  const accountName = "Tare Wellness Ltd";
+  const accountNumber = "0123456789";
+
+  const copyToClipboard = async (text: string, which: "account" | "ref") => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (which === "account") {
+        setCopiedAccount(true);
+        setTimeout(() => setCopiedAccount(false), 2000);
+      } else {
+        setCopiedRef(true);
+        setTimeout(() => setCopiedRef(false), 2000);
+      }
+      toast({
+        title: which === "account" ? "Account number copied" : "Order reference copied",
+        description: which === "account"
+          ? "Paste it into your banking app's account number field."
+          : "Paste it into your transfer's narration / memo field.",
+      });
+    } catch {
+      toast({
+        title: "Couldn't copy",
+        description: "Select the text and copy manually.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <section className="relative w-full px-5 pb-6 sm:px-8 lg:px-12">
+      <div className="mx-auto w-full max-w-3xl">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="overflow-hidden rounded-3xl bg-[#4E0030] p-6 shadow-[0_18px_50px_rgba(78,0,48,0.25)] sm:p-8"
+        >
+          {/* Header */}
+          <div className="flex items-center gap-3 border-b border-white/10 pb-5">
+            <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F10897] text-white">
+              <Building2 className="h-5 w-5" strokeWidth={2.5} />
+            </div>
+            <div>
+              <p className="font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
+                Bank Transfer
+              </p>
+              <h2 className="font-fraunces text-xl font-extrabold text-white sm:text-2xl">
+                Complete your payment
+              </h2>
+            </div>
+          </div>
+
+          {/* Total amount due — most prominent */}
+          <div className="mt-5 rounded-2xl bg-white/10 p-4 ring-1 ring-white/20">
+            <p className="font-sans text-[11px] font-bold uppercase tracking-[0.14em] text-white/60">
+              Amount Due
+            </p>
+            <p className="mt-1 font-fraunces text-3xl font-extrabold tabular-nums text-white sm:text-4xl">
+              {formatPrice(amountNaira)}
+            </p>
+          </div>
+
+          {/* Bank account details — copyable */}
+          <div className="mt-5 space-y-3">
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/5 p-4">
+              <div className="min-w-0">
+                <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">
+                  Bank
+                </p>
+                <p className="mt-0.5 truncate font-sans text-sm font-bold text-white">
+                  {bankName}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/5 p-4">
+              <div className="min-w-0">
+                <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">
+                  Account Name
+                </p>
+                <p className="mt-0.5 truncate font-sans text-sm font-bold text-white">
+                  {accountName}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-white/5 p-4">
+              <div className="min-w-0 flex-1">
+                <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white/60">
+                  Account Number
+                </p>
+                <p className="mt-0.5 font-mono text-sm font-bold text-white sm:text-base">
+                  {accountNumber}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => copyToClipboard(accountNumber, "account")}
+                aria-label="Copy account number"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F10897] text-white transition-all hover:scale-105 hover:bg-[#d4007d] active:scale-95"
+              >
+                {copiedAccount ? (
+                  <Check className="h-4 w-4" strokeWidth={2.5} />
+                ) : (
+                  <Copy className="h-4 w-4" strokeWidth={2.5} />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Order Reference — for transfer narration/memo */}
+          <div className="mt-5 rounded-2xl border-2 border-dashed border-[#F10897]/50 bg-[#F10897]/10 p-4">
+            <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white/70">
+              Use as Transfer Narration / Memo
+            </p>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <p className="font-mono text-base font-bold tracking-[0.1em] text-white sm:text-lg">
+                {orderNumber}
+              </p>
+              <button
+                type="button"
+                onClick={() => copyToClipboard(orderNumber, "ref")}
+                aria-label="Copy order reference"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F10897] text-white transition-all hover:scale-105 hover:bg-[#d4007d] active:scale-95"
+              >
+                {copiedRef ? (
+                  <Check className="h-4 w-4" strokeWidth={2.5} />
+                ) : (
+                  <Copy className="h-4 w-4" strokeWidth={2.5} />
+                )}
+              </button>
+            </div>
+            <p className="mt-3 font-sans text-[11px] leading-relaxed text-white/70">
+              Use this reference as the narration on your bank transfer so we can match your payment to your order. Once we confirm your transfer (usually within 1 business hour), your gift card emails will be sent automatically.
+            </p>
+          </div>
+
+          {/* Trust signal */}
+          <p className="mt-5 inline-flex items-center gap-1.5 font-sans text-[11px] text-white/60">
+            <CheckCircle2 className="h-3.5 w-3.5 text-[#F10897]" strokeWidth={2.5} />
+            No transfer fee from your bank.
+          </p>
+        </motion.div>
+      </div>
+    </section>
   );
 }
 
