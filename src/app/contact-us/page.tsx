@@ -3,15 +3,33 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Mail, MessageCircle, Phone, Send, Check, Clock, Loader2 } from "lucide-react";
+import { Mail, Send, Check, Clock, Loader2, ShieldCheck, LifeBuoy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const TOPICS = ["General Inquiry", "Gift Cards", "Session Bookings", "Technical Support"];
 
 const SUPPORT_CHANNELS = [
-  { icon: Mail, title: "Email Support", primary: "help@mindful.com", secondary: "support@bewelltare.com", description: "We aim to respond within 24 hours.", href: "mailto:help@mindful.com" },
-  { icon: MessageCircle, title: "Live Chat", primary: "Available Mon–Fri", secondary: "9am – 6pm EST", description: "Get instant help from our support team.", href: "#", status: "online" as const },
-  { icon: Phone, title: "Phone Support", primary: "1-800-MINDFUL", secondary: "Toll-free", description: "For urgent inquiries only.", href: "tel:18006463385" },
+  {
+    icon: Mail,
+    title: "General Inquiries",
+    primary: "hello@tarewellness.com",
+    description: "Questions about gift cards, orders, bookings, or anything else. We aim to respond within 24 hours.",
+    href: "mailto:hello@tarewellness.com",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Privacy & Data Protection",
+    primary: "privacy@tarewellness.com",
+    description: "Requests about your personal data — download, delete, correct, or lodge a complaint under NDPA 2023.",
+    href: "mailto:privacy@tarewellness.com",
+  },
+  {
+    icon: LifeBuoy,
+    title: "Technical Support",
+    primary: "support@tarewellness.com",
+    description: "Issues with your account, payment errors, or website bugs. We aim to resolve within 24 hours.",
+    href: "mailto:support@tarewellness.com",
+  },
 ];
 
 export default function ContactUsPage() {
@@ -113,9 +131,8 @@ export default function ContactUsPage() {
               <a key={channel.title} href={channel.href} className="group flex items-start gap-4 rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(78, 0, 48, 0.10)] transition-transform duration-200 hover:-translate-y-1 sm:p-6">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blush text-[#4E0030]"><Icon className="h-6 w-6" strokeWidth={2.5} /></span>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2"><h3 className="font-sans text-sm font-bold text-[#4E0030]">{channel.title}</h3>{channel.status === "online" && <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5"><span className="h-1.5 w-1.5 rounded-full bg-green-500" /><span className="font-sans text-[9px] font-bold uppercase tracking-wide text-green-700">Online</span></span>}</div>
+                  <h3 className="font-sans text-sm font-bold text-[#4E0030]">{channel.title}</h3>
                   <p className="mt-1 font-sans text-sm font-semibold text-[#F10897]">{channel.primary}</p>
-                  {channel.secondary && <p className="font-sans text-xs text-[#4E0030]/60">{channel.secondary}</p>}
                   <p className="mt-2 font-sans text-xs leading-relaxed text-[#4E0030]/65">{channel.description}</p>
                 </div>
               </a>
@@ -123,11 +140,11 @@ export default function ContactUsPage() {
             <div className="rounded-2xl bg-[#4E0030] p-5 text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.20)] sm:p-6">
               <div className="flex items-center gap-2"><Clock className="h-5 w-5 text-[#F10897]" strokeWidth={2.5} /><h3 className="font-sans text-sm font-bold">Support Hours</h3></div>
               <div className="mt-3 space-y-1.5 font-sans text-xs text-white/80">
-                <div className="flex justify-between"><span>Monday – Friday</span><span className="font-semibold text-white">9am – 6pm EST</span></div>
-                <div className="flex justify-between"><span>Saturday</span><span className="font-semibold text-white">10am – 4pm EST</span></div>
+                <div className="flex justify-between"><span>Monday – Friday</span><span className="font-semibold text-white">9am – 6pm WAT</span></div>
+                <div className="flex justify-between"><span>Saturday</span><span className="font-semibold text-white">10am – 4pm WAT</span></div>
                 <div className="flex justify-between"><span>Sunday</span><span className="font-semibold text-white/50">Closed</span></div>
               </div>
-              <p className="mt-3 border-t border-white/15 pt-3 font-sans text-[11px] text-white/60">Email support is monitored 24/7 — we aim to respond within 24 hours.</p>
+              <p className="mt-3 border-t border-white/15 pt-3 font-sans text-[11px] text-white/60">Email is monitored 24/7 — we aim to respond within 24 hours.</p>
             </div>
           </motion.div>
         </div>
