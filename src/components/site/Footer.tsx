@@ -18,7 +18,7 @@ const RESOURCE_LINKS = [
 ];
 
 const SOCIALS = [
-  { label: "Instagram", href: "https://instagram.com", Icon: Instagram },
+  { label: "Instagram", href: "https://www.instagram.com/tarebewell", Icon: Instagram },
   { label: "X (Twitter)", href: "https://x.com", Icon: Twitter },
   { label: "Email", href: "mailto:hello@tarewellness.com", Icon: AtSign },
 ];
