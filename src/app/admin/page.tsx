@@ -87,6 +87,7 @@ export default function AdminPage() {
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(false);
+  const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem("tare-admin-secret");
@@ -109,6 +110,52 @@ export default function AdminPage() {
     if (!res.ok) throw new Error("Failed");
     return res.json();
   }, []);
+
+  // Confirm receipt of a bank transfer — marks the order as "completed"
+  // and triggers gift card emails to all recipients.
+  const confirmOrder = async (orderId: string) => {
+    setConfirmingOrderId(orderId);
+    try {
+      const token = localStorage.getItem("tare-admin-secret");
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: "completed" }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Failed to confirm order");
+      }
+      const data = await res.json();
+      toast({
+        title: "Transfer confirmed!",
+        description: "Gift card emails sent to all recipients.",
+      });
+      // Update the order in the local state (don't refetch everything)
+      if (orders) {
+        setOrders(
+          orders.map((o) =>
+            o.id === orderId
+              ? { ...o, status: "completed", orderItems: o.orderItems.map((item) => ({ ...item, confirmed: true, emailSent: true })) }
+              : o
+          )
+        );
+      }
+      // Also refresh stats since pending count changed
+      apiCall("/api/admin/stats").then(setStats).catch(() => {});
+    } catch (error) {
+      toast({
+        title: "Confirmation failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setConfirmingOrderId(null);
+    }
+  };
 
   useEffect(() => {
     if (!authed) return;
@@ -321,7 +368,7 @@ export default function AdminPage() {
                       <div className="text-right">
                         <p className="font-sans text-sm font-bold text-[#F10897]">{formatPrice(order.totalAmount)}</p>
                         <span className={`inline-block rounded-full px-2 py-0.5 font-sans text-[10px] font-bold uppercase ${
-                          order.status === "completed" ? "bg-[#B5E1C3]/30 text-[#2d6e4f]" : "bg-[#FFE0C2] text-[#cc6600]"
+                          order.status === "completed" ? "bg-[#B5E1C3]/30 text-[#2d6e4f]" : order.status === "pending" ? "bg-[#FFE0C2] text-[#cc6600]" : "bg-red-100 text-red-600"
                         }`}>{order.status}</span>
                       </div>
                     </div>
@@ -345,6 +392,32 @@ export default function AdminPage() {
                         </div>
                       ))}
                     </div>
+                    {/* Confirm Transfer button — only shows for pending orders */}
+                    {order.status === "pending" && (
+                      <div className="mt-3 border-t border-maroon/10 pt-3">
+                        <button
+                          type="button"
+                          onClick={() => confirmOrder(order.id)}
+                          disabled={confirmingOrderId === order.id}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#2d6e4f] px-4 py-2.5 font-sans text-xs font-bold uppercase tracking-[0.12em] text-white shadow-sm transition-all hover:bg-[#245a3f] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                        >
+                          {confirmingOrderId === order.id ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />
+                              Confirming...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                              Confirm Transfer Received
+                            </>
+                          )}
+                        </button>
+                        <p className="mt-2 font-sans text-[11px] text-[#4E0030]/50">
+                          Click this after you&apos;ve confirmed the bank transfer arrived in your account. This will mark the order as completed and send gift card emails to all recipients.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ))
               )}
