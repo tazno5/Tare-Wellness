@@ -273,11 +273,24 @@ function CheckoutContent() {
       description: "Securing your gift — this won't take a moment.",
     });
 
-    // Read billing details from the form (fall back to placeholders if blank)
-    const billingNameEl = document.getElementById("billing-name") as HTMLInputElement | null;
-    const billingEmailEl = document.getElementById("billing-email") as HTMLInputElement | null;
-    const buyerName = billingNameEl?.value?.trim() || "Guest Buyer";
-    const buyerEmail = billingEmailEl?.value?.trim() || "guest@tarewell.com";
+    // Get buyer name + email:
+    // - When ENABLE_PAYSTACK is true: read from the Billing Information form
+    //   (the form is visible, user filled in their details)
+    // - When ENABLE_PAYSTACK is false (bank transfer only): the billing form
+    //   is hidden, so use the logged-in user's name + email from the
+    //   Zustand store (which is synced from NextAuth session)
+    let buyerName: string;
+    let buyerEmail: string;
+    if (ENABLE_PAYSTACK) {
+      const billingNameEl = document.getElementById("billing-name") as HTMLInputElement | null;
+      const billingEmailEl = document.getElementById("billing-email") as HTMLInputElement | null;
+      buyerName = billingNameEl?.value?.trim() || user?.name || "Guest Buyer";
+      buyerEmail = billingEmailEl?.value?.trim() || user?.email || "guest@tarewell.com";
+    } else {
+      // Bank transfer mode — use the logged-in user's info
+      buyerName = user?.name || "Guest Buyer";
+      buyerEmail = user?.email || "guest@tarewell.com";
+    }
 
     // Build recipients payload from store data
     const storeRecipients = useStore.getState().recipients;
@@ -709,7 +722,11 @@ function CheckoutContent() {
               )}
             </motion.article>
 
-            {/* Billing Information */}
+            {/* Billing Information — only shown when Paystack is enabled.
+                For bank transfer (ENABLE_PAYSTACK=false), the buyer's name +
+                email are taken from their logged-in session instead — no
+                billing form needed. */}
+            {ENABLE_PAYSTACK && (
             <motion.article
               variants={itemUp}
               className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
@@ -825,6 +842,7 @@ function CheckoutContent() {
                 </div>
               </div>
             </motion.article>
+            )}
 
             {/* Trust badges */}
             <motion.div
