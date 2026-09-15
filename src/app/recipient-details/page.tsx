@@ -778,7 +778,7 @@ function RecipientSlide({
           Recipient Email <span className="text-[#F10897]">*</span>
         </label>
         <div className="relative mt-2">
-          <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
+          <Mail className="pointer-events-none absolute left-4 top-3.5 h-4 w-4 text-maroon/40" strokeWidth={2.5} />
           <input
             id={`email-${recipient.uid}`}
             type="email"
@@ -788,7 +788,7 @@ function RecipientSlide({
             onBlur={(e) => e.target.setCustomValidity(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.target.value) ? "" : "Please enter a valid email")}
             placeholder="they@example.com"
             aria-invalid={recipient.email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.email)}
-            className={`h-12 w-full rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#C7B2E2] focus:outline-none focus:ring-2 focus:ring-[#C7B2E2]/40 ${
+            className={`flex h-12 w-full items-center rounded-2xl border border-maroon/15 bg-white pl-11 pr-4 font-sans text-sm text-maroon placeholder:text-maroon/40 focus:border-[#C7B2E2] focus:outline-none focus:ring-2 focus:ring-[#C7B2E2]/40 ${
               recipient.email.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient.email)
                 ? "border-red-400 focus:border-red-400 focus:ring-red-400/20"
                 : ""
