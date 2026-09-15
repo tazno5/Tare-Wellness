@@ -43,6 +43,16 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
+    // Auto-logout after 1 hour of inactivity. The JWT session token expires
+    // after maxAge seconds (3600 = 1 hour). If the user is active, the token
+    // is refreshed on each request (NextAuth default behavior with
+    // updateAge). If they close the tab / stop using the site for 1 hour,
+    // their next request will fail authentication → they get redirected
+    // to /login.
+    maxAge: 60 * 60, // 1 hour (in seconds)
+    // Refresh the token every 5 minutes during active use — updates the
+    // expiry without the user noticing.
+    updateAge: 5 * 60, // 5 minutes (in seconds)
   },
   // #8: Explicitly harden cookies for production
   cookies: {
