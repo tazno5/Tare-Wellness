@@ -267,6 +267,29 @@ export async function POST(req: Request) {
       );
     }
 
+    // Send admin notification email for ALL orders (both completed card
+    // payments and pending bank transfers). For bank transfers, this is
+    // the email that tells the admin "a new order came in — check your
+    // bank account + confirm in the admin dashboard."
+    if (order) {
+      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+      fetch(`${baseUrl}/api/email/admin-notification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderNumber: order.orderNumber,
+          buyerName: order.buyerName,
+          buyerEmail: order.buyerEmail,
+          totalAmount: order.totalAmount,
+          paymentMethod: order.paymentMethod,
+          recipientCount: order.orderItems?.length ?? 0,
+          recipientNames: order.orderItems?.map((item) => item.recipientName) ?? [],
+        }),
+      }).catch(() => {
+        // Swallow — best-effort, don't fail the order
+      });
+    }
+
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     console.error("Order creation error:", error);
