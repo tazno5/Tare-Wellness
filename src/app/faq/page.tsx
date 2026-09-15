@@ -8,8 +8,8 @@ import {
   Sparkles,
   Search,
   Mail,
-  MessageCircle,
-  Phone,
+  ShieldCheck,
+  LifeBuoy,
   Gift,
   ArrowRight,
   HelpCircle,
@@ -117,21 +117,21 @@ const POPULAR = [
 const SUPPORT = [
   {
     icon: <Mail className="h-5 w-5" strokeWidth={2.5} />,
-    title: "Email",
-    detail: "help@mindful.com",
-    body: "We reply within a few hours, Mon–Fri.",
+    title: "General Inquiries",
+    detail: "hello@tarewellness.com",
+    body: "Questions about gift cards, orders, or bookings. We reply within 24 hours.",
   },
   {
-    icon: <MessageCircle className="h-5 w-5" strokeWidth={2.5} />,
-    title: "Live Chat",
-    detail: "Available in-app",
-    body: "Real humans, ready when you are.",
+    icon: <ShieldCheck className="h-5 w-5" strokeWidth={2.5} />,
+    title: "Privacy & Data",
+    detail: "privacy@tarewellness.com",
+    body: "Requests about your personal data under NDPA 2023.",
   },
   {
-    icon: <Phone className="h-5 w-5" strokeWidth={2.5} />,
-    title: "Phone",
-    detail: "1-800-MINDFUL",
-    body: "Mon–Fri 9am–6pm EST.",
+    icon: <LifeBuoy className="h-5 w-5" strokeWidth={2.5} />,
+    title: "Technical Support",
+    detail: "support@tarewellness.com",
+    body: "Account issues, payment errors, or website bugs.",
   },
 ];
 
@@ -502,10 +502,10 @@ export default function FaqPage() {
           />
           Can&apos;t find what you&apos;re looking for? Email{" "}
           <a
-            href="mailto:help@mindful.com"
+            href="mailto:hello@tarewellness.com"
             className="font-bold text-maroon underline-offset-2 hover:underline"
           >
-            help@mindful.com
+            hello@tarewellness.com
           </a>{" "}
           and we&apos;ll take it from there.
         </p>

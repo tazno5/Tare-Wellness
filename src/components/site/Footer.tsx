@@ -20,7 +20,7 @@ const RESOURCE_LINKS = [
 const SOCIALS = [
   { label: "Instagram", href: "https://instagram.com", Icon: Instagram },
   { label: "X (Twitter)", href: "https://x.com", Icon: Twitter },
-  { label: "Email", href: "mailto:tarebewell@gmail.com", Icon: AtSign },
+  { label: "Email", href: "mailto:hello@tarewellness.com", Icon: AtSign },
 ];
 
 export default function Footer() {

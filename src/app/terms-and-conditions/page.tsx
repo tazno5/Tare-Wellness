@@ -6,7 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock, Gift, CalendarCheck, CreditCard, Heart, Laptop, PenLine,
-  ShoppingCart, Settings, User, CalendarX, ChevronDown, Scale, Headset, Phone,
+  ShoppingCart, Settings, User, CalendarX, ChevronDown, Mail, ShieldCheck, LifeBuoy,
 } from "lucide-react";
 
 const OVERVIEW_CARDS = [
@@ -29,9 +29,9 @@ const ACCORDIONS = [
 ];
 
 const SUPPORT_CHANNELS = [
-  { icon: Scale, title: "Legal", contact: "legal@mindful.com", href: "mailto:legal@mindful.com" },
-  { icon: Headset, title: "Support", contact: "help@mindful.com", href: "mailto:help@mindful.com" },
-  { icon: Phone, title: "Phone", contact: "1-800-MINDFUL", href: "tel:18006463385" },
+  { icon: Mail, title: "General Inquiries", contact: "hello@tarewellness.com", href: "mailto:hello@tarewellness.com" },
+  { icon: ShieldCheck, title: "Privacy & Data", contact: "privacy@tarewellness.com", href: "mailto:privacy@tarewellness.com" },
+  { icon: LifeBuoy, title: "Technical Support", contact: "support@tarewellness.com", href: "mailto:support@tarewellness.com" },
 ];
 
 export default function TermsAndConditionsPage() {
