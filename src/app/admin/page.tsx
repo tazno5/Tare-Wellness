@@ -710,7 +710,7 @@ export default function AdminPage() {
                   ) : (
                     <>
                       <Save className="h-4 w-4" strokeWidth={2.5} />
-                      Save Bank Details
+                      Save Changes
                     </>
                   )}
                 </button>
