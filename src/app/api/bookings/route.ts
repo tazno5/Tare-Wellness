@@ -82,7 +82,19 @@ export async function POST(req: Request) {
     const resolvedSessionPrice = sessionConfig.price;
     const resolvedSessionTitle = sessionConfig.title;
     const resolvedDuration = sessionConfig.duration;
-    const resolvedTherapistName = rawTherapistName || "Dr. Sarah Thompson";
+
+    // Fetch therapist name from admin settings (falls back to "Your Provider")
+    let resolvedTherapistName = rawTherapistName || "Your Provider";
+    try {
+      const therapistSetting = await db.siteSetting.findUnique({
+        where: { key: "therapistName" },
+      });
+      if (therapistSetting?.value) {
+        resolvedTherapistName = rawTherapistName || therapistSetting.value;
+      }
+    } catch {
+      // Fall back to default — don't fail the booking
+    }
 
     // Validate date is not in the past
     const bookingDate = new Date(scheduledDate);
@@ -141,7 +153,18 @@ export async function POST(req: Request) {
 
     // Generate meeting URL — points to WhatsApp contact for session coordination.
     // The wellness specialist uses WhatsApp to share the video call link at session time.
-    const meetingUrl = "https://wa.me/2349036530892";
+    // Fetch WhatsApp number from admin settings (falls back to default)
+    let meetingUrl = "https://wa.me/2349036530892";
+    try {
+      const whatsappSetting = await db.siteSetting.findUnique({
+        where: { key: "whatsappNumber" },
+      });
+      if (whatsappSetting?.value) {
+        meetingUrl = `https://wa.me/${whatsappSetting.value}`;
+      }
+    } catch {
+      // Fall back to default — don't fail the booking
+    }
 
     // CRITICAL #3: If redemption code provided, verify it belongs to the user,
     // has remaining sessions, and decrement sessionsRemaining atomically.

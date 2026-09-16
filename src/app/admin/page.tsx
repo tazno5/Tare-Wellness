@@ -91,7 +91,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(false);
   const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
-  const [bankDetails, setBankDetails] = useState({ bankName: "", accountName: "", accountNumber: "" });
+  const [bankDetails, setBankDetails] = useState({ bankName: "", accountName: "", accountNumber: "", whatsappNumber: "", therapistName: "" });
   const [savingBank, setSavingBank] = useState(false);
   const [bankLoaded, setBankLoaded] = useState(false);
 
@@ -199,6 +199,8 @@ export default function AdminPage() {
         bankName: data.bankName || "",
         accountName: data.accountName || "",
         accountNumber: data.accountNumber || "",
+        whatsappNumber: data.whatsappNumber || "",
+        therapistName: data.therapistName || "",
       });
       setBankLoaded(true);
     }).catch(() => {});
@@ -222,8 +224,8 @@ export default function AdminPage() {
         throw new Error(data?.error || "Failed to save");
       }
       toast({
-        title: "Bank details saved!",
-        description: "These details will appear on the checkout + order confirmation pages.",
+        title: "Settings saved!",
+        description: "Bank details, WhatsApp number, and therapist name will appear on the relevant pages.",
       });
     } catch (error) {
       toast({
@@ -593,10 +595,53 @@ export default function AdminPage() {
                   </div>
                 </div>
 
+                {/* WhatsApp + Therapist */}
+                <div className="mt-6 border-t border-maroon/10 pt-5">
+                  <h4 className="font-sans text-sm font-bold text-[#4E0030]">Session Settings</h4>
+                  <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
+                    These appear on the booking confirmation page and are used when creating bookings.
+                  </p>
+
+                  <div className="mt-4 space-y-4">
+                    <div>
+                      <label className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">
+                        WhatsApp Number <span className="text-[#F10897]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={bankDetails.whatsappNumber}
+                        onChange={(e) => setBankDetails({ ...bankDetails, whatsappNumber: e.target.value })}
+                        placeholder="e.g. 2349036530892 (country code + number, no +)"
+                        className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-mono text-sm text-[#4E0030] placeholder:font-sans placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                      />
+                      <p className="mt-1 font-sans text-[11px] text-[#4E0030]/50">
+                        Used for the &ldquo;Join via WhatsApp&rdquo; link on the booking confirmation page. Format: country code + number (e.g. 234 for Nigeria).
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">
+                        Default Therapist Name <span className="text-[#F10897]">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={bankDetails.therapistName}
+                        onChange={(e) => setBankDetails({ ...bankDetails, therapistName: e.target.value })}
+                        placeholder="e.g. Dr. Sarah Thompson"
+                        className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-[#4E0030] placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                      />
+                      <p className="mt-1 font-sans text-[11px] text-[#4E0030]/50">
+                        Shown as the default provider name when a user books a session (if no specific therapist is selected).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <button
                   type="button"
                   onClick={saveBankDetails}
-                  disabled={savingBank || !bankDetails.bankName.trim() || !bankDetails.accountName.trim() || !bankDetails.accountNumber.trim()}
+                  disabled={savingBank || !bankDetails.bankName.trim() || !bankDetails.accountName.trim() || !bankDetails.accountNumber.trim() || !bankDetails.whatsappNumber.trim() || !bankDetails.therapistName.trim()}
                   className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-6 py-3 font-sans text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#d4007d] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {savingBank ? (

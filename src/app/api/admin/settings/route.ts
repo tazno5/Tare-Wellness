@@ -14,7 +14,7 @@ import { verifyAdminToken } from "@/lib/admin-auth";
 // upserted (created if doesn't exist, updated if it does).
 
 // Keys that the admin can manage
-const ALLOWED_KEYS = ["bankName", "accountName", "accountNumber"];
+const ALLOWED_KEYS = ["bankName", "accountName", "accountNumber", "whatsappNumber", "therapistName"];
 
 export async function GET(req: Request) {
   try {

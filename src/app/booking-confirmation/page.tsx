@@ -81,7 +81,19 @@ export default function BookingConfirmationPage() {
     }
   }, [user, router]);
 
-  const meetingUrl = "https://wa.me/2349036530892";
+  // Fetch WhatsApp number from admin settings (configurable via /admin → Settings)
+  const [meetingUrl, setMeetingUrl] = useState("https://wa.me/2349036530892");
+
+  useEffect(() => {
+    fetch("/api/settings/bank-details")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.whatsappNumber) {
+          setMeetingUrl(`https://wa.me/${data.whatsappNumber}`);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // If no booking data exists (direct navigation / refresh after store clear), show empty state
   const hasBooking = !!booking.selectedDate && !!booking.selectedTime;

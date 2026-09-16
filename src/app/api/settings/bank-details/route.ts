@@ -16,13 +16,15 @@ const DEFAULTS = {
   bankName: "Tare Bank",
   accountName: "Tare Wellness Enterprise Ltd",
   accountNumber: "0000000000",
+  whatsappNumber: "2349036530892",
+  therapistName: "Your Provider",
 };
 
 export async function GET() {
   try {
     const settings = await db.siteSetting.findMany({
       where: {
-        key: { in: ["bankName", "accountName", "accountNumber"] },
+        key: { in: ["bankName", "accountName", "accountNumber", "whatsappNumber", "therapistName"] },
       },
     });
 
@@ -36,6 +38,8 @@ export async function GET() {
       bankName: result.bankName,
       accountName: result.accountName,
       accountNumber: result.accountNumber,
+      whatsappNumber: result.whatsappNumber,
+      therapistName: result.therapistName,
     });
   } catch (error) {
     console.error("Bank details fetch error:", error);
