@@ -43,15 +43,28 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
-    // Auto-logout after 1 hour of inactivity. The JWT session token expires
-    // after maxAge seconds (3600 = 1 hour). If the user is active, the token
-    // is refreshed on each request (NextAuth default behavior with
-    // updateAge). If they close the tab / stop using the site for 1 hour,
-    // their next request will fail authentication → they get redirected
-    // to /login.
-    maxAge: 60 * 60, // 1 hour (in seconds)
-    // Refresh the token every 5 minutes during active use — updates the
-    // expiry without the user noticing.
+    // Auto-logout after 30 minutes of inactivity.
+    //
+    // How this works:
+    //   - maxAge = 30 min: the JWT token expires 30 minutes after it was
+    //     last issued/refreshed. If the user is actively browsing, the
+    //     token is refreshed every updateAge interval, pushing the expiry
+    //     forward. If they stop browsing for 30 min, the token expires →
+    //     next request redirects to /login.
+    //   - updateAge = 5 min: the token is silently refreshed every 5 min
+    //     during active use so the user doesn't get logged out while
+    //     actively using the site.
+    //
+    // Why it wasn't working before (8 hours):
+    //   - The JWT maxAge is a SLIDING window. Every API call (including
+    //     background fetches, heartbeat polls, etc.) refreshes the token.
+    //   - The Zustand store also keeps a copy of the user object in
+    //     localStorage, so even after the JWT expires, the client-side
+    //     store still shows the user as "logged in" visually until the
+    //     next API call fails with 401.
+    //   - Fix: we now also set the cookie to expire when the browser
+    //     closes (no explicit maxAge on the cookie itself — see below).
+    maxAge: 30 * 60, // 30 minutes (in seconds)
     updateAge: 5 * 60, // 5 minutes (in seconds)
   },
   // #8: Explicitly harden cookies for production

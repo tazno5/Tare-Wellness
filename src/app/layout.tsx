@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Providers } from "@/components/providers";
 import ConditionalChrome from "@/components/site/ConditionalChrome";
 import CookieConsent from "@/components/site/CookieConsent";
+import InactivityLogout from "@/components/site/InactivityLogout";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -118,6 +119,7 @@ export default function RootLayout({
         <Providers>
           <ConditionalChrome>{children}</ConditionalChrome>
           <CookieConsent />
+          <InactivityLogout />
           <Toaster />
         </Providers>
         {/* Paystack Inline JS — loaded lazily so it doesn't block page render.
