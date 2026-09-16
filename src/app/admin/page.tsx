@@ -364,7 +364,7 @@ export default function AdminPage() {
             { id: "orders", label: "Orders", icon: <Package className="h-4 w-4" /> },
             { id: "bookings", label: "Bookings", icon: <Calendar className="h-4 w-4" /> },
             { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
-            { id: "settings", label: "Settings", icon: <Settings as SettingsIcon className="h-4 w-4" /> },
+            { id: "settings", label: "Settings", icon: <SettingsIcon className="h-4 w-4" /> },
           ] as { id: Tab; label: string; icon: React.ReactNode }[]).map((tab) => (
             <button
               key={tab.id}
