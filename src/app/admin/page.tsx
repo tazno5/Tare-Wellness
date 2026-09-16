@@ -18,6 +18,9 @@ import {
   LogOut,
   Gift,
   Ticket,
+  Settings as SettingsIcon,
+  Building2,
+  Save,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -73,7 +76,7 @@ type AdminUser = {
   _count: { orders: number; bookings: number; redemptions: number };
 };
 
-type Tab = "overview" | "orders" | "bookings" | "users";
+type Tab = "overview" | "orders" | "bookings" | "users" | "settings";
 
 export default function AdminPage() {
   const { toast } = useToast();
@@ -88,6 +91,9 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(false);
   const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
+  const [bankDetails, setBankDetails] = useState({ bankName: "", accountName: "", accountNumber: "" });
+  const [savingBank, setSavingBank] = useState(false);
+  const [bankLoaded, setBankLoaded] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("tare-admin-secret");
@@ -183,6 +189,52 @@ export default function AdminPage() {
     if (users) return;
     apiCall("/api/admin/users").then(setUsers).catch(() => {});
   }, [authed, activeTab, users, apiCall]);
+
+  // Fetch bank details when settings tab is opened
+  useEffect(() => {
+    if (!authed || activeTab !== "settings") return;
+    if (bankLoaded) return;
+    apiCall("/api/admin/settings").then((data) => {
+      setBankDetails({
+        bankName: data.bankName || "",
+        accountName: data.accountName || "",
+        accountNumber: data.accountNumber || "",
+      });
+      setBankLoaded(true);
+    }).catch(() => {});
+  }, [authed, activeTab, bankLoaded, apiCall]);
+
+  // Save bank details
+  const saveBankDetails = async () => {
+    setSavingBank(true);
+    try {
+      const token = localStorage.getItem("tare-admin-secret");
+      const res = await fetch("/api/admin/settings", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(bankDetails),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Failed to save");
+      }
+      toast({
+        title: "Bank details saved!",
+        description: "These details will appear on the checkout + order confirmation pages.",
+      });
+    } catch (error) {
+      toast({
+        title: "Save failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingBank(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -312,6 +364,7 @@ export default function AdminPage() {
             { id: "orders", label: "Orders", icon: <Package className="h-4 w-4" /> },
             { id: "bookings", label: "Bookings", icon: <Calendar className="h-4 w-4" /> },
             { id: "users", label: "Users", icon: <Users className="h-4 w-4" /> },
+            { id: "settings", label: "Settings", icon: <Settings as SettingsIcon className="h-4 w-4" /> },
           ] as { id: Tab; label: string; icon: React.ReactNode }[]).map((tab) => (
             <button
               key={tab.id}
@@ -483,6 +536,85 @@ export default function AdminPage() {
                   </div>
                 ))
               )}
+            </div>
+          )}
+
+          {activeTab === "settings" && (
+            <div className="space-y-4">
+              <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-[#F10897]" strokeWidth={2.5} />
+                  <h3 className="font-fraunces text-lg font-bold text-[#4E0030]">Bank Transfer Details</h3>
+                </div>
+                <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
+                  These details are shown to customers on the checkout page and order confirmation page when they select bank transfer as the payment method.
+                </p>
+
+                <div className="mt-5 space-y-4">
+                  <div>
+                    <label className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">
+                      Bank Name <span className="text-[#F10897]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={bankDetails.bankName}
+                      onChange={(e) => setBankDetails({ ...bankDetails, bankName: e.target.value })}
+                      placeholder="e.g. GTBank, Access Bank, Zenith Bank"
+                      className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-[#4E0030] placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">
+                      Account Name <span className="text-[#F10897]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={bankDetails.accountName}
+                      onChange={(e) => setBankDetails({ ...bankDetails, accountName: e.target.value })}
+                      placeholder="e.g. Tare Wellness Enterprise Ltd"
+                      className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-sans text-sm text-[#4E0030] placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#4E0030]/70">
+                      Account Number <span className="text-[#F10897]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={bankDetails.accountNumber}
+                      onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })}
+                      placeholder="e.g. 0123456789"
+                      maxLength={10}
+                      className="mt-2 h-12 w-full rounded-2xl border border-maroon/15 bg-white px-4 font-mono text-sm font-bold text-[#4E0030] placeholder:font-sans placeholder:font-normal placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={saveBankDetails}
+                  disabled={savingBank || !bankDetails.bankName.trim() || !bankDetails.accountName.trim() || !bankDetails.accountNumber.trim()}
+                  className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-6 py-3 font-sans text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#d4007d] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {savingBank ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" strokeWidth={2.5} />
+                      Save Bank Details
+                    </>
+                  )}
+                </button>
+                <p className="mt-3 font-sans text-[11px] text-[#4E0030]/50">
+                  Changes take effect immediately on the checkout + order confirmation pages.
+                </p>
+              </div>
             </div>
           )}
         </div>

@@ -850,16 +850,24 @@ function BankTransferInstructions({
 }) {
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [copiedRef, setCopiedRef] = useState(false);
+  const [bankName, setBankName] = useState("Loading...");
+  const [accountName, setAccountName] = useState("Loading...");
+  const [accountNumber, setAccountNumber] = useState("Loading...");
 
   const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
   const amountNaira = totalAmountKobo / 100;
 
-  // Bank details — same as shown on the checkout page BankTransferBlock.
-  // In a future iteration, these could be env-var configurable or fetched
-  // from /api/admin/settings. For now, hardcoded per spec.
-  const bankName = "Tare Bank";
-  const accountName = "Tare Wellness Ltd";
-  const accountNumber = "0123456789";
+  // Fetch bank details from the API (configured by admin in /admin → Settings)
+  useEffect(() => {
+    fetch("/api/settings/bank-details")
+      .then((r) => r.json())
+      .then((data) => {
+        setBankName(data.bankName || "Tare Bank");
+        setAccountName(data.accountName || "Tare Wellness");
+        setAccountNumber(data.accountNumber || "0000000000");
+      })
+      .catch(() => {});
+  }, []);
 
   const copyToClipboard = async (text: string, which: "account" | "ref") => {
     try {

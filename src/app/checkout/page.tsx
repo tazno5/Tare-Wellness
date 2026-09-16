@@ -1104,6 +1104,25 @@ function CheckoutContent() {
 //      — Bank Transfer is the only visible payment option
 // ============================================================
 function BankTransferBlock({ submitting }: { submitting: boolean }) {
+  const [bankDetails, setBankDetails] = useState({
+    bankName: "Loading...",
+    accountName: "Loading...",
+    accountNumber: "Loading...",
+  });
+
+  useEffect(() => {
+    fetch("/api/settings/bank-details")
+      .then((r) => r.json())
+      .then((data) => {
+        setBankDetails({
+          bankName: data.bankName || "Tare Bank",
+          accountName: data.accountName || "Tare Wellness",
+          accountNumber: data.accountNumber || "0000000000",
+        });
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="rounded-2xl bg-blush/40 p-4 ring-1 ring-maroon/10">
       <p className="font-sans text-sm text-maroon/80">
@@ -1114,16 +1133,16 @@ function BankTransferBlock({ submitting }: { submitting: boolean }) {
       <div className="mt-3 space-y-2 rounded-xl bg-white/80 p-3 font-sans text-sm ring-1 ring-maroon/15">
         <div className="flex justify-between gap-2">
           <span className="shrink-0 text-maroon/60">Bank</span>
-          <span className="truncate font-bold text-maroon">Tare Bank</span>
+          <span className="truncate font-bold text-maroon">{bankDetails.bankName}</span>
         </div>
         <div className="flex justify-between gap-2">
           <span className="shrink-0 text-maroon/60">Account Name</span>
-          <span className="truncate font-bold text-maroon">Tare Wellness Ltd</span>
+          <span className="truncate font-bold text-maroon">{bankDetails.accountName}</span>
         </div>
         <div className="flex justify-between gap-2">
           <span className="shrink-0 text-maroon/60">Account Number</span>
           <span className="font-mono font-bold text-maroon break-all">
-            0123456789
+            {bankDetails.accountNumber}
           </span>
         </div>
       </div>

@@ -200,3 +200,11 @@ model Booking {
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   redemption      Redemption? @relation(fields: [redemptionId], references: [id])
 }
+
+// ============ SITE SETTINGS ============
+
+model SiteSetting {
+  key       String   @id // e.g. "bankName", "accountName", "accountNumber"
+  value     String   // the setting value
+  updatedAt DateTime @updatedAt
+}
