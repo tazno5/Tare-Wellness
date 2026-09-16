@@ -94,6 +94,10 @@ export default function AdminPage() {
   const [bankDetails, setBankDetails] = useState({ bankName: "", accountName: "", accountNumber: "", whatsappNumber: "", therapistName: "" });
   const [savingBank, setSavingBank] = useState(false);
   const [bankLoaded, setBankLoaded] = useState(false);
+  const [schedule, setSchedule] = useState<Record<string, string[]>>({
+    monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: [],
+  });
+  const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
   useEffect(() => {
     const stored = localStorage.getItem("tare-admin-secret");
@@ -202,6 +206,23 @@ export default function AdminPage() {
         whatsappNumber: data.whatsappNumber || "",
         therapistName: data.therapistName || "",
       });
+      // Load counselor schedule if it exists
+      if (data.counselorSchedule) {
+        try {
+          const parsed = typeof data.counselorSchedule === "string"
+            ? JSON.parse(data.counselorSchedule)
+            : data.counselorSchedule;
+          setSchedule({
+            monday: parsed.monday || [],
+            tuesday: parsed.tuesday || [],
+            wednesday: parsed.wednesday || [],
+            thursday: parsed.thursday || [],
+            friday: parsed.friday || [],
+            saturday: parsed.saturday || [],
+            sunday: parsed.sunday || [],
+          });
+        } catch { /* keep default */ }
+      }
       setBankLoaded(true);
     }).catch(() => {});
   }, [authed, activeTab, bankLoaded, apiCall]);
@@ -217,7 +238,10 @@ export default function AdminPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(bankDetails),
+        body: JSON.stringify({
+          ...bankDetails,
+          counselorSchedule: JSON.stringify(schedule),
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -636,6 +660,40 @@ export default function AdminPage() {
                       </p>
                     </div>
                   </div>
+                </div>
+
+                {/* Counselor Schedule */}
+                <div className="mt-6 border-t border-maroon/10 pt-5">
+                  <h4 className="font-sans text-sm font-bold text-[#4E0030]">Counselor Schedule</h4>
+                  <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
+                    Enter available time slots for each day. Users will only see these slots when booking a session on the selected day. Leave blank for days the counselor is unavailable.
+                  </p>
+
+                  <div className="mt-4 space-y-3">
+                    {DAYS.map((day) => (
+                      <div key={day} className="flex items-center gap-3">
+                        <span className="w-24 shrink-0 font-sans text-xs font-bold uppercase tracking-[0.1em] text-[#4E0030]/70">
+                          {day.charAt(0).toUpperCase() + day.slice(1)}
+                        </span>
+                        <input
+                          type="text"
+                          value={schedule[day]?.join(", ") || ""}
+                          onChange={(e) => {
+                            const slots = e.target.value
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter((s) => s.length > 0);
+                            setSchedule({ ...schedule, [day]: slots });
+                          }}
+                          placeholder="e.g. 3:00 PM, 4:00 PM (or leave blank)"
+                          className="h-10 flex-1 rounded-xl border border-maroon/15 bg-white px-3 font-sans text-sm text-[#4E0030] placeholder:text-[#4E0030]/35 focus:border-[#F10897] focus:outline-none focus:ring-2 focus:ring-[#F10897]/30"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-2 font-sans text-[11px] text-[#4E0030]/50">
+                    Separate time slots with commas. Format: &ldquo;3:00 PM, 4:00 PM&rdquo;. All times are in WAT (West Africa Time).
+                  </p>
                 </div>
 
                 <button

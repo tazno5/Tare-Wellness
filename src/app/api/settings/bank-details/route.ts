@@ -20,18 +20,36 @@ const DEFAULTS = {
   therapistName: "Your Provider",
 };
 
+const DEFAULT_SCHEDULE = {
+  monday: ["3:00 PM", "4:00 PM"],
+  tuesday: ["1:00 PM", "2:00 PM"],
+  wednesday: ["3:00 PM", "4:00 PM"],
+  thursday: ["1:00 PM", "2:00 PM"],
+  friday: ["3:00 PM", "4:00 PM"],
+  saturday: ["5:00 PM"],
+  sunday: [] as string[],
+};
+
 export async function GET() {
   try {
     const settings = await db.siteSetting.findMany({
       where: {
-        key: { in: ["bankName", "accountName", "accountNumber", "whatsappNumber", "therapistName"] },
+        key: { in: ["bankName", "accountName", "accountNumber", "whatsappNumber", "therapistName", "counselorSchedule"] },
       },
     });
 
-    // Convert to a key-value object, falling back to defaults
     const result: Record<string, string> = { ...DEFAULTS };
+    let counselorSchedule = DEFAULT_SCHEDULE;
     for (const s of settings) {
-      result[s.key] = s.value;
+      if (s.key === "counselorSchedule") {
+        try {
+          counselorSchedule = JSON.parse(s.value);
+        } catch {
+          // Keep default if JSON is invalid
+        }
+      } else {
+        result[s.key] = s.value;
+      }
     }
 
     return NextResponse.json({
@@ -40,6 +58,7 @@ export async function GET() {
       accountNumber: result.accountNumber,
       whatsappNumber: result.whatsappNumber,
       therapistName: result.therapistName,
+      counselorSchedule,
     });
   } catch (error) {
     console.error("Bank details fetch error:", error);

@@ -165,6 +165,27 @@ export default function BookSessionPage() {
   );
   const [selectedTime, setSelectedTime] = useState<string>(booking.selectedTime);
 
+  // Fetch counselor schedule from admin settings (configurable via /admin → Settings)
+  const [counselorSchedule, setCounselorSchedule] = useState<Record<string, string[]>>({
+    monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: [],
+  });
+
+  useEffect(() => {
+    fetch("/api/settings/bank-details")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.counselorSchedule) {
+          setCounselorSchedule(data.counselorSchedule);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Get the day name for the selected date
+  const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  const selectedDayName = selectedDate ? DAY_NAMES[selectedDate.getDay()] : null;
+  const availableSlots = selectedDayName ? (counselorSchedule[selectedDayName] || []) : [];
+
   // Set gradient — render + useEffect
   useMemo(() => {
     if (typeof document === "undefined") return;
@@ -611,21 +632,31 @@ export default function BookSessionPage() {
               </h2>
 
               <div className="mt-4 space-y-4">
-                {TIME_SLOTS.map((slot) => (
-                  <div key={slot.id}>
+                {!selectedDate ? (
+                  <p className="font-sans text-sm text-maroon/60 py-4 text-center">
+                    Pick a date above to see available time slots.
+                  </p>
+                ) : availableSlots.length === 0 ? (
+                  <div className="rounded-2xl bg-[#FFE0C2]/30 p-4 text-center">
+                    <p className="font-sans text-sm font-bold text-[#cc6600]">
+                      No sessions available on this day
+                    </p>
+                    <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
+                      The counselor is not available on {selectedDayName}s. Please pick a different date.
+                    </p>
+                  </div>
+                ) : (
+                  <div>
                     <div className="flex items-center gap-2">
                       <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blush text-[#F10897]">
-                        {slot.icon}
+                        <Clock className="h-4 w-4" strokeWidth={2.5} />
                       </span>
                       <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon">
-                        {slot.label}
-                      </span>
-                      <span className="font-sans text-[11px] text-maroon/50">
-                        {slot.range}
+                        Available Times ({selectedDayName})
                       </span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {slot.times.map((t) => {
+                      {availableSlots.map((t) => {
                         const active = selectedTime === t;
                         return (
                           <button
@@ -645,7 +676,7 @@ export default function BookSessionPage() {
                       })}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             </motion.article>
 
