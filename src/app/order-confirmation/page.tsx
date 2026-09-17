@@ -175,6 +175,44 @@ function OrderConfirmationContent() {
     }
   }, [orderId]);
 
+  // ============ REAL-TIME STATUS POLLING ============
+  // While the order status is "pending" (bank transfer awaiting admin
+  // confirmation), poll /api/orders/[id] every 7 seconds to check if
+  // the admin has confirmed the transfer. Once the status changes to
+  // "completed", stop polling and auto-update the UI to reveal the
+  // receipt cards + show the "Transfer Confirmed!" message.
+  const [pollingActive, setPollingActive] = useState(false);
+  const [justConfirmed, setJustConfirmed] = useState(false);
+
+  useEffect(() => {
+    // Only poll if we have an order ID and the order is pending
+    if (!orderId || !apiOrder || apiOrder.status !== "pending") {
+      setPollingActive(false);
+      return;
+    }
+
+    setPollingActive(true);
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/orders/${orderId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.status !== "pending") {
+          // Status changed! Update the order + stop polling.
+          setApiOrder(data);
+          setPollingActive(false);
+          setJustConfirmed(true);
+          clearInterval(pollInterval);
+        }
+      } catch {
+        // Network error — keep polling, don't disrupt the user
+      }
+    }, 7000); // Poll every 7 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [orderId, apiOrder?.status]); // Re-run when status changes
+
   useEffect(() => {
     setHasMounted(true);
   }, []);
@@ -440,7 +478,7 @@ function OrderConfirmationContent() {
           >
             <Sparkles className="h-3.5 w-3.5 text-maroon" strokeWidth={2.5} />
             <span className="font-sans text-[11px] font-bold uppercase tracking-[0.18em] text-maroon sm:text-xs">
-              {apiOrder?.status === "pending" ? "Awaiting Transfer" : "Order Confirmed"}
+              {apiOrder?.status === "pending" ? "Awaiting Transfer" : justConfirmed ? "Transfer Confirmed!" : "Order Confirmed"}
             </span>
           </motion.div>
 
@@ -452,6 +490,8 @@ function OrderConfirmationContent() {
           >
             {apiOrder?.status === "pending"
               ? "Transfer pending"
+              : justConfirmed
+              ? "Transfer confirmed!"
               : (<>Your gift is on its way{" "}<span className="text-[#F10897]">&#10084;&#65039;</span></>)}
           </motion.h1>
 
@@ -463,6 +503,8 @@ function OrderConfirmationContent() {
           >
             {apiOrder?.status === "pending"
               ? "We're waiting for your bank transfer to clear. Once confirmed, your gift card will be sent to your recipient automatically."
+              : justConfirmed
+              ? "We've confirmed your transfer. Your gift card has been emailed to your recipient. Here's your receipt."
               : "We've emailed each recipient their gift card. Keep these receipts for your records."}
           </motion.p>
 
@@ -510,7 +552,35 @@ function OrderConfirmationContent() {
         />
       )}
 
-      {/* ============ RECEIPT CARDS ============ */}
+      {/* ============ TRANSITION ANIMATION (when admin confirms transfer) ============ */}
+      {/* Shows a brief celebratory animation when the polling detects the
+          status changed from "pending" to "completed". Auto-dismisses. */}
+      {justConfirmed && (
+        <motion.section
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="relative w-full px-5 pb-4 sm:px-8 lg:px-12"
+        >
+          <div className="mx-auto w-full max-w-3xl rounded-3xl bg-[#B5E1C3]/30 p-5 text-center ring-1 ring-[#2d6e4f]/20 sm:p-6">
+            <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#2d6e4f]">
+              <Check className="h-6 w-6 text-white" strokeWidth={3} />
+            </div>
+            <p className="mt-3 font-fraunces text-xl font-bold text-[#2d6e4f]">
+              Transfer confirmed!
+            </p>
+            <p className="mt-1 font-sans text-sm text-[#4E0030]/70">
+              Your payment has been verified. Your gift card receipt is now available below.
+            </p>
+          </div>
+        </motion.section>
+      )}
+
+      {/* ============ RECEIPT CARDS (only when confirmed/completed) ============ */}
+      {/* Hidden while the order is "pending" (bank transfer not yet confirmed).
+          Automatically revealed when the polling detects the status changed
+          to "completed" — no manual refresh needed. */}
+      {apiOrder?.status !== "pending" && (
       <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
         <motion.div
           variants={container}
@@ -738,7 +808,19 @@ function OrderConfirmationContent() {
           </div>
         </motion.div>
       </section>
+      )}
 
+      {/* ============ POLLING INDICATOR (subtle — shown while waiting) ============ */}
+      {apiOrder?.status === "pending" && (
+        <div className="mx-auto w-full max-w-3xl px-5 pb-10 text-center sm:px-8">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 shadow-sm">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[#F10897]" />
+            <p className="font-sans text-[11px] font-medium text-maroon/60">
+              Checking for confirmation... This page will update automatically.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ============ COMMON QUESTIONS ============ */}
       <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
