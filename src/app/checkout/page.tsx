@@ -396,10 +396,20 @@ function CheckoutContent() {
         // now associated with the order in the DB, not the user's session cart.
         clearCart();
         clearRecipients();
-        toast({
-          title: "Payment successful!",
-          description: `Order ${order.orderNumber} confirmed.`,
-        });
+
+        // Different confirmation messages for card vs bank transfer
+        if (paymentMethod === "transfer") {
+          toast({
+            title: "Order placed!",
+            description: `Check your email for bank transfer instructions. Order ${order.orderNumber}.`,
+          });
+        } else {
+          toast({
+            title: "Payment successful!",
+            description: `Order ${order.orderNumber} confirmed.`,
+          });
+        }
+
         router.push(`/order-confirmation?id=${order.id}&orderNumber=${order.orderNumber}&method=${paymentMethod}`);
         return;
       }
