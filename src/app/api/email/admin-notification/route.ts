@@ -45,7 +45,9 @@ export async function POST(req: Request) {
     }
 
     const { orderNumber, buyerName, buyerEmail, totalAmount, paymentMethod, recipientCount, recipientNames } = parsed.data;
-    const amountNaira = (totalAmount / 100).toLocaleString();
+    // The DB stores amounts in Naira (not kobo) — totalAmount 39000 = ₦39,000.
+  // Don't divide by 100.
+  const amountNaira = totalAmount.toLocaleString();
 
     const adminRaw = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || "hello@tarewellness.com";
     const adminEmail = adminRaw.match(/<([^>]+)>/)?.[1] || adminRaw;

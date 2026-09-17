@@ -855,7 +855,9 @@ function BankTransferInstructions({
   const [accountNumber, setAccountNumber] = useState("Loading...");
 
   const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
-  const amountNaira = totalAmountKobo / 100;
+  // The DB stores amounts in Naira (not kobo) — price 39000 = ₦39,000.
+  // Don't divide by 100. Use totalAmountKobo directly (it's actually Naira).
+  const amountNaira = totalAmountKobo;
 
   // Fetch bank details from the API (configured by admin in /admin → Settings)
   useEffect(() => {
