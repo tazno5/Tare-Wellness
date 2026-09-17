@@ -7,6 +7,7 @@ import { Providers } from "@/components/providers";
 import ConditionalChrome from "@/components/site/ConditionalChrome";
 import CookieConsent from "@/components/site/CookieConsent";
 import InactivityLogout from "@/components/site/InactivityLogout";
+import SessionSync from "@/components/site/SessionSync";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -120,6 +121,7 @@ export default function RootLayout({
           <ConditionalChrome>{children}</ConditionalChrome>
           <CookieConsent />
           <InactivityLogout />
+          <SessionSync />
           <Toaster />
         </Providers>
         {/* Paystack Inline JS — loaded lazily so it doesn't block page render.

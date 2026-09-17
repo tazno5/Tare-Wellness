@@ -51,4 +51,4 @@ export const useStore = create<StoreState>()(persist((set, get) => ({
   logout: () => set({ user: null }),
   addDemoCode: (code) => set({ demoCodes: [...get().demoCodes.filter(c => c.code !== code.code), code] }),
   clearDemoCodes: () => set({ demoCodes: [] }),
-}), { name: "tare-wellness-store", partialize: (s) => ({ cart: s.cart, totalQty: s.totalQty, totalPrice: s.totalPrice, recipients: s.recipients, redemption: s.redemption, booking: s.booking, user: s.user, demoCodes: s.demoCodes }) }));
+}), { name: "tare-wellness-store", partialize: (s) => ({ cart: s.cart, totalQty: s.totalQty, totalPrice: s.totalPrice, recipients: s.recipients, redemption: s.redemption, booking: s.booking, demoCodes: s.demoCodes }) }));
