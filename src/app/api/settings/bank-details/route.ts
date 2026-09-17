@@ -32,11 +32,19 @@ const DEFAULT_SCHEDULE = {
 
 export async function GET() {
   try {
-    const settings = await db.siteSetting.findMany({
-      where: {
-        key: { in: ["bankName", "accountName", "accountNumber", "whatsappNumber", "therapistName", "counselorSchedule"] },
-      },
-    });
+    // Wrap SiteSetting query in try-catch — if the Prisma client on
+    // Vercel doesn't have the SiteSetting model (not regenerated after
+    // db push), fall back to defaults so the page still renders.
+    let settings: { key: string; value: string }[] = [];
+    try {
+      settings = await db.siteSetting.findMany({
+        where: {
+          key: { in: ["bankName", "accountName", "accountNumber", "whatsappNumber", "therapistName", "counselorSchedule"] },
+        },
+      });
+    } catch {
+      // Use defaults
+    }
 
     const result: Record<string, string> = { ...DEFAULTS };
     let counselorSchedule = DEFAULT_SCHEDULE;

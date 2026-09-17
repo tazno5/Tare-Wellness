@@ -64,13 +64,23 @@ export async function POST(req: Request) {
     const safeBuyerName = escapeHtml(buyerName);
     const siteUrl = getSiteUrl();
 
-    // Fetch bank details from SiteSetting (same as checkout page)
-    const settings = await db.siteSetting.findMany({
-      where: { key: { in: ["bankName", "accountName", "accountNumber"] } },
-    });
-    const bankName = settings.find((s) => s.key === "bankName")?.value || "Tare Bank";
-    const accountName = settings.find((s) => s.key === "accountName")?.value || "Tare Wellness";
-    const accountNumber = settings.find((s) => s.key === "accountNumber")?.value || "0000000000";
+    // Fetch bank details from SiteSetting (same as checkout page).
+    // Wrapped in try-catch — if the Prisma client on Vercel doesn't
+    // have the SiteSetting model yet (not regenerated after db push),
+    // fall back to default values so the email still sends.
+    let bankName = "Tare Bank";
+    let accountName = "Tare Wellness";
+    let accountNumber = "0000000000";
+    try {
+      const settings = await db.siteSetting.findMany({
+        where: { key: { in: ["bankName", "accountName", "accountNumber"] } },
+      });
+      bankName = settings.find((s) => s.key === "bankName")?.value || bankName;
+      accountName = settings.find((s) => s.key === "accountName")?.value || accountName;
+      accountNumber = settings.find((s) => s.key === "accountNumber")?.value || accountNumber;
+    } catch (dbError) {
+      console.error("SiteSetting fetch failed (using defaults):", dbError);
+    }
 
     const subject = `Bank Transfer Instructions - Order ${orderNumber} - NGN ${amountNaira}`;
     const htmlContent = `
