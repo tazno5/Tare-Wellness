@@ -288,6 +288,24 @@ export async function POST(req: Request) {
       }).catch(() => {
         // Swallow — best-effort, don't fail the order
       });
+
+      // For pending (bank transfer) orders, also send the buyer an email
+      // with the bank details + order reference so they have a permanent
+      // record (even if they close the browser tab).
+      if (order.status === "pending") {
+        fetch(`${baseUrl}/api/email/bank-transfer-instructions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderNumber: order.orderNumber,
+            buyerName: order.buyerName,
+            buyerEmail: order.buyerEmail,
+            totalAmount: order.totalAmount,
+          }),
+        }).catch(() => {
+          // Swallow — best-effort
+        });
+      }
     }
 
     return NextResponse.json(order, { status: 201 });
