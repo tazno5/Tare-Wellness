@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -148,10 +148,54 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-export default function BookSessionPage() {
+export default function BookSessionPageWrapper() {
+  return (
+    <Suspense fallback={
+      <main className="flex flex-1 items-center justify-center px-5 py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-[#F10897]" strokeWidth={2.5} />
+      </main>
+    }>
+      <BookSessionPage />
+    </Suspense>
+  );
+}
+
+function BookSessionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { booking, setBooking, redemption, user } = useStore();
+  const { booking, setBooking, redemption, setRedemption, user } = useStore();
+
+  // Auto-apply gift card if ?code= is in the URL (from the "Book Next Session"
+  // button on the /account page). Redeem it automatically + set the redemption
+  // state so the booking summary shows the session ledger.
+  useEffect(() => {
+    const codeParam = searchParams.get("code");
+    if (codeParam && !redemption.redeemed) {
+      const rawCode = codeParam.replace(/-/g, "").toUpperCase();
+      // Call the redeem API to validate + link to the user
+      fetch("/api/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: rawCode }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.valid) {
+            setRedemption({
+              code: data.code,
+              creditBalance: data.creditAmount,
+              redeemed: true,
+            });
+            toast({
+              title: "Gift card applied!",
+              description: `₦${data.creditAmount.toLocaleString()} credit — ${data.cardSessions} session(s).`,
+            });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [viewMonth, setViewMonth] = useState(() => {
     const now = new Date();
@@ -744,31 +788,49 @@ export default function BookSessionPage() {
               </div>
 
               <div className="mt-4 space-y-2 border-t border-white/15 pt-4 font-sans text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-blush/80">Session Price</span>
-                  <span className="font-bold tabular-nums text-white">
-                    ₦{session.price.toLocaleString()}
-                  </span>
-                </div>
                 {giftCardApplied > 0 ? (
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1 text-blush/80">
-                      <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
-                      Gift card applied
-                    </span>
-                    <span className="font-bold tabular-nums text-[#F10897]">
-                      -₦{giftCardApplied.toLocaleString()}
-                    </span>
-                  </div>
-                ) : null}
+                  <>
+                    {/* Session-based ledger when a gift card is applied */}
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1 text-blush/80">
+                        <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
+                        Sessions Available
+                      </span>
+                      <span className="font-bold tabular-nums text-white">
+                        {redemption.creditBalance > 0 ? Math.round(redemption.creditBalance / (session.price || 1)) : 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-blush/80">This Booking</span>
+                      <span className="font-bold tabular-nums text-[#F10897]">
+                        -1
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-blush/80">Remaining After</span>
+                      <span className="font-bold tabular-nums text-white">
+                        {Math.max(0, (redemption.creditBalance > 0 ? Math.round(redemption.creditBalance / (session.price || 1)) : 0) - 1)}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-blush/80">Session Price</span>
+                      <span className="font-bold tabular-nums text-white">
+                        ₦{session.price.toLocaleString()}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="mt-4 flex items-center justify-between border-t border-white/15 pt-4">
                 <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-blush/80">
-                  Total
+                  {giftCardApplied > 0 ? "Sessions Due" : "Total"}
                 </span>
                 <span className="font-fraunces text-2xl font-extrabold text-white">
-                  ₦{total.toLocaleString()}
+                  {giftCardApplied > 0 ? "0" : `₦${total.toLocaleString()}`}
                 </span>
               </div>
 

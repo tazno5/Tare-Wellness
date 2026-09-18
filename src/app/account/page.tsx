@@ -9,6 +9,7 @@ import {
   Calendar,
   Clock,
   Gift,
+  CalendarCheck,
   Loader2,
   LogOut,
   Mail,
@@ -645,6 +646,27 @@ function SettingsTab({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
 
+  // Fetch the user's gift card redemptions for the "My Gift Cards" section
+  type GiftCardData = {
+    id: string;
+    code: string;
+    status: string;
+    creditAmount: number;
+    sessionsRemaining: number;
+    sessionsUsed: number;
+    orderItem: { cardTitle: string; cardSessions: number; cardPrice: number; cardGradient: string };
+  };
+  const [giftCards, setGiftCards] = useState<GiftCardData[] | null>(null);
+
+  useEffect(() => {
+    fetch("/api/account/redemptions")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setGiftCards(data))
+      .catch(() => setGiftCards([]));
+  }, []);
+
+  const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
+
   // Download user's data as JSON
   const handleExport = async () => {
     setExporting(true);
@@ -776,6 +798,94 @@ function SettingsTab({
           <LogOut className="h-4 w-4" strokeWidth={2.5} />
           Sign Out
         </button>
+      </div>
+
+      {/* ============ MY GIFT CARDS ============ */}
+      <div className="rounded-2xl bg-white p-5 shadow-[0_4px_15px_rgba(78,0,48,0.06)] sm:p-6">
+        <div className="flex items-center gap-2">
+          <Gift className="h-5 w-5 text-[#F10897]" strokeWidth={2.5} />
+          <h3 className="font-fraunces text-lg font-bold text-[#4E0030]">My Gift Cards</h3>
+        </div>
+        <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
+          Your redeemed gift cards with session tracking.
+        </p>
+
+        {!giftCards ? (
+          <div className="mt-4 flex justify-center">
+            <Loader2 className="h-5 w-5 animate-spin text-[#F10897]" strokeWidth={2.5} />
+          </div>
+        ) : giftCards.length === 0 ? (
+          <div className="mt-4 rounded-xl bg-[#FFF5EE] p-4 text-center">
+            <p className="font-sans text-xs text-[#4E0030]/60">
+              No gift cards redeemed yet. When someone sends you a gift card, redeem it and it&apos;ll appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {giftCards.map((gc) => {
+              const total = gc.orderItem.cardSessions;
+              const used = gc.sessionsUsed;
+              const remaining = gc.sessionsRemaining;
+              const hasBalance = remaining > 0;
+
+              return (
+                <div
+                  key={gc.id}
+                  className={`rounded-xl border p-4 ${
+                    hasBalance
+                      ? "border-[#F10897]/30 bg-[#FCE4EC]/30"
+                      : "border-maroon/10 bg-[#FFF5EE]/50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-sans text-sm font-bold text-[#4E0030]">
+                        {gc.orderItem.cardTitle}
+                      </p>
+                      <p className="mt-0.5 font-mono text-[11px] font-bold tracking-wider text-[#F10897]">
+                        {gc.code}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-wide ${
+                      hasBalance
+                        ? "bg-[#B5E1C3]/30 text-[#2d6e4f]"
+                        : "bg-maroon/10 text-maroon/50"
+                    }`}>
+                      {hasBalance ? "Active" : "Fully Used"}
+                    </span>
+                  </div>
+
+                  {/* Session tracking */}
+                  <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-lg bg-white p-2">
+                      <p className="font-sans text-[10px] font-bold uppercase tracking-wide text-[#4E0030]/50">Total</p>
+                      <p className="font-fraunces text-lg font-bold text-[#4E0030]">{total}</p>
+                    </div>
+                    <div className="rounded-lg bg-white p-2">
+                      <p className="font-sans text-[10px] font-bold uppercase tracking-wide text-[#4E0030]/50">Used</p>
+                      <p className="font-fraunces text-lg font-bold text-[#4E0030]">{used}</p>
+                    </div>
+                    <div className={`rounded-lg p-2 ${hasBalance ? "bg-[#B5E1C3]/20" : "bg-white"}`}>
+                      <p className="font-sans text-[10px] font-bold uppercase tracking-wide text-[#4E0030]/50">Available</p>
+                      <p className={`font-fraunces text-lg font-bold ${hasBalance ? "text-[#2d6e4f]" : "text-[#4E0030]/40"}`}>{remaining}</p>
+                    </div>
+                  </div>
+
+                  {/* Book Next Session button */}
+                  {hasBalance && (
+                    <Link
+                      href={`/book-session?code=${gc.code}`}
+                      className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-5 py-2.5 font-sans text-xs font-bold uppercase tracking-[0.12em] text-white transition-all hover:bg-[#d4007d] active:scale-95"
+                    >
+                      <CalendarCheck className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      Book Next Session
+                    </Link>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ============ PRIVACY & DATA (NDPA 2023) ============ */}
