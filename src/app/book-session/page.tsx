@@ -364,25 +364,58 @@ function BookSessionPage() {
   const formattedTime = selectedTime || "Select a time";
 
   const session = SESSION_TYPES.find((s) => s.id === sessionType)!;
-  // Use the SERVER-FETCHED gift card as the source of truth for credit + sessions.
-  // The Zustand store's `redemption` was removed (the store only tracked a single
-  // redemption and was unreliable). /api/redemptions now provides the authoritative list.
-  // Each booking consumes 1 session from the gift card — the Total displayed
-  // is 0 if the user has a gift card with sessions remaining (the gift card covers it).
-  const giftCardSessionsRemaining = selectedGiftCard ? selectedGiftCard.sessionsRemaining : 0;
-  const total = giftCardSessionsRemaining > 0 ? 0 : session.price;
+  // ============ AUTHORITATIVE SESSION-BALANCE MATH ============
+  // Use BOTH `sessionsRemaining` AND the derived `cardSessions - sessionsUsed`
+  // as a defensive cross-check. They should always agree, but in cases where
+  // the gift cards list hasn't been refetched yet (e.g. user navigated back to
+  // /book-session after booking the final session on a card, browser served
+  // a cached state, etc.), one source might lag the other. By computing both
+  // AND using the MINIMUM, we ensure the UI never shows more available
+  // sessions than actually exist.
+  //
+  //   availableBalance = min(sessionsRemaining, cardSessions - sessionsUsed)
+  //
+  // Examples (verifies universal behavior across all tiers):
+  //   1-session card, fresh:        available=1
+  //   1-session card, fully used:   available=0 (sessionsRemaining=0 OR used=1=total)
+  //   2-session card, 1 used:       available=1 (sessionsRemaining=1, 2-1=1)
+  //   2-session card, 2 used:       available=0 (sessionsRemaining=0, 2-2=0)
+  //   3-session card, 2 used:       available=1 (sessionsRemaining=1, 3-2=1)
+  //
+  // `isFullyRedeemed` is true when this card has zero sessions left to book
+  // against — used to gate the Confirm button + render the "Gift Card Fully
+  // Redeemed" warning in the summary card.
+  const selectedCardSessionsRemaining = selectedGiftCard?.sessionsRemaining ?? 0;
+  const selectedCardSessionsUsed = selectedGiftCard?.sessionsUsed ?? 0;
+  const selectedCardTotal = selectedGiftCard?.cardSessions ?? 0;
+  const derivedAvailable = Math.max(0, selectedCardTotal - selectedCardSessionsUsed);
+  const availableBalance = Math.max(
+    0,
+    Math.min(selectedCardSessionsRemaining, derivedAvailable),
+  );
+  const isFullyRedeemed =
+    !!selectedGiftCard && availableBalance <= 0;
+  // Total displayed to the user is "Covered by gift card" when sessions are
+  // still available, otherwise the full ₦ price (so they know they need to
+  // buy another card).
+  const total = availableBalance > 0 ? 0 : session.price;
 
   const [confirming, setConfirming] = useState(false);
 
   // A booking requires: a date, a time, AND a gift card with at least
   // 1 session remaining. No gift card → no booking (client requirement).
   // This gate is universal — works for all gift card tiers because we only
-  // require `sessionsRemaining > 0`, not a specific tier threshold.
+  // require `availableBalance > 0`, not a specific tier threshold.
+  // `isFullyRedeemed` is a redundant defensive check that catches the edge
+  // case where `sessionsRemaining` says >0 but `cardSessions - sessionsUsed`
+  // says 0 (or vice versa) — the UI must NOT let the user submit in that
+  // state because the backend will reject it.
   const canConfirm =
     !!selectedDate &&
     !!selectedTime &&
     !!selectedGiftCard &&
-    selectedGiftCard.sessionsRemaining > 0;
+    availableBalance > 0 &&
+    !isFullyRedeemed;
 
   const handleConfirmClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -397,10 +430,10 @@ function BookSessionPage() {
         });
         return;
       }
-      if (selectedGiftCard.sessionsRemaining <= 0) {
+      if (isFullyRedeemed || availableBalance <= 0) {
         toast({
-          title: "No sessions remaining",
-          description: "This gift card has no sessions left. Buy another one to continue.",
+          title: "Gift card fully redeemed",
+          description: `This gift card has no sessions left. Total: ${selectedCardTotal}, Used: ${selectedCardSessionsUsed}. Buy another card to book more sessions.`,
           variant: "destructive",
         });
         return;
@@ -457,6 +490,31 @@ function BookSessionPage() {
         title: "Booking confirmed!",
         description: `Your session is booked for ${selectedDate.toLocaleDateString()}.`,
       });
+
+      // ============ OPTIMISTIC LOCAL STATE UPDATE ============
+      // The backend has decremented sessionsRemaining + incremented sessionsUsed.
+      // The next page load will refetch /api/redemptions and get the fresh values,
+      // but if the user hits browser-back to /book-session before the refetch runs,
+      // they would see STALE data (old sessionsRemaining) and could try to book
+      // again — which the backend would reject with "No sessions remaining".
+      //
+      // To prevent that scenario, we OPTIMISTICALLY update the gift cards list
+      // in local state right now. The selected card's sessionsRemaining drops by 1
+      // and sessionsUsed goes up by 1 — matching what the backend just did. If
+      // the user navigates back, the UI already reflects the new balance.
+      if (selectedGiftCard) {
+        setGiftCards((prev) =>
+          prev.map((c) =>
+            c.id === selectedGiftCard.id
+              ? {
+                  ...c,
+                  sessionsRemaining: Math.max(0, c.sessionsRemaining - 1),
+                  sessionsUsed: c.sessionsUsed + 1,
+                }
+              : c,
+          ),
+        );
+      }
 
       // Persist the booking number returned by the API so the confirmation
       // page can display the real BK-2026-XXXXXXXX instead of a hardcoded value.
@@ -642,9 +700,19 @@ function BookSessionPage() {
                   Your Gift Card
                 </h2>
                 {selectedGiftCard && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-[#F10897]">
-                    <Check className="h-3 w-3" strokeWidth={2.5} />
-                    {selectedGiftCard.sessionsRemaining} session{selectedGiftCard.sessionsRemaining === 1 ? "" : "s"} left
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] ${
+                      isFullyRedeemed
+                        ? "bg-[#F10897]/15 text-[#F10897] ring-1 ring-[#F10897]/40"
+                        : "bg-blush text-[#F10897]"
+                    }`}
+                  >
+                    {isFullyRedeemed ? (
+                      <Gift className="h-3 w-3" strokeWidth={2.5} />
+                    ) : (
+                      <Check className="h-3 w-3" strokeWidth={2.5} />
+                    )}
+                    {availableBalance} session{availableBalance === 1 ? "" : "s"} left
                   </span>
                 )}
               </div>
@@ -703,12 +771,37 @@ function BookSessionPage() {
                             Code: <span className="font-mono">{card.code}</span>
                           </p>
                           <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                            <span className="inline-flex items-center rounded-full bg-blush px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-[#F10897]">
-                              {card.sessionsRemaining} left
-                            </span>
-                            <span className="inline-flex items-center rounded-full bg-[#4E0030]/10 px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-maroon">
-                              {card.sessionsUsed} used
-                            </span>
+                            {(() => {
+                              // Per-card authoritative balance — same defensive
+                              // cross-check as the summary card. We use min()
+                              // of both sources so the UI never shows more
+                              // available sessions than actually exist.
+                              const cardAvail = Math.max(
+                                0,
+                                Math.min(
+                                  card.sessionsRemaining,
+                                  (card.cardSessions ?? 0) - card.sessionsUsed,
+                                ),
+                              );
+                              const cardExhausted =
+                                cardAvail <= 0 && card.sessionsUsed > 0;
+                              return (
+                                <>
+                                  <span
+                                    className={`inline-flex items-center rounded-full px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] ${
+                                      cardExhausted
+                                        ? "bg-[#4E0030]/10 text-[#4E0030]/60 ring-1 ring-[#4E0030]/15"
+                                        : "bg-blush text-[#F10897]"
+                                    }`}
+                                  >
+                                    {cardExhausted ? "Fully redeemed" : `${cardAvail} left`}
+                                  </span>
+                                  <span className="inline-flex items-center rounded-full bg-[#4E0030]/10 px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-maroon">
+                                    {card.sessionsUsed} used
+                                  </span>
+                                </>
+                              );
+                            })()}
                           </div>
                         </div>
                       </button>
@@ -1012,28 +1105,44 @@ function BookSessionPage() {
               {/* ============ SESSION LEDGER ============ */}
               {/* Universal 3-column ledger that works for ALL gift card tiers
                   (1-session, 2-session, 3-session, or any future tier).
-                  Math is dynamic — never hardcoded to a specific tier:
-                    Available   = selectedGiftCard.sessionsRemaining (current balance)
+                  Math is dynamic — derived from the AUTHORITATIVE `availableBalance`
+                  computed at the top of this component:
+                    availableBalance = min(sessionsRemaining, cardSessions - sessionsUsed)
+                  Both sources are checked defensively so the UI never shows more
+                  available sessions than actually exist (prevents stale-state
+                  over-booking that the backend would reject).
+                    Available   = availableBalance (authoritative)
                     This Booking = 1 (always 1 session per booking)
-                    Remaining   = Available - This Booking
-                  Examples (verifies universal behavior):
-                    1-session card, first booking:  Available 1 | This 1 | Remaining 0
-                    2-session card, first booking:  Available 2 | This 1 | Remaining 1
-                    3-session card, first booking:  Available 3 | This 1 | Remaining 2
-                    3-session card, 2nd booking:    Available 2 | This 1 | Remaining 1
+                    Remaining   = max(0, availableBalance - 1)
+                  Examples:
+                    1-session card, fresh:       Available 1 | This 1 | Remaining 0
+                    1-session card, fully used: Available 0 | This 1 | Remaining 0
+                    2-session card, 1 used:     Available 1 | This 1 | Remaining 0
+                    2-session card, 2 used:     Available 0 | This 1 | Remaining 0
+                    3-session card, 2 used:     Available 1 | This 1 | Remaining 0
               */}
               {selectedGiftCard && (
-                <div className="mt-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+                <div
+                  className={`mt-4 rounded-2xl p-4 ring-1 transition-colors ${
+                    isFullyRedeemed
+                      ? "bg-[#F10897]/10 ring-[#F10897]/40"
+                      : "bg-white/5 ring-white/10"
+                  }`}
+                >
                   <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-blush/70">
                     Session Ledger
                   </p>
                   <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                    <div className="rounded-xl bg-white/10 px-2 py-3">
+                    <div
+                      className={`rounded-xl px-2 py-3 transition-colors ${
+                        isFullyRedeemed ? "bg-[#F10897]/15" : "bg-white/10"
+                      }`}
+                    >
                       <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-blush/60">
                         Available
                       </p>
                       <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-white">
-                        {selectedGiftCard.sessionsRemaining}
+                        {availableBalance}
                       </p>
                     </div>
                     <div className="rounded-xl bg-[#F10897]/20 px-2 py-3">
@@ -1049,7 +1158,7 @@ function BookSessionPage() {
                         Remaining
                       </p>
                       <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-white">
-                        {Math.max(0, selectedGiftCard.sessionsRemaining - 1)}
+                        {Math.max(0, availableBalance - 1)}
                       </p>
                     </div>
                   </div>
@@ -1060,46 +1169,93 @@ function BookSessionPage() {
                 </div>
               )}
 
+              {/* "Gift Card Fully Redeemed" warning block — replaces the
+                  "Covered by gift card" message when the selected card has
+                  0 sessions left. Bold + high-contrast so the user immediately
+                  understands they cannot proceed with this card. */}
+              {isFullyRedeemed && selectedGiftCard && (
+                <div
+                  role="alert"
+                  className="mt-4 rounded-2xl border-2 border-[#F10897]/60 bg-[#F10897]/15 p-4 text-center"
+                >
+                  <p className="inline-flex items-center gap-1.5 font-sans text-xs font-bold uppercase tracking-[0.14em] text-[#F10897]">
+                    <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    Gift Card Fully Redeemed
+                  </p>
+                  <p className="mt-1.5 font-sans text-[11px] text-white/85">
+                    You&apos;ve used all {selectedCardTotal} session{selectedCardTotal === 1 ? "" : "s"} on this card
+                    ({selectedCardSessionsUsed} of {selectedCardTotal} redeemed).
+                    Buy another gift card to book more sessions.
+                  </p>
+                  <Link
+                    href="/gift-cards"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[#F10897] px-4 py-2 font-sans text-xs font-semibold text-white transition-all hover:bg-[#d4007d] active:scale-95"
+                  >
+                    <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    Buy Another Gift Card
+                  </Link>
+                </div>
+              )}
+
               <div className="mt-4 flex items-center justify-between border-t border-white/15 pt-4">
                 <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-blush/80">
                   Total
                 </span>
                 <span className="font-fraunces text-2xl font-extrabold text-white">
-                  {total === 0 ? "Covered by gift card" : `₦${total.toLocaleString()}`}
+                  {isFullyRedeemed
+                    ? `₦${session.price.toLocaleString()}`
+                    : total === 0
+                      ? "Covered by gift card"
+                      : `₦${total.toLocaleString()}`}
                 </span>
               </div>
 
-              {selectedGiftCard ? (
+              {/* Status pill — only show the "covers full session" checkmark
+                  when the card is NOT fully redeemed. When fully redeemed,
+                  the warning block above replaces this. */}
+              {selectedGiftCard && !isFullyRedeemed ? (
                 <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white">
                   <Check className="h-3 w-3" strokeWidth={2.5} />
                   Gift card covers full session
                 </p>
-              ) : (
+              ) : !selectedGiftCard ? (
                 <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white">
                   <Gift className="h-3 w-3" strokeWidth={2.5} />
                   Select a gift card to continue
                 </p>
-              )}
+              ) : null}
 
               <button
                 type="button"
                 onClick={handleConfirmClick}
                 disabled={!canConfirm || confirming}
+                aria-disabled={!canConfirm || confirming}
                 className={`group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3.5 font-sans text-sm font-semibold transition-all duration-200 ${
-                  confirming ? "cursor-wait bg-white/15 text-white/50"
+                  confirming
+                    ? "cursor-wait bg-white/15 text-white/50"
                     : canConfirm
-                    ? "bg-[#F10897] text-white shadow-[0_10px_30px_rgba(241,8,151,0.35)] hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
-                    : "bg-white/25 text-white/90 border border-white/40 hover:bg-white/35"
+                      ? "bg-[#F10897] text-white shadow-[0_10px_30px_rgba(241,8,151,0.35)] hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
+                      : isFullyRedeemed
+                        ? "cursor-not-allowed bg-white/10 text-white/40 ring-1 ring-white/15 opacity-60"
+                        : "cursor-not-allowed bg-white/25 text-white/90 border border-white/40 hover:bg-white/35 opacity-70"
                 }`}
               >
-                {confirming ? (<><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />Booking...</>) : (<>Confirm My Session<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={2.5} /></>)}
+                {confirming ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />Booking...</>
+                ) : isFullyRedeemed ? (
+                  <><Gift className="h-4 w-4" strokeWidth={2.5} />Card Fully Redeemed</>
+                ) : (
+                  <>Confirm My Session<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={2.5} /></>
+                )}
               </button>
 
               {!canConfirm && !confirming && (
                 <p className="mt-2 text-center font-sans text-[11px] text-blush/80">
                   {!selectedGiftCard
                     ? "Select a gift card to continue"
-                    : "Pick a date and time to confirm"}
+                    : isFullyRedeemed
+                      ? "This card is fully redeemed — buy another to continue"
+                      : "Pick a date and time to confirm"}
                 </p>
               )}
 
