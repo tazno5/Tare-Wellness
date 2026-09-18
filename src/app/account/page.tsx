@@ -78,6 +78,12 @@ type GiftCardAccount = {
   sessionsRemaining: number; // sessions left to book
   sessionsUsed: number;      // sessions already booked
   status: string;
+  // True when the card is fully redeemed (sessionsRemaining === 0 AND
+  // sessionsUsed === cardSessions). The UI renders exhausted cards in a
+  // separate "Past Packages" section with a "Fully Redeemed" badge and a
+  // disabled CTA — they're shown read-only for history, never hidden or
+  // deleted from the DB.
+  isExhausted: boolean;
   redeemedAt: string | null;
   createdAt: string;
 };
@@ -508,14 +514,11 @@ function BookingsTab({
   return (
     <div className="space-y-6">
       {/* ============ MY GIFT CARDS / ACTIVE PACKAGES ============ */}
-      {/* Relocated from the Settings tab (where it never actually existed in
-          code) to here, the Bookings tab. The user can see every active gift
-          card they own with total / used / remaining + a "Book Next Session"
-          button right next to their actual bookings.
-
-          This section is universal — works for 1-session, 2-session,
-          3-session, or any future tier, because all values come straight
-          from the DB via /api/redemptions. No tier-specific math here. */}
+      {/* Active gift cards (sessionsRemaining > 0) — these can be booked
+          against right now. Each card shows a 3-column ledger
+          (Total / Used / Remaining), a progress bar, and a "Book Next
+          Session" CTA. Universal across all tiers (1/2/3/N-session)
+          because all values come straight from the DB. */}
       <div>
         <div className="mb-3 flex items-center justify-between gap-3">
           <h3 className="font-fraunces text-lg font-bold text-[#4E0030] inline-flex items-center gap-2">
@@ -531,137 +534,267 @@ function BookingsTab({
           </Link>
         </div>
 
-        {giftCards === null || giftCards.length === 0 ? (
-          <div className="rounded-2xl bg-white p-6 text-center shadow-[0_4px_15px_rgba(78,0,48,0.06)]">
-            <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#FFF5EE]">
-              <Gift className="h-5 w-5 text-[#F10897]" strokeWidth={2.5} />
-            </div>
-            <p className="mt-3 font-sans text-sm font-bold text-[#4E0030]">
-              No active gift cards
-            </p>
-            <p className="mt-1 font-sans text-xs text-[#4E0030]/65">
-              Buy a gift card to unlock session bookings. Each booking consumes
-              one session from your card balance.
-            </p>
-            <Link
-              href="/gift-cards"
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#F10897] px-5 py-2.5 font-sans text-xs font-semibold text-white transition-all hover:bg-[#d4007d]"
-            >
-              <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
-              Buy a Gift Card
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {giftCards.map((card) => {
-              // Universal per-card ledger — derived straight from DB values,
-              // no tier-specific logic. Works identically for 1/2/3/N session cards.
-              const remaining = card.sessionsRemaining;
-              const used = card.sessionsUsed;
-              const total = card.cardSessions;
-              // Progress bar 0–100%. Empty cards show 100% used (full bar in pink).
-              const usedPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 100;
-              const sessionWord = remaining === 1 ? "session" : "sessions";
+        {/* Split active vs exhausted. We never DELETE depleted cards —
+            they stay in the DB permanently for booking history + foreign
+            key relationships. The UI shows them in a separate "Past
+            Packages" section below, in a read-only / disabled state. */}
+        {(() => {
+          const activeCards = (giftCards ?? []).filter((c) => !c.isExhausted);
+          const exhaustedCards = (giftCards ?? []).filter((c) => c.isExhausted);
 
-              return (
-                <div
-                  key={card.id}
-                  className="rounded-2xl bg-white p-5 shadow-[0_4px_15px_rgba(78,0,48,0.06)] sm:p-6"
+          if (giftCards === null) {
+            return (
+              <div className="rounded-2xl bg-white p-6 text-center shadow-[0_4px_15px_rgba(78,0,48,0.06)]">
+                <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#F10897]" strokeWidth={2.5} />
+                <p className="mt-2 font-sans text-xs text-[#4E0030]/60">Loading…</p>
+              </div>
+            );
+          }
+
+          if (activeCards.length === 0 && exhaustedCards.length === 0) {
+            return (
+              <div className="rounded-2xl bg-white p-6 text-center shadow-[0_4px_15px_rgba(78,0,48,0.06)]">
+                <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#FFF5EE]">
+                  <Gift className="h-5 w-5 text-[#F10897]" strokeWidth={2.5} />
+                </div>
+                <p className="mt-3 font-sans text-sm font-bold text-[#4E0030]">
+                  No active gift cards
+                </p>
+                <p className="mt-1 font-sans text-xs text-[#4E0030]/65">
+                  Buy a gift card to unlock session bookings. Each booking consumes
+                  one session from your card balance.
+                </p>
+                <Link
+                  href="/gift-cards"
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#F10897] px-5 py-2.5 font-sans text-xs font-semibold text-white transition-all hover:bg-[#d4007d]"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-3 border-b border-maroon/10 pb-4">
-                    <div className="min-w-0">
-                      <p className="font-fraunces text-base font-bold text-[#4E0030]">
-                        {card.cardTitle}
-                      </p>
-                      <p className="mt-0.5 font-sans text-[11px] text-[#4E0030]/60">
-                        Code <span className="font-mono">{card.code}</span>
-                        {card.redeemedAt && (
-                          <> · Redeemed {formatDate(card.redeemedAt)}</>
-                        )}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-sans text-[10px] font-bold uppercase tracking-wide text-[#4E0030]/60">
-                        Credit
-                      </p>
-                      <p className="font-fraunces text-lg font-bold text-[#F10897]">
-                        {formatPrice(card.creditAmount)}
-                      </p>
-                    </div>
-                  </div>
+                  <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  Buy a Gift Card
+                </Link>
+              </div>
+            );
+          }
 
-                  {/* 3-column ledger — same UI as the booking summary on
-                      /book-session. Universal across all tiers. */}
-                  <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                    <div className="rounded-xl bg-[#FFF5EE] p-3">
-                      <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-[#4E0030]/60">
-                        Total Sessions
-                      </p>
-                      <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-[#4E0030]">
-                        {total}
-                      </p>
-                    </div>
-                    <div className="rounded-xl bg-[#E8B6D5]/15 p-3">
-                      <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-[#7a1f5a]">
-                        Used
-                      </p>
-                      <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-[#7a1f5a]">
-                        {used}
-                      </p>
-                    </div>
-                    <div className="rounded-xl bg-[#B5E1C3]/30 p-3">
-                      <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-[#2d6e4f]">
-                        Remaining
-                      </p>
-                      <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-[#2d6e4f]">
-                        {remaining}
-                      </p>
-                    </div>
-                  </div>
+          return (
+            <>
+              {/* Active cards — render even if exhaustedCards is non-empty */}
+              {activeCards.length > 0 && (
+                <div className="space-y-3">
+                  {activeCards.map((card) => {
+                    const remaining = card.sessionsRemaining;
+                    const used = card.sessionsUsed;
+                    const total = card.cardSessions;
+                    const usedPct = total > 0 ? Math.min(100, Math.round((used / total) * 100)) : 100;
+                    const sessionWord = remaining === 1 ? "session" : "sessions";
 
-                  {/* Progress bar — visual indicator of session consumption.
-                      0% used (fresh card) → 100% used (empty card). */}
-                  <div className="mt-3">
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#FFF5EE]">
+                    return (
                       <div
-                        className="h-full rounded-full bg-[#F10897] transition-all duration-500"
-                        style={{ width: `${usedPct}%` }}
-                      />
-                    </div>
-                    <p className="mt-1.5 text-right font-sans text-[10px] text-[#4E0030]/55">
-                      {usedPct}% used
-                    </p>
-                  </div>
+                        key={card.id}
+                        className="rounded-2xl bg-white p-5 shadow-[0_4px_15px_rgba(78,0,48,0.06)] sm:p-6"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-maroon/10 pb-4">
+                          <div className="min-w-0">
+                            <p className="font-fraunces text-base font-bold text-[#4E0030]">
+                              {card.cardTitle}
+                            </p>
+                            <p className="mt-0.5 font-sans text-[11px] text-[#4E0030]/60">
+                              Code <span className="font-mono">{card.code}</span>
+                              {card.redeemedAt && (
+                                <> · Redeemed {formatDate(card.redeemedAt)}</>
+                              )}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-sans text-[10px] font-bold uppercase tracking-wide text-[#4E0030]/60">
+                              Credit
+                            </p>
+                            <p className="font-fraunces text-lg font-bold text-[#F10897]">
+                              {formatPrice(card.creditAmount)}
+                            </p>
+                          </div>
+                        </div>
 
-                  {/* CTA: Book the next session from this card, or buy more
-                      if the card is empty. */}
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    {remaining > 0 ? (
-                      <Link
-                        href="/book-session"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-[#F10897] px-4 py-2 font-sans text-xs font-semibold text-white transition-all hover:bg-[#d4007d]"
-                      >
-                        <Calendar className="h-3.5 w-3.5" strokeWidth={2.5} />
-                        Book Next Session
-                        <span className="ml-1 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px]">
-                          {remaining} {sessionWord} left
-                        </span>
-                      </Link>
-                    ) : (
-                      <Link
-                        href="/gift-cards"
-                        className="inline-flex items-center gap-1.5 rounded-full bg-white border-2 border-[#F10897] px-4 py-2 font-sans text-xs font-semibold text-[#F10897] transition-all hover:bg-[#E8B6D5]/15"
-                      >
-                        <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
-                        Buy Another Gift Card
-                      </Link>
-                    )}
+                        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                          <div className="rounded-xl bg-[#FFF5EE] p-3">
+                            <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-[#4E0030]/60">
+                              Total Sessions
+                            </p>
+                            <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-[#4E0030]">
+                              {total}
+                            </p>
+                          </div>
+                          <div className="rounded-xl bg-[#E8B6D5]/15 p-3">
+                            <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-[#7a1f5a]">
+                              Used
+                            </p>
+                            <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-[#7a1f5a]">
+                              {used}
+                            </p>
+                          </div>
+                          <div className="rounded-xl bg-[#B5E1C3]/30 p-3">
+                            <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-[#2d6e4f]">
+                              Remaining
+                            </p>
+                            <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-[#2d6e4f]">
+                              {remaining}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3">
+                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#FFF5EE]">
+                            <div
+                              className="h-full rounded-full bg-[#F10897] transition-all duration-500"
+                              style={{ width: `${usedPct}%` }}
+                            />
+                          </div>
+                          <p className="mt-1.5 text-right font-sans text-[10px] text-[#4E0030]/55">
+                            {usedPct}% used
+                          </p>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                          <Link
+                            href="/book-session"
+                            className="inline-flex items-center gap-1.5 rounded-full bg-[#F10897] px-4 py-2 font-sans text-xs font-semibold text-white transition-all hover:bg-[#d4007d]"
+                          >
+                            <Calendar className="h-3.5 w-3.5" strokeWidth={2.5} />
+                            Book Next Session
+                            <span className="ml-1 rounded-full bg-white/20 px-1.5 py-0.5 text-[10px]">
+                              {remaining} {sessionWord} left
+                            </span>
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Past Packages — fully redeemed cards. Read-only.
+                  These records are NEVER deleted from the DB. We render
+                  them in a muted, disabled state so the user can see their
+                  full gift card history and the bookings linked to each
+                  card remain navigable via the Bookings list below. */}
+              {exhaustedCards.length > 0 && (
+                <div className="mt-6">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Package className="h-4 w-4 text-[#4E0030]/50" strokeWidth={2.5} />
+                    <h4 className="font-fraunces text-sm font-bold uppercase tracking-[0.14em] text-[#4E0030]/60">
+                      Past Packages · Fully Redeemed
+                    </h4>
+                    <span className="rounded-full bg-[#4E0030]/5 px-2 py-0.5 font-sans text-[10px] font-bold text-[#4E0030]/55">
+                      {exhaustedCards.length}
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    {exhaustedCards.map((card) => {
+                      const used = card.sessionsUsed;
+                      const total = card.cardSessions;
+                      // For exhausted cards the progress is always 100%.
+                      const usedPct = 100;
+
+                      return (
+                        <div
+                          key={card.id}
+                          className="rounded-2xl bg-[#FFF5EE]/60 p-5 shadow-[0_2px_8px_rgba(78,0,48,0.04)] ring-1 ring-maroon/5 sm:p-6"
+                          aria-label="Fully redeemed gift card — kept for history"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3 border-b border-maroon/10 pb-4">
+                            <div className="min-w-0">
+                              <p className="font-fraunces text-base font-bold text-[#4E0030]/70">
+                                {card.cardTitle}
+                              </p>
+                              <p className="mt-0.5 font-sans text-[11px] text-[#4E0030]/50">
+                                Code <span className="font-mono">{card.code}</span>
+                                {card.redeemedAt && (
+                                  <> · Redeemed {formatDate(card.redeemedAt)}</>
+                                )}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span
+                                className="inline-flex items-center gap-1.5 rounded-full bg-[#4E0030]/10 px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-[#4E0030]/65"
+                                title="All sessions on this gift card have been used"
+                              >
+                                <CheckCircle2 className="h-3 w-3" strokeWidth={2.5} />
+                                Fully Redeemed
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* 3-column ledger — Same shape as active cards,
+                              but in muted colors. Badge shows "Used: N | Available: 0". */}
+                          <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                            <div className="rounded-xl bg-white/60 p-3">
+                              <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-[#4E0030]/50">
+                                Total Sessions
+                              </p>
+                              <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-[#4E0030]/70">
+                                {total}
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-[#E8B6D5]/10 p-3">
+                              <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-[#7a1f5a]/80">
+                                Used
+                              </p>
+                              <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-[#7a1f5a]">
+                                {used}
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-white/60 p-3">
+                              <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-[#4E0030]/50">
+                                Available
+                              </p>
+                              <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-[#4E0030]/50">
+                                0
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Progress bar — full bar, muted color */}
+                          <div className="mt-3">
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/60">
+                              <div
+                                className="h-full rounded-full bg-[#4E0030]/40"
+                                style={{ width: `${usedPct}%` }}
+                              />
+                            </div>
+                            <p className="mt-1.5 text-right font-sans text-[10px] text-[#4E0030]/45">
+                              {usedPct}% used
+                            </p>
+                          </div>
+
+                          {/* CTA: disabled "Fully Redeemed" button + a
+                              subtle "Buy Another" link. */}
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              disabled
+                              aria-disabled="true"
+                              title="All sessions on this gift card have been used"
+                              className="inline-flex items-center gap-1.5 rounded-full bg-[#4E0030]/10 px-4 py-2 font-sans text-xs font-semibold text-[#4E0030]/50 cursor-not-allowed"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                              Fully Redeemed
+                            </button>
+                            <Link
+                              href="/gift-cards"
+                              className="inline-flex items-center gap-1.5 rounded-full bg-white border-2 border-[#F10897]/40 px-4 py-2 font-sans text-xs font-semibold text-[#F10897]/80 transition-all hover:bg-[#E8B6D5]/15 hover:border-[#F10897]"
+                            >
+                              <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
+                              Buy Another Gift Card
+                            </Link>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
+            </>
+          );
+        })()}
       </div>
 
       {/* ============ BOOKINGS LIST ============ */}
