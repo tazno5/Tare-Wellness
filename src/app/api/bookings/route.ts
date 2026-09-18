@@ -330,10 +330,48 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(booking, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Booking creation error:", error);
+
+    // Prisma P2002 = unique constraint violation. The most common cause on
+    // production is the Booking.redemptionId unique index — if the migration
+    // `20260918160000_drop_booking_redemption_unique` hasn't run on the prod
+    // DB yet (e.g. missing `prisma migrate deploy` in the build pipeline),
+    // the second booking on a multi-session card will fail here with a P2002
+    // on (redemptionId). Surface a clear, actionable error so the user knows
+    // it's not their fault and the dev team can investigate.
+    if (error?.code === "P2002") {
+      const target = error.meta?.target as string[] | undefined;
+      const fields = target?.join(", ") ?? "unknown field";
+      return NextResponse.json(
+        {
+          error:
+            fields.includes("redemptionId")
+              ? "This gift card already has a booking linked to it. The database schema needs to be updated to allow multiple bookings per gift card — please contact support or run the latest Prisma migration."
+              : `Duplicate value on field(s): ${fields}. Please try again.`,
+          code: "P2002",
+        },
+        { status: 409 },
+      );
+    }
+
+    // Prisma P2003 = foreign key constraint violation. Rare, but happens if
+    // the redemption record was deleted between validation and booking.create.
+    if (error?.code === "P2003") {
+      return NextResponse.json(
+        { error: "Gift card record not found. Please refresh the page and try again." },
+        { status: 404 },
+      );
+    }
+
     return NextResponse.json(
-      { error: "Failed to create booking" },
+      {
+        error: "Failed to create booking",
+        details:
+          process.env.NODE_ENV !== "production"
+            ? error?.message
+            : undefined,
+      },
       { status: 500 },
     );
   }
