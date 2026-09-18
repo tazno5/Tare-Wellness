@@ -77,6 +77,52 @@ export async function PATCH(
         data: { confirmed: true },
       });
 
+      // CRITICAL: Grant sessions on every redemption in this order.
+      // The redemption was created with sessionsRemaining=0 (see
+      // /api/orders). It only gets sessions granted when:
+      //   - self-purchase + verified card payment → granted at order time
+      //   - everything else → granted HERE, when admin confirms payment
+      // Without this step, the recipient cannot book any sessions even
+      // though they paid for them. The grant is universal — works for
+      // 1-session, 2-session, 3-session, or any future tier — because
+      // sessionsRemaining is set from card.sessions (the gift card type's
+      // total), not a hardcoded value.
+      const orderWithItems = await db.order.findUnique({
+        where: { id },
+        include: {
+          orderItems: {
+            include: { redemption: true },
+          },
+        },
+      });
+
+      if (orderWithItems) {
+        for (const item of orderWithItems.orderItems) {
+          if (!item.redemption) continue;
+
+          // Auto-attach to buyer for self-gifts (buyerEmail === recipientEmail).
+          // For gifts to other people, leave userId null — the recipient
+          // will redeem the code on /redeem, which attaches it to their account.
+          const isSelfGift =
+            item.recipientEmail.trim().toLowerCase() ===
+            orderWithItems.buyerEmail.trim().toLowerCase();
+
+          await db.redemption.update({
+            where: { id: item.redemption.id },
+            data: {
+              sessionsRemaining: item.cardSessions,
+              ...(isSelfGift
+                ? {
+                    userId: orderWithItems.userId,
+                    status: "redeemed",
+                    redeemedAt: new Date(),
+                  }
+                : {}),
+            },
+          });
+        }
+      }
+
       // Re-fetch the order with order items for the email send
       const completedOrder = await db.order.findUnique({
         where: { id },
@@ -103,12 +149,33 @@ export async function PATCH(
       }
     }
 
-    // If marking as failed/refunded, un-confirm the order items
+    // If marking as failed/refunded, un-confirm the order items AND claw back
+    // any un-used sessions from the redemption so the holder can't keep
+    // booking on a refunded gift card. We only claw back the unused balance
+    // (sessionsRemaining); sessions already consumed (sessionsUsed) stay
+    // consumed — those bookings happened in good faith.
     if (status === "failed" || status === "refunded") {
       await db.orderItem.updateMany({
         where: { orderId: id },
         data: { confirmed: false },
       });
+
+      const refundOrder = await db.order.findUnique({
+        where: { id },
+        include: { orderItems: { include: { redemption: true } } },
+      });
+      if (refundOrder) {
+        for (const item of refundOrder.orderItems) {
+          if (!item.redemption) continue;
+          await db.redemption.update({
+            where: { id: item.redemption.id },
+            data: {
+              sessionsRemaining: 0,
+              status: "cancelled",
+            },
+          });
+        }
+      }
     }
 
     return NextResponse.json({

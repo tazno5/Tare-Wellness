@@ -14,7 +14,10 @@ const createBookingSchema = z.object({
   scheduledDate: z.string().min(1).max(100),
   scheduledTime: z.string().min(1).max(20),
   therapistName: z.string().max(200).optional().default("Dr. Sarah Thompson"),
-  redemptionCode: z.string().max(20).optional(),
+  // Client requirement: every booking MUST be backed by a valid gift card.
+  // Direct session purchase is intentionally disabled — users must buy a
+  // gift card first (see /gift-cards) and redeem it before booking.
+  redemptionCode: z.string().min(1).max(20),
 });
 
 // #3: Server-side session price lookup — never trust client-provided prices
@@ -166,10 +169,23 @@ export async function POST(req: Request) {
       // Fall back to default — don't fail the booking
     }
 
-    // CRITICAL #3: If redemption code provided, verify it belongs to the user,
-    // has remaining sessions, and decrement sessionsRemaining atomically.
+    // CRITICAL: Every booking MUST be backed by a valid gift card belonging
+    // to the current user, with at least one session remaining. Zod already
+    // rejected empty/missing codes (redemptionCode is required); here we
+    // verify the code belongs to the user and decrement sessionsRemaining
+    // atomically (conditional updateMany prevents race conditions).
+    //
+    // The decrement math is UNIVERSAL across all gift card tiers — works
+    // identically for 1-session, 2-session, 3-session, or any future tier:
+    //   sessionsRemaining starts at card.sessions (set when admin confirms payment)
+    //   each booking decrements sessionsRemaining by 1, increments sessionsUsed by 1
+    //   bookings are rejected once sessionsRemaining reaches 0
     let redemptionId: string | null = null;
-    if (redemptionCode) {
+    let updatedSessionsRemaining = 0; // for the confirmation email
+    let updatedSessionsUsed = 0;     // for the confirmation email
+    let cardTitleForEmail = "Gift Card";
+    let cardSessionsForEmail = 0;     // total sessions on the card
+    {
       // Normalize the code: uppercase + strip non-alphanumeric + try dashed format
       const normalizedCode = redemptionCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
       const dashedCode = normalizedCode.replace(/(.{4})(?=.)/g, "$1-");
@@ -186,20 +202,38 @@ export async function POST(req: Request) {
 
       if (!redemption) {
         return NextResponse.json(
-          { error: "Invalid redemption code" },
+          { error: "Invalid redemption code — no gift card found with that code." },
           { status: 400 },
+        );
+      }
+
+      // The redemption has no user attached yet — happens when:
+      //   1. The gift card was bought for someone else (recipient must
+      //      redeem the code on /redeem to attach it to their account)
+      //   2. The buyer paid by bank transfer and admin hasn't confirmed
+      //      payment yet (sessionsRemaining=0, status="active")
+      if (!redemption.userId) {
+        return NextResponse.json(
+          {
+            error:
+              redemption.sessionsRemaining > 0
+                ? "This gift card has not been redeemed yet. Visit /redeem to add it to your account."
+                : "This gift card is not yet active. If you paid by bank transfer, your sessions unlock once payment is confirmed.",
+          },
+          { status: 403 },
         );
       }
 
       // Verify the redemption belongs to the current user
       if (redemption.userId !== userId) {
         return NextResponse.json(
-          { error: "This gift card does not belong to your account" },
+          { error: "This gift card does not belong to your account." },
           { status: 403 },
         );
       }
 
-      // Verify there are remaining sessions
+      // Verify there are remaining sessions (universal check — applies to
+      // every tier: 1-session, 2-session, 3-session, etc.)
       if (redemption.sessionsRemaining <= 0) {
         return NextResponse.json(
           {
@@ -210,6 +244,8 @@ export async function POST(req: Request) {
       }
 
       // Atomically decrement sessionsRemaining and increment sessionsUsed.
+      // This is the universal ledger math: 1 booking = 1 session consumed,
+      // regardless of card tier.
       const decremented = await db.redemption.updateMany({
         where: {
           id: redemption.id,
@@ -229,6 +265,11 @@ export async function POST(req: Request) {
       }
 
       redemptionId = redemption.id;
+      // Compute post-booking balance for the confirmation email
+      updatedSessionsRemaining = redemption.sessionsRemaining - 1;
+      updatedSessionsUsed = redemption.sessionsUsed + 1;
+      cardTitleForEmail = redemption.orderItem?.cardTitle || "Gift Card";
+      cardSessionsForEmail = redemption.orderItem?.cardSessions || 0;
     }
 
     // Create the booking — using server-side price (#3)
@@ -250,6 +291,28 @@ export async function POST(req: Request) {
       include: {
         redemption: true,
       },
+    });
+
+    // ============ BOOKING CONFIRMATION EMAIL ============
+    // Fire-and-forget: dispatch a transactional email to the user with
+    // booking details, reference code, and updated session balance.
+    // Best-effort — never blocks the booking response. The email endpoint
+    // handles its own Brevo API + dev-mode console.log fallback.
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    fetch(`${baseUrl}/api/email/booking-confirmation`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bookingId: booking.id,
+        // Pass the computed post-booking values so the email endpoint
+        // doesn't have to re-fetch the redemption (cheaper + race-free).
+        sessionsRemainingAfter: updatedSessionsRemaining,
+        sessionsUsedAfter: updatedSessionsUsed,
+        cardTitle: cardTitleForEmail,
+        cardSessionsTotal: cardSessionsForEmail,
+      }),
+    }).catch(() => {
+      // Swallow — best-effort, don't fail the booking
     });
 
     return NextResponse.json(booking, { status: 201 });

@@ -233,15 +233,36 @@ export async function POST(req: Request) {
           },
         });
 
+        // AUTO-REDEEM for self-purchases: if the recipient email matches the
+        // buyer email, immediately attach the redemption to the buyer's
+        // account with sessionsRemaining = card.sessions. This eliminates
+        // the need to manually visit /redeem and enter the code just to
+        // unlock sessions you already paid for. The buyer can go straight
+        // to /book-session.
+        //
+        // For gifts to OTHER people, leave the redemption as "active" with
+        // sessionsRemaining=0 — the recipient will redeem the code on
+        // /redeem, which sets sessionsRemaining and userId.
+        const isSelfGift =
+          r.recipientEmail.trim().toLowerCase() ===
+          buyerEmail.trim().toLowerCase();
+
         await tx.redemption.create({
           data: {
             code: generateRedemptionCode(),
             orderItemId: orderItem.id,
             orderId: newOrder.id,
             creditAmount: card.price,
-            sessionsRemaining: 0,
+            sessionsRemaining: isSelfGift ? card.sessions : 0,
             sessionsUsed: 0,
-            status: "active",
+            status: isSelfGift ? "redeemed" : "active",
+            // Only attach to buyer for self-gifts, and only when the order
+            // itself is paid (verified card payment). For pending bank
+            // transfers, sessions are granted when admin confirms payment
+            // (see /api/admin/orders/[id] PATCH).
+            ...(isSelfGift && isVerifiedCardPayment
+              ? { userId, redeemedAt: new Date() }
+              : {}),
           },
         });
       }

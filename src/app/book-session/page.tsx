@@ -165,38 +165,70 @@ function BookSessionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { booking, setBooking, redemption, setRedemption, user } = useStore();
+  const { booking, setBooking, user } = useStore();
 
-  // Auto-apply gift card if ?code= is in the URL (from the "Book Next Session"
-  // button on the /account page). Redeem it automatically + set the redemption
-  // state so the booking summary shows the session ledger.
+  // ============ GIFT CARDS — server-side source of truth ============
+  // Client requirement: users can ONLY book sessions against a gift card.
+  // Direct session purchase is disabled. We fetch the user's gift cards
+  // (with sessionsRemaining > 0) from /api/redemptions and let the user
+  // pick which one to book against. If they have no gift cards, we gate
+  // the entire booking flow and show a CTA to buy or redeem one.
+  //
+  // The math is UNIVERSAL across all gift card tiers — the same UI + API
+  // logic works for 1-session, 2-session, 3-session, or any future tier:
+  //   sessionsRemaining comes straight from the DB (set when admin confirms payment)
+  //   each booking decrements sessionsRemaining by 1 (handled in /api/bookings)
+  //   the Session Ledger below shows Available / This Booking / Remaining dynamically.
+  type GiftCard = {
+    id: string;
+    code: string;
+    cardTitle: string;
+    cardSessions: number;
+    creditAmount: number;
+    sessionsRemaining: number;
+    sessionsUsed: number;
+  };
+  const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
+  const [giftCardsLoading, setGiftCardsLoading] = useState(true);
+  const [selectedGiftCardId, setSelectedGiftCardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    setGiftCardsLoading(true);
+    fetch("/api/redemptions")
+      .then((r) => (r.ok ? r.json() : { cards: [] }))
+      .then((data) => {
+        const cards: GiftCard[] = data.cards ?? [];
+        setGiftCards(cards);
+        // Auto-select the first available card so the user doesn't have to
+        setSelectedGiftCardId((prev) => prev ?? cards[0]?.id ?? null);
+      })
+      .catch(() => setGiftCards([]))
+      .finally(() => setGiftCardsLoading(false));
+  }, [user]);
+
+  const selectedGiftCard = giftCards.find((g) => g.id === selectedGiftCardId) ?? null;
+
+  // Auto-select gift card from ?code= URL param (from the "Book Next Session"
+  // button on /account). If the user clicks that button with a specific card,
+  // we land here with ?code=XXXX-XXXX-XXXX-XXXX and auto-select the matching
+  // card from the fetched list. We DON'T call /api/redeem because the card is
+  // already attached to the user's account (it came from /api/redemptions).
   useEffect(() => {
     const codeParam = searchParams.get("code");
-    if (codeParam && !redemption.redeemed) {
-      const rawCode = codeParam.replace(/-/g, "").toUpperCase();
-      // Call the redeem API to validate + link to the user
-      fetch("/api/redeem", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: rawCode }),
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.valid) {
-            setRedemption({
-              code: data.code,
-              creditBalance: data.creditAmount,
-              redeemed: true,
-            });
-            toast({
-              title: "Gift card applied!",
-              description: `₦${data.creditAmount.toLocaleString()} credit — ${data.cardSessions} session(s).`,
-            });
-          }
-        })
-        .catch(() => {});
+    if (!codeParam || giftCards.length === 0) return;
+    const normalized = codeParam.replace(/-/g, "").toUpperCase();
+    const match = giftCards.find(
+      (c) => c.code.replace(/-/g, "").toUpperCase() === normalized,
+    );
+    if (match) {
+      setSelectedGiftCardId(match.id);
+      toast({
+        title: "Gift card selected",
+        description: `${match.cardTitle} · ${match.sessionsRemaining} session${match.sessionsRemaining === 1 ? "" : "s"} remaining.`,
+      });
     }
-  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [searchParams, giftCards]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [viewMonth, setViewMonth] = useState(() => {
     const now = new Date();
@@ -332,18 +364,47 @@ function BookSessionPage() {
   const formattedTime = selectedTime || "Select a time";
 
   const session = SESSION_TYPES.find((s) => s.id === sessionType)!;
-  const giftCardApplied = redemption.redeemed ? redemption.creditBalance : 0;
-  const total = Math.max(0, session.price - giftCardApplied);
+  // Use the SERVER-FETCHED gift card as the source of truth for credit + sessions.
+  // The Zustand store's `redemption` was removed (the store only tracked a single
+  // redemption and was unreliable). /api/redemptions now provides the authoritative list.
+  // Each booking consumes 1 session from the gift card — the Total displayed
+  // is 0 if the user has a gift card with sessions remaining (the gift card covers it).
+  const giftCardSessionsRemaining = selectedGiftCard ? selectedGiftCard.sessionsRemaining : 0;
+  const total = giftCardSessionsRemaining > 0 ? 0 : session.price;
 
   const [confirming, setConfirming] = useState(false);
 
-  // Require a gift card to book — the client wants users to only book
-  // sessions using gift card credit, never pay out of pocket.
-  const canConfirm = !!selectedDate && !!selectedTime && redemption.redeemed;
+  // A booking requires: a date, a time, AND a gift card with at least
+  // 1 session remaining. No gift card → no booking (client requirement).
+  // This gate is universal — works for all gift card tiers because we only
+  // require `sessionsRemaining > 0`, not a specific tier threshold.
+  const canConfirm =
+    !!selectedDate &&
+    !!selectedTime &&
+    !!selectedGiftCard &&
+    selectedGiftCard.sessionsRemaining > 0;
 
   const handleConfirmClick = async (e: React.MouseEvent) => {
     e.preventDefault();
+    // Defensive guard — should never fire because the button is disabled,
+    // but if a user manages to click while ineligible we give a clear message.
     if (!canConfirm) {
+      if (!selectedGiftCard) {
+        toast({
+          title: "Gift card required",
+          description: "You need a gift card to book a session. Buy one or redeem a code first.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (selectedGiftCard.sessionsRemaining <= 0) {
+        toast({
+          title: "No sessions remaining",
+          description: "This gift card has no sessions left. Buy another one to continue.",
+          variant: "destructive",
+        });
+        return;
+      }
       toast({
         title: "Almost there",
         description: "Pick a date and time before confirming.",
@@ -377,7 +438,10 @@ function BookSessionPage() {
           scheduledDate: selectedDate.toISOString(),
           scheduledTime: selectedTime,
           therapistName: "Your Provider",
-          redemptionCode: redemption.redeemed ? redemption.code : undefined,
+          // Send the SERVER-VALIDATED gift card code (not the store's),
+          // so the booking API can verify it belongs to the user and
+          // decrement sessionsRemaining atomically.
+          redemptionCode: selectedGiftCard?.code,
         }),
       });
 
@@ -456,6 +520,50 @@ function BookSessionPage() {
       ) : (
       <>
 
+      {/* ============ GIFT-CARD GATE ============ */}
+      {/* Client requirement: bookings must be backed by a gift card. If the
+          user has no gift cards with sessionsRemaining > 0, gate the entire
+          booking flow and offer to buy or redeem a code. This gate is
+          universal — works regardless of how many sessions the user's card
+          has (1, 2, 3, or any future tier), because we just need at least
+          one session available to allow booking. */}
+      {!giftCardsLoading && giftCards.length === 0 ? (
+        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-16 text-center sm:py-20">
+          <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(78,0,48,0.10)]">
+            <Gift className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />
+          </div>
+          <h2 className="mt-4 font-fraunces text-2xl font-bold text-[#4E0030]">
+            You need a gift card to book a session
+          </h2>
+          <p className="mt-3 max-w-md font-sans text-sm leading-relaxed text-[#4E0030]/75">
+            Sessions are booked with gift card credit. Buy a gift card for
+            yourself (or someone you love) and the sessions unlock automatically
+            once payment is confirmed.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/gift-cards"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78,0,48,0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
+            >
+              <Gift className="h-4 w-4" strokeWidth={2.5} />
+              Buy a Gift Card
+            </Link>
+            <Link
+              href="/redeem"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white border-2 border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78,0,48,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95"
+            >
+              <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+              Redeem a Code
+            </Link>
+          </div>
+          <p className="mt-5 max-w-sm font-sans text-[12px] text-[#4E0030]/55">
+            Already bought one? If you paid by bank transfer, your sessions
+            unlock the moment your payment is confirmed.
+          </p>
+        </section>
+      ) : (
+      <>
+
       {/* ============ HERO ============ */}
       <section className="relative w-full overflow-hidden px-5 pb-6 pt-6 sm:px-8 sm:pb-10 lg:px-12">
         <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center text-center">
@@ -519,6 +627,97 @@ function BookSessionPage() {
             animate="show"
             className="flex flex-col gap-6"
           >
+            {/* ============ GIFT CARD SELECTOR ============ */}
+            {/* Client requirement: every booking is backed by a gift card.
+                The user picks which of their gift cards to book against.
+                The selector is universal — it works for 1-session, 2-session,
+                3-session, or any future tier, because the card data comes
+                straight from the DB (sessionsRemaining, sessionsUsed, etc.). */}
+            <motion.article
+              variants={itemUp}
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
+                  Your Gift Card
+                </h2>
+                {selectedGiftCard && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-blush px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.12em] text-[#F10897]">
+                    <Check className="h-3 w-3" strokeWidth={2.5} />
+                    {selectedGiftCard.sessionsRemaining} session{selectedGiftCard.sessionsRemaining === 1 ? "" : "s"} left
+                  </span>
+                )}
+              </div>
+
+              {giftCardsLoading ? (
+                <div className="mt-4 flex items-center gap-2 text-maroon/60">
+                  <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
+                  <span className="font-sans text-sm">Loading your gift cards…</span>
+                </div>
+              ) : giftCards.length === 0 ? (
+                <div className="mt-4 rounded-2xl border border-dashed border-maroon/15 bg-blush/30 p-4 text-center">
+                  <p className="font-sans text-sm text-maroon/80">
+                    No active gift card found.
+                  </p>
+                  <Link
+                    href="/gift-cards"
+                    className="mt-2 inline-flex items-center gap-1.5 font-sans text-sm font-bold text-[#F10897] hover:underline"
+                  >
+                    Buy a gift card
+                    <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  </Link>
+                </div>
+              ) : (
+                <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  {giftCards.map((card) => {
+                    const active = selectedGiftCardId === card.id;
+                    return (
+                      <button
+                        key={card.id}
+                        type="button"
+                        onClick={() => setSelectedGiftCardId(card.id)}
+                        aria-pressed={active}
+                        className={`group flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all duration-200 ${
+                          active
+                            ? "border-[#F10897] bg-blush/40 shadow-[0_8px_24px_rgba(241,8,151,0.15)]"
+                            : "border-maroon/10 bg-white hover:border-maroon/25"
+                        }`}
+                      >
+                        <div
+                          className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                            active ? "bg-[#F10897] text-white" : "bg-blush text-[#F10897]"
+                          }`}
+                        >
+                          <Gift className="h-4 w-4" strokeWidth={2.5} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="font-fraunces text-sm font-bold text-maroon">
+                              {card.cardTitle}
+                            </h3>
+                            {active && (
+                              <Check className="h-4 w-4 text-[#F10897]" strokeWidth={2.5} />
+                            )}
+                          </div>
+                          <p className="mt-0.5 font-sans text-[11px] text-maroon/65">
+                            Code: <span className="font-mono">{card.code}</span>
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            <span className="inline-flex items-center rounded-full bg-blush px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-[#F10897]">
+                              {card.sessionsRemaining} left
+                            </span>
+                            <span className="inline-flex items-center rounded-full bg-[#4E0030]/10 px-2 py-0.5 font-sans text-[9px] font-bold uppercase tracking-[0.12em] text-maroon">
+                              {card.sessionsUsed} used
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </motion.article>
+
             {/* Session type */}
             <motion.article
               variants={itemUp}
@@ -791,53 +990,86 @@ function BookSessionPage() {
               </div>
 
               <div className="mt-4 space-y-2 border-t border-white/15 pt-4 font-sans text-sm">
-                {giftCardApplied > 0 ? (
-                  <>
-                    {/* Session-based ledger when a gift card is applied */}
-                    <div className="flex items-center justify-between">
-                      <span className="inline-flex items-center gap-1 text-blush/80">
-                        <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
-                        Sessions Available
-                      </span>
-                      <span className="font-bold tabular-nums text-white">
-                        {redemption.creditBalance > 0 ? Math.round(redemption.creditBalance / (session.price || 1)) : 0}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-blush/80">This Booking</span>
-                      <span className="font-bold tabular-nums text-[#F10897]">
-                        -1
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-blush/80">Remaining After</span>
-                      <span className="font-bold tabular-nums text-white">
-                        {Math.max(0, (redemption.creditBalance > 0 ? Math.round(redemption.creditBalance / (session.price || 1)) : 0) - 1)}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span className="text-blush/80">Session Price</span>
-                      <span className="font-bold tabular-nums text-white">
-                        ₦{session.price.toLocaleString()}
-                      </span>
-                    </div>
-                  </>
-                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-blush/80">Session Price</span>
+                  <span className="font-bold tabular-nums text-white">
+                    ₦{session.price.toLocaleString()}
+                  </span>
+                </div>
+                {selectedGiftCard ? (
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1 text-blush/80">
+                      <Gift className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      {selectedGiftCard.cardTitle}
+                    </span>
+                    <span className="font-bold tabular-nums text-[#F10897]">
+                      1 session used
+                    </span>
+                  </div>
+                ) : null}
               </div>
+
+              {/* ============ SESSION LEDGER ============ */}
+              {/* Universal 3-column ledger that works for ALL gift card tiers
+                  (1-session, 2-session, 3-session, or any future tier).
+                  Math is dynamic — never hardcoded to a specific tier:
+                    Available   = selectedGiftCard.sessionsRemaining (current balance)
+                    This Booking = 1 (always 1 session per booking)
+                    Remaining   = Available - This Booking
+                  Examples (verifies universal behavior):
+                    1-session card, first booking:  Available 1 | This 1 | Remaining 0
+                    2-session card, first booking:  Available 2 | This 1 | Remaining 1
+                    3-session card, first booking:  Available 3 | This 1 | Remaining 2
+                    3-session card, 2nd booking:    Available 2 | This 1 | Remaining 1
+              */}
+              {selectedGiftCard && (
+                <div className="mt-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
+                  <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-blush/70">
+                    Session Ledger
+                  </p>
+                  <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                    <div className="rounded-xl bg-white/10 px-2 py-3">
+                      <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-blush/60">
+                        Available
+                      </p>
+                      <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-white">
+                        {selectedGiftCard.sessionsRemaining}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-[#F10897]/20 px-2 py-3">
+                      <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-[#F10897]">
+                        This Booking
+                      </p>
+                      <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-white">
+                        1
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-white/10 px-2 py-3">
+                      <p className="font-sans text-[9px] font-bold uppercase tracking-[0.1em] text-blush/60">
+                        Remaining
+                      </p>
+                      <p className="mt-1 font-fraunces text-xl font-extrabold tabular-nums text-white">
+                        {Math.max(0, selectedGiftCard.sessionsRemaining - 1)}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-center font-sans text-[10px] text-blush/60">
+                    {selectedGiftCard.cardTitle} · Code{" "}
+                    <span className="font-mono">{selectedGiftCard.code}</span>
+                  </p>
+                </div>
+              )}
 
               <div className="mt-4 flex items-center justify-between border-t border-white/15 pt-4">
                 <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-blush/80">
-                  {giftCardApplied > 0 ? "Sessions Due" : "Total"}
+                  Total
                 </span>
                 <span className="font-fraunces text-2xl font-extrabold text-white">
-                  {giftCardApplied > 0 ? "0" : `₦${total.toLocaleString()}`}
+                  {total === 0 ? "Covered by gift card" : `₦${total.toLocaleString()}`}
                 </span>
               </div>
 
-              {giftCardApplied > 0 ? (
+              {selectedGiftCard ? (
                 <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white">
                   <Check className="h-3 w-3" strokeWidth={2.5} />
                   Gift card covers full session
@@ -845,7 +1077,7 @@ function BookSessionPage() {
               ) : (
                 <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-white">
                   <Gift className="h-3 w-3" strokeWidth={2.5} />
-                  Redeem a gift card to cover the cost
+                  Select a gift card to continue
                 </p>
               )}
 
@@ -865,10 +1097,8 @@ function BookSessionPage() {
 
               {!canConfirm && !confirming && (
                 <p className="mt-2 text-center font-sans text-[11px] text-blush/80">
-                  {!redemption.redeemed
-                    ? "Redeem a gift card to book a session"
-                    : !selectedDate
-                    ? "Pick a date to confirm"
+                  {!selectedGiftCard
+                    ? "Select a gift card to continue"
                     : "Pick a date and time to confirm"}
                 </p>
               )}
@@ -885,28 +1115,28 @@ function BookSessionPage() {
       <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 text-center">
           <p className="font-sans text-sm text-maroon/70">
-            Need to redeem a code first?
+            Need another gift card or want to redeem a code?
           </p>
-          <Link
-            href="/redeem"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95"
-          >
-            <Gift className="h-4 w-4" strokeWidth={2.5} />
-            Redeem a Gift Card
-          </Link>
-
-          {/* Allow switching to a different gift card when current one is exhausted */}
-          {redemption.redeemed && giftCardApplied > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/gift-cards"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#F10897] px-6 py-3 font-sans text-sm font-semibold text-white shadow-[0_8px_24px_rgba(78,0,48,0.18)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95"
+            >
+              <Gift className="h-4 w-4" strokeWidth={2.5} />
+              Buy a Gift Card
+            </Link>
             <Link
               href="/redeem"
-              className="mt-3 inline-flex items-center justify-center gap-1.5 font-sans text-xs font-semibold text-maroon/50 hover:text-[#F10897] transition-colors"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-6 py-3 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95"
             >
-              <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-              Use a different gift card
+              <Gift className="h-4 w-4" strokeWidth={2.5} />
+              Redeem a Code
             </Link>
-          )}
+          </div>
         </div>
       </section>
+      </>
+      )}
       </>
       )}
     </main>

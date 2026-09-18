@@ -174,7 +174,11 @@ model Redemption {
   orderItem     OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
   order         Order      @relation(fields: [orderId], references: [id])
   user          User?      @relation(fields: [userId], references: [id])
-  booking       Booking?
+  // One redemption can be linked to MANY bookings — a 3-session gift card
+  // produces 3 separate bookings over time. Previously this was `Booking?`
+  // with a @unique constraint on Booking.redemptionId, which incorrectly
+  // limited a redemption to a single booking. The relation is now one-to-many.
+  bookings      Booking[]
 }
 
 // ============ BOOKINGS ============
@@ -183,7 +187,9 @@ model Booking {
   id              String      @id @default(cuid())
   bookingNumber   String      @unique // "BK-2026-XXXXXX"
   userId          String
-  redemptionId    String?     @unique // linked redemption (if paid with gift card)
+  // NOT unique — a multi-session gift card can sponsor multiple bookings.
+  // Removed `@unique` so a 3-session card can produce 3 separate bookings.
+  redemptionId    String?
   sessionType     String      // "individual" | "couples" | "family" | "wellness"
   sessionTitle    String      // "Individual Therapy"
   sessionPrice    Int         // price in kobo/naira

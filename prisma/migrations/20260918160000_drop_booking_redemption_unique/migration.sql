@@ -1,0 +1,12 @@
+-- Drop the unique constraint on Booking.redemptionId
+--
+-- A multi-session gift card (2-session, 3-session, etc.) is meant to
+-- sponsor MULTIPLE bookings over time. Previously, Booking.redemptionId
+-- had a `@unique` constraint, which limited a redemption to a single
+-- booking — so the 2nd booking on any multi-session card failed with a
+-- Prisma P2002 unique-constraint violation. This migration drops that
+-- index so the relation becomes one-to-many.
+--
+-- The schema change is mirrored in prisma/schema.prisma and
+-- prisma/schema.postgres.prisma (Redemption.booking → Redemption.bookings[]).
+DROP INDEX IF EXISTS "Booking_redemptionId_key";
