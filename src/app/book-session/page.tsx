@@ -21,6 +21,7 @@ import {
   ArrowRight,
   CalendarCheck,
   Gift,
+  X,
   HelpCircle,
   Loader2,
 } from "lucide-react";
@@ -887,6 +888,21 @@ function BookSessionPage() {
             <Gift className="h-4 w-4" strokeWidth={2.5} />
             Redeem a Gift Card
           </Link>
+
+          {/* Allow removing an exhausted gift card so the user can book without one */}
+          {redemption.redeemed && giftCardApplied > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setRedemption({ code: "", creditBalance: 0, redeemed: false });
+                toast({ title: "Gift card removed", description: "You can now book at the standard rate." });
+              }}
+              className="mt-3 inline-flex items-center justify-center gap-1.5 font-sans text-xs font-semibold text-maroon/50 hover:text-[#F10897] transition-colors"
+            >
+              <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+              Remove gift card
+            </button>
+          )}
         </div>
       </section>
       </>
