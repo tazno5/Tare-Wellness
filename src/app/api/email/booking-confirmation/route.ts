@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { BrevoClient } from "@getbrevo/brevo";
 import { db } from "@/lib/db";
-import { checkRateLimit } from "@/lib/ratelimit";
 
 // ============ POST /api/email/booking-confirmation ============
 //
@@ -51,14 +50,17 @@ function escapeHtml(str: string | null | undefined): string {
 
 export async function POST(req: Request) {
   try {
-    // Rate limiting: 5 booking-confirmation emails per minute per IP
-    const { success } = await checkRateLimit(req, "email");
-    if (!success) {
-      return NextResponse.json(
-        { error: "Too many email requests. Please wait a moment." },
-        { status: 429 },
-      );
-    }
+    // NOTE: We intentionally do NOT call checkRateLimit() here.
+    //
+    // This endpoint is called server-to-server from /api/bookings after a
+    // booking is created — the IP is the Vercel function's own IP, not the
+    // user's, so rate-limiting on IP is meaningless. Worse, the bookings
+    // route fire-and-forgets this call with `.catch(() => {})`, so if the
+    // rate limit hit (429), the booking confirmation email would silently
+    // disappear and the user would never know.
+    //
+    // The bookings route itself has its own rate limit (5 bookings per
+    // minute per user IP). That's the right place to limit — not here.
 
     const body = await req.json();
     const {

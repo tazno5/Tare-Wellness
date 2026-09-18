@@ -298,7 +298,21 @@ export async function POST(req: Request) {
     // booking details, reference code, and updated session balance.
     // Best-effort — never blocks the booking response. The email endpoint
     // handles its own Brevo API + dev-mode console.log fallback.
-    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    //
+    // URL resolution: prefer NEXTAUTH_URL (set explicitly in Vercel env
+    // vars to the production domain e.g. https://tarewellness.com). If
+    // not set, fall back to VERCEL_URL (auto-set by Vercel on every
+    // deployment, includes the deployment-specific subdomain like
+    // xxx.vercel.app). If neither is set, use localhost (dev only).
+    // Without a real URL, the server-to-server fetch silently fails —
+    // caught by .catch() — and no email is sent.
+    const baseUrl =
+      (process.env.NEXTAUTH_URL && !process.env.NEXTAUTH_URL.startsWith("http://localhost"))
+        ? process.env.NEXTAUTH_URL
+        : process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : "http://localhost:3000";
+
     fetch(`${baseUrl}/api/email/booking-confirmation`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
