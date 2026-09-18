@@ -40,7 +40,34 @@ export const useStore = create<StoreState>()(persist((set, get) => ({
   setRecipients: (recipients) => set({ recipients }),
   updateRecipient: (uid, patch) => set({ recipients: get().recipients.map(r => r.uid === uid ? { ...r, ...patch } : r) }),
   confirmRecipient: (uid) => set({ recipients: get().recipients.map(r => r.uid === uid ? { ...r, confirmed: true } : r) }),
-  deleteRecipient: (uid) => set({ recipients: get().recipients.filter(r => r.uid !== uid) }),
+  deleteRecipient: (uid) => {
+    const recipient = get().recipients.find((r) => r.uid === uid);
+    if (!recipient) return;
+    // Decrement the cart item count for the recipient's cardId. The cart
+    // tracks qty-per-cardId (e.g. {cardId:"two", qty:3}), and the recipients
+    // list has one entry per cart unit. Deleting one recipient must also
+    // decrement the corresponding cart item's qty, OR remove it entirely
+    // if qty hits 0.
+    //
+    // Without this sync, the navbar's shopping bag badge (which reads
+    // totalQty from cart) would show a stale count after a recipient is
+    // deleted on /recipient-details. Worse, /cart-review computes the
+    // total price from the cart, so the user would overpay for gift
+    // cards they deleted.
+    const cart = get()
+      .cart.map((c) =>
+        c.cardId === recipient.cardId
+          ? { ...c, qty: Math.max(0, c.qty - 1) }
+          : c,
+      )
+      .filter((c) => c.qty > 0);
+    const t = computeTotals(cart);
+    set({
+      cart,
+      ...t,
+      recipients: get().recipients.filter((r) => r.uid !== uid),
+    });
+  },
   clearRecipients: () => set({ recipients: [] }),
   setRedemption: (state) => set({ redemption: state }),
   clearRedemption: () => set({ redemption: defaultRedemption }),

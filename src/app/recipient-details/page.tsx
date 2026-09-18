@@ -151,19 +151,50 @@ function RecipientDetailsContent() {
     setActiveIndex(0);
   }, [recipientsKey]);
 
-  // Cart string for forward navigation (preserve across flow)
-  const cartParam = searchParams.get("cart") ?? "";
-  const totalParam = searchParams.get("total") ?? "";
+  // Cart string for forward navigation — rebuilt from the current
+  // recipients list (NOT the original cart URL param from /gift-cards).
+  //
+  // Why we don't use the original cart URL param:
+  //   It reflects the cart state at the time the user left /gift-cards
+  //   (e.g. "one:1,two:3" = 4 items). If the user deletes a recipient
+  //   on this page, the actual cart + recipients list shrinks, but the
+  //   original cart URL param would still say 4 items. Forwarding that
+  //   stale value would cause /cart-review to display 4 items AND
+  //   compute the total for 4 — the user would be charged for gift
+  //   cards they deleted.
+  //
+  // Instead we rebuild the cart string from the current recipients
+  // list (grouped by cardId), keeping the navbar badge, the
+  // /cart-review page, and the actual order all in sync.
   const forwardQuery = useMemo(() => {
     const q = new URLSearchParams();
-    if (cartParam) q.set("cart", cartParam);
-    if (totalParam) q.set("total", totalParam);
+    // Rebuild cart string from the current recipients list.
+    const cardCounts: Record<string, number> = {};
+    for (const r of recipients) {
+      cardCounts[r.cardId] = (cardCounts[r.cardId] ?? 0) + 1;
+    }
+    const rebuiltCart = Object.entries(cardCounts)
+      .map(([cardId, count]) => `${cardId}:${count}`)
+      .join(",");
+    if (rebuiltCart) q.set("cart", rebuiltCart);
+    // Recompute total from the rebuilt cart (so the URL stays consistent
+    // with what /cart-review will actually charge).
+    // We use the per-card price from the store's cart array (which has
+    // the title/price/sessions/gradient metadata).
+    const storeCart = useStore.getState().cart;
+    const cardPriceLookup: Record<string, number> = {};
+    for (const c of storeCart) cardPriceLookup[c.cardId] = c.price;
+    const rebuiltTotal = Object.entries(cardCounts).reduce(
+      (sum, [cardId, count]) => sum + (cardPriceLookup[cardId] ?? 0) * count,
+      0,
+    );
+    if (rebuiltTotal > 0) q.set("total", String(rebuiltTotal));
     const r = recipients
       .map((r) => `${r.uid}:${r.cardId}:${r.name || "_"}:${r.email || "_"}`)
       .join(",");
     if (r) q.set("recipients", r);
     return q.toString();
-  }, [cartParam, totalParam, recipients]);
+  }, [recipients]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const allConfirmed =
     recipients.length > 0 && recipients.every((r) => r.confirmed);
