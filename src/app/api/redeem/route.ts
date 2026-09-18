@@ -82,11 +82,42 @@ export async function POST(req: Request) {
       );
     }
 
+    // IDEMPOTENT SELF-PURCHASE HANDLING:
+    // If this redemption is ALREADY attached to the current user (a self-
+    // purchase that was auto-attached at order time, see /api/orders),
+    // we treat this as a no-op success. We do NOT reset sessionsRemaining
+    // to the full cardSessions value — the user may have already booked
+    // sessions against it, and resetting would erase those bookings'
+    // session-count impact (effectively granting free sessions).
+    //
+    // Returns the same success shape as a normal redemption so the
+    // /redeem page shows a "Gift card applied!" toast. We use the
+    // ACTUAL current sessionsRemaining (which reflects any bookings
+    // already made) instead of resetting to cardSessions.
+    if (redemption.userId === userId && redemption.status === "active") {
+      return NextResponse.json({
+        valid: true,
+        code: redemption.code,
+        creditAmount: redemption.creditAmount,
+        cardTitle: redemption.orderItem.cardTitle,
+        cardSessions: redemption.orderItem.cardSessions,
+        sessionsRemaining: redemption.sessionsRemaining,
+        status: "active",
+        message: `This gift card is already on your account. You have ${redemption.sessionsRemaining} session${redemption.sessionsRemaining === 1 ? "" : "s"} remaining.`,
+      });
+    }
+
     // Apply the credit to the authenticated user's account.
     // CRITICAL #2: Use a conditional updateMany (atomic) to prevent
     // double-redemption race conditions. Only updates if status is
     // still "active" — if another request already redeemed it, the
     // count will be 0 and we return 409.
+    //
+    // For a normal gift card (recipient received the code via email and
+    // is entering it on /redeem for the first time), we set:
+    //   - userId to the current user (claims the card)
+    //   - status to "redeemed" (marks the code as claimed)
+    //   - sessionsRemaining to cardSessions (grants the full balance)
     const result = await db.redemption.updateMany({
       where: { id: redemption.id, status: "active" },
       data: {

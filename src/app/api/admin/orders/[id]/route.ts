@@ -103,6 +103,13 @@ export async function PATCH(
           // Auto-attach to buyer for self-gifts (buyerEmail === recipientEmail).
           // For gifts to other people, leave userId null — the recipient
           // will redeem the code on /redeem, which attaches it to their account.
+          //
+          // Status stays "active" — NOT "redeemed". The "redeemed" status
+          // is reserved for when a user manually enters the code on the
+          // /redeem page. A self-purchase auto-attaches the userId but
+          // the code itself is still "active" (not yet manually redeemed).
+          // The admin UI was showing "redeemed" on fresh self-purchases,
+          // confusing the client into thinking the card had been used up.
           const isSelfGift =
             item.recipientEmail.trim().toLowerCase() ===
             orderWithItems.buyerEmail.trim().toLowerCase();
@@ -114,7 +121,6 @@ export async function PATCH(
               ...(isSelfGift
                 ? {
                     userId: orderWithItems.userId,
-                    status: "redeemed",
                     redeemedAt: new Date(),
                   }
                 : {}),

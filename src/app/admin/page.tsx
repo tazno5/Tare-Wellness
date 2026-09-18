@@ -50,7 +50,12 @@ type AdminOrder = {
     recipientName: string;
     recipientEmail: string;
     emailSent: boolean;
-    redemption: { code: string; status: string } | null;
+    redemption: {
+      code: string;
+      status: string;
+      sessionsRemaining: number;
+      sessionsUsed: number;
+    } | null;
   }[];
 };
 
@@ -458,7 +463,25 @@ export default function AdminPage() {
                             <p className="font-sans text-xs font-bold text-[#4E0030]">{item.cardTitle}</p>
                             <p className="font-sans text-[11px] text-[#4E0030]/60">→ {item.recipientName} ({item.recipientEmail})</p>
                             {item.redemption && (
-                              <p className="mt-1 font-mono text-[10px] font-bold tracking-wider text-[#F10897]">{item.redemption.code} · {item.redemption.status}</p>
+                              <div className="mt-1 space-y-0.5">
+                                <p className="font-mono text-[10px] font-bold tracking-wider text-[#F10897]">{item.redemption.code}</p>
+                                <p className="font-sans text-[10px] text-[#4E0030]/65">
+                                  {/* Map raw status to a clearer label for the admin.
+                                      "active" with sessionsRemaining > 0 = card is live and bookable.
+                                      "active" with sessionsRemaining = 0 = awaiting redemption (gift to other person).
+                                      "redeemed" = user manually entered the code on /redeem.
+                                      "cancelled" = order was refunded / failed. */}
+                                  {item.redemption.status === "active" && item.redemption.sessionsRemaining > 0
+                                    ? <span className="text-[#2d6e4f] font-bold">● Live — {item.redemption.sessionsRemaining} session{item.redemption.sessionsRemaining === 1 ? "" : "s"} available</span>
+                                    : item.redemption.status === "active"
+                                      ? <span className="text-[#cc6600] font-bold">● Awaiting redemption (recipient must enter code)</span>
+                                      : item.redemption.status === "redeemed"
+                                        ? <span className="text-[#7a1f5a] font-bold">● Redeemed — {item.redemption.sessionsUsed} of {(item.redemption.sessionsUsed + item.redemption.sessionsRemaining)} session{((item.redemption.sessionsUsed + item.redemption.sessionsRemaining) === 1) ? "" : "s"} used</span>
+                                        : item.redemption.status === "cancelled"
+                                          ? <span className="text-red-500 font-bold">● Cancelled / refunded</span>
+                                          : <span className="text-[#4E0030]/60 font-bold">● {item.redemption.status}</span>}
+                                </p>
+                              </div>
                             )}
                           </div>
                           <div className="flex items-center gap-2">

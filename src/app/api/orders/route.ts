@@ -233,14 +233,30 @@ export async function POST(req: Request) {
           },
         });
 
-        // AUTO-REDEEM for self-purchases: if the recipient email matches the
+        // AUTO-ATTACH for self-purchases: if the recipient email matches the
         // buyer email, immediately attach the redemption to the buyer's
         // account with sessionsRemaining = card.sessions. This eliminates
         // the need to manually visit /redeem and enter the code just to
         // unlock sessions you already paid for. The buyer can go straight
         // to /book-session.
         //
-        // For gifts to OTHER people, leave the redemption as "active" with
+        // IMPORTANT: status stays "active" — NOT "redeemed". The "redeemed"
+        // status is reserved for when a user manually enters the code on the
+        // /redeem page. For a self-purchase, the card is auto-attached to the
+        // buyer, but the code itself hasn't been "redeemed" (entered) —
+        // it's still "active" until the user explicitly types it in.
+        //
+        // This matters for the admin UI: showing "redeemed" on a fresh
+        // self-purchase card was confusing the client (they thought the
+        // card had been used up). With status="active", the admin UI
+        // correctly shows the card is live + has sessions available.
+        //
+        // /api/redeem is idempotent — if a self-purchase buyer later goes
+        // to /redeem and enters their own code, it will detect the
+        // userId is already attached and return success without
+        // resetting sessionsRemaining (preserving any sessions already booked).
+        //
+        // For gifts to OTHER people, the redemption stays "active" with
         // sessionsRemaining=0 — the recipient will redeem the code on
         // /redeem, which sets sessionsRemaining and userId.
         const isSelfGift =
@@ -255,7 +271,7 @@ export async function POST(req: Request) {
             creditAmount: card.price,
             sessionsRemaining: isSelfGift ? card.sessions : 0,
             sessionsUsed: 0,
-            status: isSelfGift ? "redeemed" : "active",
+            status: "active",
             // Only attach to buyer for self-gifts, and only when the order
             // itself is paid (verified card payment). For pending bank
             // transfers, sessions are granted when admin confirms payment
