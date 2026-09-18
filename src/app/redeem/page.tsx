@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 const OPTIONS = [
   {
@@ -100,9 +101,17 @@ const itemUp = {
 
 export default function RedeemPage() {
   const { toast } = useToast();
-  const { redemption, setRedemption, demoCodes } = useStore();
+  const { redemption, setRedemption, demoCodes, user } = useStore();
+  const router = useRouter();
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Auth gate: redirect unauthenticated users to /login with callbackUrl=/redeem
+  useEffect(() => {
+    if (!user) {
+      router.replace("/login?callbackUrl=/redeem");
+    }
+  }, [user, router]);
 
   // Set gradient — render + useEffect
   useMemo(() => {
@@ -134,6 +143,13 @@ export default function RedeemPage() {
 
   const handleRedeem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Require authentication — if not logged in, redirect to login
+    if (!user) {
+      router.push("/login?callbackUrl=/redeem");
+      return;
+    }
+
     if (!isValid) {
       toast({
         title: "Check your code",
@@ -232,6 +248,28 @@ export default function RedeemPage() {
         className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
       />
 
+      {/* Auth gate fallback — shown briefly while redirecting to /login */}
+      {!user ? (
+        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
+          <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(78,0,48,0.10)]">
+            <Lock className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />
+          </div>
+          <h2 className="mt-4 font-fraunces text-xl font-bold text-maroon sm:text-2xl">
+            Sign in to redeem your gift
+          </h2>
+          <p className="mt-2 max-w-sm font-sans text-sm text-maroon/70">
+            You need to be signed in to redeem a gift card. Redirecting you to the login page...
+          </p>
+          <Link
+            href="/login?callbackUrl=/redeem"
+            className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#F10897] px-6 py-3 font-sans text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#d4007d]"
+          >
+            Go to sign in
+            <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+          </Link>
+        </section>
+      ) : (
+      <>
       {/* ============ HERO + CODE ENTRY ============ */}
       <section className="relative w-full overflow-hidden px-5 pb-10 pt-6 sm:px-8 sm:pb-14 lg:px-12">
         <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center text-center">
@@ -361,7 +399,7 @@ export default function RedeemPage() {
                     ) : (
                       <>
                         <Gift className="h-5 w-5" strokeWidth={2.5} />
-                        Redeem Gift
+                        {user ? "Redeem Gift" : "Sign in to Redeem"}
                       </>
                     )}
                   </motion.button>
@@ -583,6 +621,8 @@ export default function RedeemPage() {
           )}
         </div>
       </section>
+      </>
+      )}
     </main>
   );
 }

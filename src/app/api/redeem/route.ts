@@ -18,6 +18,17 @@ export async function POST(req: Request) {
     }
 
     const session = await getServerSession(authOptions);
+
+    // Require authentication — users must be signed in to redeem a gift card.
+    // This ensures the redeemed credit is linked to their account.
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: "Please sign in to redeem your gift card." },
+        { status: 401 },
+      );
+    }
+
+    const userId = (session.user as { id: string }).id;
     const body = await req.json();
     const { code } = body as { code: string };
 
@@ -71,32 +82,27 @@ export async function POST(req: Request) {
       );
     }
 
-    // If user is logged in, apply the credit to their account.
+    // Apply the credit to the authenticated user's account.
     // CRITICAL #2: Use a conditional updateMany (atomic) to prevent
     // double-redemption race conditions. Only updates if status is
     // still "active" — if another request already redeemed it, the
     // count will be 0 and we return 409.
-    let userId: string | null = null;
-    if (session?.user) {
-      userId = (session.user as { id: string }).id;
+    const result = await db.redemption.updateMany({
+      where: { id: redemption.id, status: "active" },
+      data: {
+        userId,
+        status: "redeemed",
+        redeemedAt: new Date(),
+        sessionsRemaining: redemption.orderItem.cardSessions,
+      },
+    });
 
-      const result = await db.redemption.updateMany({
-        where: { id: redemption.id, status: "active" },
-        data: {
-          userId,
-          status: "redeemed",
-          redeemedAt: new Date(),
-          sessionsRemaining: redemption.orderItem.cardSessions,
-        },
-      });
-
-      if (result.count === 0) {
-        // Another request redeemed it between our read and write
-        return NextResponse.json(
-          { error: "This gift card has already been redeemed" },
-          { status: 409 },
-        );
-      }
+    if (result.count === 0) {
+      // Another request redeemed it between our read and write
+      return NextResponse.json(
+        { error: "This gift card has already been redeemed" },
+        { status: 409 },
+      );
     }
 
     return NextResponse.json({
@@ -105,10 +111,8 @@ export async function POST(req: Request) {
       creditAmount: redemption.creditAmount,
       cardTitle: redemption.orderItem.cardTitle,
       cardSessions: redemption.orderItem.cardSessions,
-      status: userId ? "redeemed" : "active",
-      message: userId
-        ? `Gift card redeemed! ₦${redemption.creditAmount.toLocaleString()} credit applied to your account.`
-        : `Valid code! ₦${redemption.creditAmount.toLocaleString()} credit available — sign in to apply it to your account.`,
+      status: "redeemed",
+      message: `Gift card redeemed! ₦${redemption.creditAmount.toLocaleString()} credit applied to your account.`,
     });
   } catch (error) {
     console.error("Redemption error:", error);
