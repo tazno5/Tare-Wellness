@@ -337,7 +337,9 @@ function BookSessionPage() {
 
   const [confirming, setConfirming] = useState(false);
 
-  const canConfirm = !!selectedDate && !!selectedTime;
+  // Require a gift card to book — the client wants users to only book
+  // sessions using gift card credit, never pay out of pocket.
+  const canConfirm = !!selectedDate && !!selectedTime && redemption.redeemed;
 
   const handleConfirmClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -863,7 +865,11 @@ function BookSessionPage() {
 
               {!canConfirm && !confirming && (
                 <p className="mt-2 text-center font-sans text-[11px] text-blush/80">
-                  Pick a date and time to confirm
+                  {!redemption.redeemed
+                    ? "Redeem a gift card to book a session"
+                    : !selectedDate
+                    ? "Pick a date to confirm"
+                    : "Pick a date and time to confirm"}
                 </p>
               )}
 
@@ -889,19 +895,15 @@ function BookSessionPage() {
             Redeem a Gift Card
           </Link>
 
-          {/* Allow removing an exhausted gift card so the user can book without one */}
+          {/* Allow switching to a different gift card when current one is exhausted */}
           {redemption.redeemed && giftCardApplied > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                setRedemption({ code: "", creditBalance: 0, redeemed: false });
-                toast({ title: "Gift card removed", description: "You can now book at the standard rate." });
-              }}
+            <Link
+              href="/redeem"
               className="mt-3 inline-flex items-center justify-center gap-1.5 font-sans text-xs font-semibold text-maroon/50 hover:text-[#F10897] transition-colors"
             >
               <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-              Remove gift card
-            </button>
+              Use a different gift card
+            </Link>
           )}
         </div>
       </section>
