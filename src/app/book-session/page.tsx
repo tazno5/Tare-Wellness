@@ -111,19 +111,6 @@ const TIME_SLOTS: {
   },
 ];
 
-// Complete static array of ALL possible daily operating hours — the union of
-// every time slot the counselor could offer across any day of the week.
-// Used by the time picker to render EVERY slot, even ones not in the
-// counselor's schedule for the selected day. Slots not in the day's
-// schedule are rendered as DISABLED (struck-through + opacity-40 +
-// pointer-events-none + bg-transparent + "Not offered" label) so the
-// user sees the full operating-hours grid at face value. Without this,
-// slots that aren't offered on a given day would simply be hidden,
-// making it look like the counselor works fewer hours than they do.
-const ALL_DAILY_TIME_SLOTS: string[] = Array.from(
-  new Set(TIME_SLOTS.flatMap((slot) => slot.times)),
-).sort();
-
 const FAQS = [
   {
     q: "Can I reschedule my session?",
@@ -1096,6 +1083,15 @@ function BookSessionPage() {
                   <p className="font-sans text-sm text-maroon/60 py-4 text-center">
                     Pick a date above to see available time slots.
                   </p>
+                ) : availableSlots.length === 0 ? (
+                  <div className="rounded-2xl bg-[#FFE0C2]/30 p-4 text-center">
+                    <p className="font-sans text-sm font-bold text-[#cc6600]">
+                      No sessions available on this day
+                    </p>
+                    <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
+                      The counselor is not available on {selectedDayName}s. Please pick a different date.
+                    </p>
+                  </div>
                 ) : (
                   <div>
                     <div className="flex items-center gap-2">
@@ -1106,51 +1102,41 @@ function BookSessionPage() {
                         Available Times ({selectedDayName})
                       </span>
                     </div>
-                    {/* ============ FULL TIME-SLOT RENDERING ============
-                        We iterate over ALL standard daily operating hours
-                        (a static union of every time the counselor could
-                        possibly offer across any day of the week). For
-                        each slot:
-                          - If it's NOT in the counselor's schedule for the
-                            selected day → render as DISABLED (struck-through,
-                            opacity-40, pointer-events-none, bg-transparent)
-                            with a "Not offered" label. This makes it clear
-                            at face value which slots the counselor doesn't
-                            work, without hiding them.
-                          - If it IS in the schedule AND already booked →
-                            render as DISABLED with the same styling +
-                            "Booked" label. The disabled state is the DEFAULT
-                            resting state — no focus/active/post-selection
-                            conditional logic.
-                          - If it IS in the schedule AND available → render
-                            as a normal clickable button.
-                        The disabled styling matches the user's exact spec:
-                        line-through opacity-40 cursor-not-allowed
-                        pointer-events-none bg-transparent. */}
+                    {/* ============ COUNSELOR-SCHEDULE TIME-SLOT RENDERING ============
+                        We map over the counselor's specific available time
+                        slots for the selected day (from the admin-configured
+                        counselorSchedule). For each slot:
+                          - Cross-reference against the monthBookedTimes data
+                            (pre-fetched from /api/bookings/slots?month=YYYY-MM)
+                            to check if this specific slot is already booked.
+                          - If booked → render as DISABLED immediately on
+                            initial render with the user's exact spec:
+                            line-through opacity-40 cursor-not-allowed
+                            pointer-events-none. The disabled visual is the
+                            DEFAULT resting state — no focus/active/
+                            post-selection conditional logic.
+                          - If available → render as a normal clickable
+                            button (no disabled classes).
+                        We do NOT iterate over a generic full-day array of
+                        hours — only the counselor's actual schedule is
+                        shown. Slots the counselor doesn't offer on this
+                        day simply don't appear (per the user's revert
+                        request). */}
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {ALL_DAILY_TIME_SLOTS.map((t) => {
+                      {availableSlots.map((t) => {
                         const active = selectedTime === t;
-                        const inSchedule = availableSlots.includes(t);
                         const booked = isTimeSlotBooked(t);
-                        const isDisabled = !inSchedule || booked;
-                        const disabledLabel = !inSchedule ? "Not offered" : "Booked";
                         return (
                           <button
                             key={t}
                             type="button"
-                            onClick={() => !isDisabled && setSelectedTime(t)}
+                            onClick={() => !booked && setSelectedTime(t)}
                             aria-pressed={active}
-                            disabled={isDisabled}
-                            aria-disabled={isDisabled}
-                            title={
-                              !inSchedule
-                                ? "Not offered on this day"
-                                : booked
-                                  ? "Already booked — choose another time"
-                                  : undefined
-                            }
+                            disabled={booked}
+                            aria-disabled={booked}
+                            title={booked ? "Already booked — choose another time" : undefined}
                             className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
-                              isDisabled
+                              booked
                                 ? "line-through opacity-40 cursor-not-allowed pointer-events-none bg-transparent text-maroon/40"
                                 : active
                                   ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(78, 0, 48, 0.25)]"
@@ -1158,8 +1144,8 @@ function BookSessionPage() {
                             }`}
                           >
                             {t}
-                            {isDisabled && (
-                              <span className="ml-1 text-[9px] uppercase tracking-wide">{disabledLabel}</span>
+                            {booked && (
+                              <span className="ml-1 text-[9px] uppercase tracking-wide">Booked</span>
                             )}
                           </button>
                         );
