@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       console.error("SiteSetting fetch failed (using defaults):", dbError);
     }
 
-    const subject = `Bank Transfer Instructions - Order ${orderNumber} - NGN ${amountNaira}`;
+    const subject = `Bank Transfer Instructions - Order ${orderNumber} - \u20a6${amountNaira}`;
     const htmlContent = `
       <div style="font-family: 'Plus Jakarta Sans', sans-serif; max-width: 600px; margin: 0 auto; background: #FFF5EE; padding: 40px 20px;">
         <div style="background: #4E0030; border-radius: 24px 24px 0 0; padding: 32px; text-align: center;">
@@ -99,22 +99,50 @@ export async function POST(req: Request) {
           </p>
           <div style="background: #FFF5EE; border-radius: 16px; padding: 20px; margin-bottom: 20px;">
             <p style="color: #4E0030; opacity: 0.6; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 4px 0;">Amount Due</p>
-            <p style="color: #4E0030; font-size: 28px; font-weight: bold; margin: 0;">NGN ${amountNaira}</p>
+            <p style="color: #4E0030; font-size: 28px; font-weight: bold; margin: 0;">\u20a6${amountNaira}</p>
           </div>
           <div style="background: #FFF5EE; border-radius: 16px; padding: 20px; margin-bottom: 20px;">
             <p style="color: #4E0030; opacity: 0.6; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 12px 0;">Bank Details</p>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-              <span style="color: #4E0030; opacity: 0.6; font-size: 14px;">Bank</span>
-              <span style="color: #4E0030; font-size: 14px; font-weight: bold;">${escapeHtml(bankName)}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-              <span style="color: #4E0030; opacity: 0.6; font-size: 14px;">Account Name</span>
-              <span style="color: #4E0030; font-size: 14px; font-weight: bold;">${escapeHtml(accountName)}</span>
-            </div>
-            <div style="display: flex; justify-content: space-between;">
-              <span style="color: #4E0030; opacity: 0.6; font-size: 14px;">Account Number</span>
-              <span style="color: #4E0030; font-size: 14px; font-weight: bold; font-family: monospace;">${escapeHtml(accountNumber)}</span>
-            </div>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tbody>
+                <tr>
+                  <td style="padding: 6px 0; border-bottom: 1px solid rgba(78, 0, 48, 0.06);">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tbody>
+                        <tr>
+                          <td style="vertical-align: top; color: #4E0030; opacity: 0.6; font-size: 14px; font-weight: 600; padding-right: 16px; white-space: nowrap;">Bank:&nbsp;</td>
+                          <td style="vertical-align: top; color: #4E0030; font-size: 14px; font-weight: bold; text-align: right;">${escapeHtml(bankName)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; border-bottom: 1px solid rgba(78, 0, 48, 0.06);">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tbody>
+                        <tr>
+                          <td style="vertical-align: top; color: #4E0030; opacity: 0.6; font-size: 14px; font-weight: 600; padding-right: 16px; white-space: nowrap;">Account Name:&nbsp;</td>
+                          <td style="vertical-align: top; color: #4E0030; font-size: 14px; font-weight: bold; text-align: right;">${escapeHtml(accountName)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tbody>
+                        <tr>
+                          <td style="vertical-align: top; color: #4E0030; opacity: 0.6; font-size: 14px; font-weight: 600; padding-right: 16px; white-space: nowrap;">Account Number:&nbsp;</td>
+                          <td style="vertical-align: top; color: #4E0030; font-size: 14px; font-weight: bold; text-align: right; font-family: monospace;">${escapeHtml(accountNumber)}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
           <div style="background: #FCE4EC; border: 2px dashed #F10897; border-radius: 16px; padding: 20px; margin-bottom: 24px;">
             <p style="color: #4E0030; opacity: 0.7; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 8px 0;">Use as Transfer Narration / Memo</p>
@@ -156,7 +184,7 @@ export async function POST(req: Request) {
 
     if (process.env.NODE_ENV !== "production") {
       console.log("[DEV] Bank transfer instructions email not sent - BREVO_API_KEY not set.");
-      console.log(`   To: ${buyerEmail} | Order: ${orderNumber} | Amount: NGN ${amountNaira}`);
+      console.log(`   To: ${buyerEmail} | Order: ${orderNumber} | Amount: \u20a6${amountNaira}`);
     }
 
     return NextResponse.json({ success: true, message: "Logged to console (no provider)" });
