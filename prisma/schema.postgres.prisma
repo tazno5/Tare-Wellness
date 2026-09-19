@@ -201,6 +201,9 @@ model Booking {
   meetingUrl      String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
+  // Reminder tracking — prevents duplicate reminder emails.
+  reminder24hSent     Boolean @default(false)
+  reminder10minSent    Boolean @default(false)
 
   // Relations
   user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
