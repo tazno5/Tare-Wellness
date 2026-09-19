@@ -4,11 +4,5 @@
   "buildCommand": "prisma generate && prisma migrate deploy && next build",
   "devCommand": "next dev",
   "installCommand": "bun install",
-  "regions": ["fra1"],
-  "crons": [
-    {
-      "path": "/api/cron/booking-reminders",
-      "schedule": "*/5 * * * *"
-    }
-  ]
+  "regions": ["fra1"]
 }
