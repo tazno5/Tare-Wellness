@@ -246,6 +246,12 @@ function BookSessionPage() {
   const [counselorSchedule, setCounselorSchedule] = useState<Record<string, string[]>>({
     monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: [],
   });
+  // Track whether the counselor schedule has loaded. Until it has, we
+  // can't know which slots are available for any given day, so the time
+  // picker shows a loading state. This prevents the user from seeing
+  // an empty schedule (which would look like "no sessions available")
+  // when the schedule just hasn't loaded yet.
+  const [counselorScheduleLoaded, setCounselorScheduleLoaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings/bank-details")
@@ -255,34 +261,30 @@ function BookSessionPage() {
           setCounselorSchedule(data.counselorSchedule);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setCounselorScheduleLoaded(true));
   }, []);
 
   // ============ MONTH-LEVEL PRE-FETCH OF BOOKED SLOTS ============
-  // Instead of fetching booked times one-date-at-a-time when the user
-  // clicks a date (which caused a flash of "all available" before the
-  // fetch completed), we pre-fetch the ENTIRE visible month's booked
-  // times when the calendar month changes. This gives us the data
-  // BEFORE the user clicks any date, so:
-  //   1. The calendar can show fully-booked dates as disabled/struck-
-  //      through at face value (before the user clicks them).
-  //   2. When the user clicks a date, the time slots immediately show
-  //      the correct strikethroughs (no flash — the data is already
-  //      in memory from the month pre-fetch).
-  //
-  // The API returns { monthBookedTimes: { "YYYY-MM-DD": string[] } } —
-  // a map of date→bookedTimes for every day in the month that has at
-  // least one booking. Days with zero bookings are omitted (smaller
-  // response).
-  const [monthBookedTimes, setMonthBookedTimes] = useState<Record<string, string[]>>({});
-  // Track whether the month pre-fetch has completed. Until it has,
-  // the time picker shows a loading state instead of showing all slots
-  // (which might include already-booked ones that haven't been filtered
-  // out yet). This prevents the race condition where the user picks a
-  // time slot before the booked-times data has loaded, tries to confirm,
-  // and gets a backend rejection ("You already have a booking at this
-  // time" or "This time slot is already booked").
+  // Pre-fetch the ENTIRE visible month's booked times when the calendar
+  // month changes. The API returns BookingSlot objects with:
+  //   - scheduledTime: string (e.g. "3:00 PM")
+  //   - durationMinutes: number (30, 50, 60, 75)
+  //   - userId: string (to distinguish "your booking" vs "someone else's")
+  // The client uses all three to:
+  //   1. Filter out booked slots from the time picker (omission method)
+  //   2. Compute overlaps — a 60-min booking at 10:00 AM blocks 10:30 AM
+  //      even though there's no booking AT 10:30 AM
+  //   3. Block the user's own existing bookings (so they don't get a
+  //      "You already have a booking at this time" error)
+  type BookingSlot = {
+    scheduledTime: string;
+    durationMinutes: number;
+    userId: string;
+  };
+  const [monthBookedTimes, setMonthBookedTimes] = useState<Record<string, BookingSlot[]>>({});
   const [monthBookedTimesLoaded, setMonthBookedTimesLoaded] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -296,9 +298,10 @@ function BookSessionPage() {
       .then((data) => {
         setMonthBookedTimes(
           data.monthBookedTimes && typeof data.monthBookedTimes === "object"
-            ? data.monthBookedTimes
+            ? (data.monthBookedTimes as Record<string, BookingSlot[]>)
             : {},
         );
+        if (data.currentUserId) setCurrentUserId(data.currentUserId);
         setMonthBookedTimesLoaded(true);
       })
       .catch(() => {
@@ -321,24 +324,103 @@ function BookSessionPage() {
     return `${yyyy}-${mm}-${dd}`;
   };
 
-  // Helper: is a given time slot already booked on the SELECTED date?
-  // Uses the month pre-fetch data — no separate per-date fetch needed.
-  const bookedTimesForSelected = selectedDate
+  // ============ TIME PARSING + OVERLAP DETECTION ============
+  // Parse a time string like "3:00 PM" into minutes since midnight (e.g. 15*60 = 900).
+  // Returns null if the format is unparseable.
+  const parseTimeToMinutes = (timeStr: string): number | null => {
+    const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!match) return null;
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const ampm = match[3].toUpperCase();
+    if (ampm === "PM" && hours !== 12) hours += 12;
+    if (ampm === "AM" && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  };
+
+  // The currently-selected session type's duration (in minutes).
+  // Used for overlap detection — if the user selects a 60-min session
+  // type and there's a 50-min booking ending at 10:50, a 10:30 AM slot
+  // would overlap (10:30 + 60 = 11:30 > 10:50). We need to block it.
+  const selectedSessionDuration = SESSION_TYPES.find((s) => s.id === sessionType)?.duration ?? 50;
+
+  // Check if a given time slot would overlap with ANY existing booking
+  // on the selected date. Overlap = the proposed session's time range
+  // intersects with an existing booking's time range.
+  //   proposed: [slotStart, slotStart + selectedSessionDuration)
+  //   existing: [bookingStart, bookingStart + bookingDuration)
+  //   overlap = proposedStart < existingEnd && existingStart < proposedEnd
+  const isSlotOverlapping = (slotTime: string, bookings: BookingSlot[]): boolean => {
+    const slotStart = parseTimeToMinutes(slotTime);
+    if (slotStart === null) return false;
+    const slotEnd = slotStart + selectedSessionDuration;
+    for (const b of bookings) {
+      const bookingStart = parseTimeToMinutes(b.scheduledTime);
+      if (bookingStart === null) continue;
+      const bookingEnd = bookingStart + b.durationMinutes;
+      // Standard interval overlap check
+      if (slotStart < bookingEnd && bookingStart < slotEnd) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Helper: the booked slots for the SELECTED date (from month pre-fetch).
+  // Returns BookingSlot[] (objects with time + duration + userId).
+  const bookedSlotsForSelected: BookingSlot[] = selectedDate
     ? monthBookedTimes[formatDateKey(selectedDate)] ?? []
     : [];
-  const isTimeSlotBooked = (time: string) => bookedTimesForSelected.includes(time);
+
+  // Helper: is a given time slot already booked (exact match) on the
+  // SELECTED date? This catches the case where the user has an existing
+  // booking at the exact same time — they should see "Your booking" not
+  // just "Booked".
+  const findExactBooking = (time: string): BookingSlot | undefined =>
+    bookedSlotsForSelected.find((b) => b.scheduledTime === time);
+
+  // Helper: would a given time slot OVERLAP with any existing booking?
+  // Uses the selected session type's duration to compute the proposed
+  // session's time range and checks for intersections with existing
+  // bookings. This catches the case where a 60-min booking at 10:00 AM
+  // blocks a 10:30 AM slot (they overlap).
+  const isTimeSlotBooked = (time: string): boolean =>
+    isSlotOverlapping(time, bookedSlotsForSelected);
+
+  // Helper: is the slot blocked because of the user's OWN booking?
+  // Used to show "Your booking" instead of "Booked" so the user
+  // understands why they can't re-book.
+  const isOwnBooking = (time: string): boolean => {
+    const exact = findExactBooking(time);
+    if (exact && exact.userId === currentUserId) return true;
+    // Also check overlap with own bookings
+    const slotStart = parseTimeToMinutes(time);
+    if (slotStart === null) return false;
+    const slotEnd = slotStart + selectedSessionDuration;
+    for (const b of bookedSlotsForSelected) {
+      if (b.userId !== currentUserId) continue;
+      const bookingStart = parseTimeToMinutes(b.scheduledTime);
+      if (bookingStart === null) continue;
+      const bookingEnd = bookingStart + b.durationMinutes;
+      if (slotStart < bookingEnd && bookingStart < slotEnd) return true;
+    }
+    return false;
+  };
 
   // Helper: is a given calendar date FULLY BOOKED?
-  // True when ALL available time slots for that day (from the counselor
-  // schedule) are in the bookedTimes for that date. Used to visually
-  // disable the date in the calendar BEFORE the user clicks it.
+  // True when ALL available time slots for that day would overlap with
+  // an existing booking. Uses the current session type's duration for
+  // the overlap check — so a date might be "fully booked" for a 60-min
+  // session but still have room for a 30-min session.
   const isDateFullyBooked = (d: Date): boolean => {
     const dayName = DAY_NAMES[d.getDay()];
     const daySlots = counselorSchedule[dayName] ?? [];
-    if (daySlots.length === 0) return false; // no schedule for this day = not "fully booked", just unavailable
+    if (daySlots.length === 0) return false; // no schedule = unavailable, not fully booked
     const booked = monthBookedTimes[formatDateKey(d)] ?? [];
-    // Fully booked when every available slot is in the booked list
-    return daySlots.every((slot) => booked.includes(slot));
+    if (booked.length === 0) return false;
+    // A date is fully booked when EVERY available slot overlaps with
+    // at least one existing booking.
+    return daySlots.every((slot) => isSlotOverlapping(slot, booked));
   };
 
   // Set gradient — render + useEffect
@@ -494,11 +576,12 @@ function BookSessionPage() {
     !!selectedGiftCard &&
     availableBalance > 0 &&
     !isFullyRedeemed &&
-    // Block confirm until the month's booked-times data has loaded.
-    // Without this, the user could pick a time slot before the
-    // omission filter has run, then confirm a booked slot — the backend
-    // would reject with "You already have a booking at this time" or
-    // "This time slot is already booked".
+    // Block confirm until BOTH the counselor schedule AND the month's
+    // booked-times data have loaded. Without this, the user could pick
+    // a time slot before the omission filter has run, then confirm a
+    // booked slot — the backend would reject with "You already have a
+    // booking at this time" or "This time slot is already booked".
+    counselorScheduleLoaded &&
     monthBookedTimesLoaded &&
     // Block confirm if the user's selected time slot was already booked
     // (e.g. another user grabbed it between when this user picked it and
@@ -622,12 +705,42 @@ function BookSessionPage() {
 
       router.push("/booking-confirmation");
     } catch (error) {
-      // Show the error — do NOT silently navigate to confirmation
+      // Show the error — do NOT silently navigate to confirmation.
+      // If the error is a conflict ("already booked" / "overlaps"),
+      // also REFRESH the booked-times data so the time picker updates
+      // to show the newly-taken slot as unavailable, and clear the
+      // user's selected time so they have to pick a new one.
+      const errMsg = error instanceof Error ? error.message : "Something went wrong. Please try again.";
+      const isConflict = /already|overlap|booked/i.test(errMsg);
       toast({
         title: "Booking failed",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        description: errMsg,
         variant: "destructive",
       });
+      if (isConflict) {
+        // Clear the selected time — it's no longer available
+        setSelectedTime("");
+        // Force a re-fetch of the month's booked times so the time
+        // picker updates immediately (the slot that was just grabbed
+        // by someone else will now be filtered out)
+        setMonthBookedTimesLoaded(false);
+        const yyyy = viewMonth.getFullYear();
+        const mm = String(viewMonth.getMonth() + 1).padStart(2, "0");
+        const monthParam = `${yyyy}-${mm}`;
+        fetch(`/api/bookings/slots?month=${monthParam}`)
+          .then((r) => (r.ok ? r.json() : { monthBookedTimes: {} }))
+          .then((data) => {
+            setMonthBookedTimes(
+              data.monthBookedTimes && typeof data.monthBookedTimes === "object"
+                ? (data.monthBookedTimes as Record<string, BookingSlot[]>)
+                : {},
+            );
+            setMonthBookedTimesLoaded(true);
+          })
+          .catch(() => {
+            setMonthBookedTimesLoaded(true);
+          });
+      }
     } finally {
       setConfirming(false);
     }
@@ -1019,25 +1132,15 @@ function BookSessionPage() {
                     const past = isPast(day);
                     const selected = selectedDate && isSameDay(day, selectedDate);
                     const isToday = isSameDay(day, today);
-                    // Check if this date is fully booked (all available
-                    // slots taken). Uses the month pre-fetch data so the
-                    // calendar shows it at face value — BEFORE the user
-                    // clicks. Also check if the counselor has NO schedule
-                    // for this day (dayName has empty slots) — that means
-                    // the day is unavailable (not "fully booked" per se,
-                    // but the user still can't book on it).
                     const dayName = DAY_NAMES[day.getDay()];
                     const dayHasSchedule = (counselorSchedule[dayName] ?? []).length > 0;
-                    const fullyBooked = !past && dayHasSchedule && isDateFullyBooked(day);
+                    // Only mark as fullyBooked if the month data has loaded.
+                    // If it hasn't loaded yet, we don't know whether the
+                    // date is fully booked — treat it as available to
+                    // avoid a false "fully booked" state that disappears
+                    // when the data loads.
+                    const fullyBooked = !past && dayHasSchedule && monthBookedTimesLoaded && isDateFullyBooked(day);
                     const noSchedule = !past && !dayHasSchedule;
-                    // Any date that's in the past, fully booked, or has no
-                    // counselor schedule at all is treated as "unavailable"
-                    // and gets the muted + non-interactive Tailwind spec
-                    // from the user request:
-                    //   opacity-30 text-gray-400 cursor-not-allowed
-                    //   pointer-events-none hover:bg-transparent
-                    // The native `disabled` attribute is set so the button
-                    // can't be focused or clicked.
                     const isDisabled = past || fullyBooked || noSchedule;
                     return (
                       <button
@@ -1068,6 +1171,12 @@ function BookSessionPage() {
                         {isToday && !selected && !isDisabled && (
                           <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#F10897]" />
                         )}
+                        {/* "Fully booked" tag — a small red dot under the
+                            date number so the user can see at a glance
+                            which dates are fully booked before clicking. */}
+                        {fullyBooked && !selected && (
+                          <span className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full bg-[#F10897]" title="Fully booked" />
+                        )}
                       </button>
                     );
                   })}
@@ -1094,6 +1203,11 @@ function BookSessionPage() {
                   <p className="font-sans text-sm text-maroon/60 py-4 text-center">
                     Pick a date above to see available time slots.
                   </p>
+                ) : !counselorScheduleLoaded ? (
+                  <div className="flex items-center gap-2 py-4 text-maroon/60">
+                    <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
+                    <span className="font-sans text-sm">Loading schedule…</span>
+                  </div>
                 ) : availableSlots.length === 0 ? (
                   <div className="rounded-2xl bg-[#FFE0C2]/30 p-4 text-center">
                     <p className="font-sans text-sm font-bold text-[#cc6600]">

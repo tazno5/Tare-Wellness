@@ -116,37 +116,85 @@ export async function POST(req: Request) {
       );
     }
 
-    // Check for scheduling conflicts
-    // 1. User can't have two bookings at the same time
-    const userConflict = await db.booking.findFirst({
-      where: {
-        userId,
-        scheduledDate: bookingDate,
-        scheduledTime,
-        status: "confirmed",
-      },
-    });
+    // ============ SERVER-SIDE RE-CHECK: OVERLAP-AWARE CONFLICT DETECTION ============
+    // The client-side omission filter handles the common case, but we
+    // re-check on the server right before creating the booking as a
+    // safety net (in case another user grabbed the slot seconds earlier,
+    // or the client data was stale).
+    //
+    // We check for OVERLAPS, not just exact time matches. Different
+    // session types have different durations (30, 50, 60, 75 min), so
+    // a 60-min booking at 10:00 AM blocks a 10:30 AM slot even though
+    // the times aren't identical.
+    //
+    // Overlap = proposedStart < existingEnd && existingStart < proposedEnd
+    // where proposedEnd = proposedStart + resolvedDuration
+    // and existingEnd = existingStart + existingBooking.durationMinutes
 
-    if (userConflict) {
+    // Parse the proposed booking's time into minutes since midnight
+    const parseTimeToMinutes = (timeStr: string): number | null => {
+      const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+      if (!match) return null;
+      let hours = parseInt(match[1], 10);
+      const minutes = parseInt(match[2], 10);
+      const ampm = match[3].toUpperCase();
+      if (ampm === "PM" && hours !== 12) hours += 12;
+      if (ampm === "AM" && hours === 12) hours = 0;
+      return hours * 60 + minutes;
+    };
+
+    const proposedStart = parseTimeToMinutes(scheduledTime);
+    const proposedEnd = proposedStart !== null ? proposedStart + resolvedDuration : null;
+
+    if (proposedStart === null || proposedEnd === null) {
       return NextResponse.json(
-        { error: "You already have a booking at this time" },
-        { status: 409 },
+        { error: "Invalid time format" },
+        { status: 400 },
       );
     }
 
-    // 2. Therapist can't have two bookings at the same time
-    const therapistConflict = await db.booking.findFirst({
+    // Fetch ALL confirmed bookings for the same date (for both this user
+    // and the therapist) so we can check for overlaps
+    const existingBookings = await db.booking.findMany({
       where: {
-        therapistName: resolvedTherapistName,
         scheduledDate: bookingDate,
-        scheduledTime,
         status: "confirmed",
+        // Check both this user's bookings AND the therapist's bookings
+        OR: [
+          { userId },
+          { therapistName: resolvedTherapistName },
+        ],
+      },
+      select: {
+        userId: true,
+        scheduledTime: true,
+        durationMinutes: true,
       },
     });
 
-    if (therapistConflict) {
+    // Check each existing booking for overlap
+    for (const existing of existingBookings) {
+      const existingStart = parseTimeToMinutes(existing.scheduledTime);
+      if (existingStart === null) continue;
+      const existingEnd = existingStart + existing.durationMinutes;
+      const overlaps = proposedStart < existingEnd && existingStart < proposedEnd;
+      if (!overlaps) continue;
+
+      // Overlap detected — return the appropriate error message
+      if (existing.userId === userId) {
+        return NextResponse.json(
+          {
+            error: "You already have a booking that overlaps with this time. Please choose a different time.",
+            conflictType: "user_overlap",
+          },
+          { status: 409 },
+        );
+      }
       return NextResponse.json(
-        { error: "This time slot is already booked. Please choose another time." },
+        {
+          error: "This time slot overlaps with an existing booking. Please choose a different time.",
+          conflictType: "therapist_overlap",
+        },
         { status: 409 },
       );
     }
