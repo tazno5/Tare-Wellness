@@ -304,7 +304,27 @@ export default function AdminPage() {
   };
 
   const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
+  // Date-only formatter — for scheduled session dates. The time is shown
+  // separately via the scheduledTime field (e.g. "10:00 AM") in the Bookings
+  // tab, so we don't include it here to avoid confusion.
   const formatDate = (iso: string) => new Date(iso).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+
+  // Date+time formatter — for transaction timestamps (order createdAt, user
+  // signup createdAt). The admin needs to know WHEN a transaction happened,
+  // not just which day — two orders on the same day at 09:00 vs 23:00 are
+  // very different events. Format: "19 Sept 2026, 14:30" (24-hour clock).
+  // Uses the Africa/Lagos timezone (the project's target market) so the
+  // timestamp matches what the admin sees on their local clock.
+  const formatDateTime = (iso: string) =>
+    new Date(iso).toLocaleString("en-NG", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "Africa/Lagos",
+    });
 
   if (!authed) {
     return (
@@ -447,7 +467,7 @@ export default function AdminPage() {
                     <div className="flex flex-wrap items-start justify-between gap-2 border-b border-maroon/10 pb-3">
                       <div>
                         <p className="font-sans text-sm font-bold text-[#4E0030]">{order.orderNumber}</p>
-                        <p className="font-sans text-xs text-[#4E0030]/60">{formatDate(order.createdAt)} · {order.buyerName} · {order.buyerEmail}</p>
+                        <p className="font-sans text-xs text-[#4E0030]/60">{formatDateTime(order.createdAt)} · {order.buyerName} · {order.buyerEmail}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-sans text-sm font-bold text-[#F10897]">{formatPrice(order.totalAmount)}</p>
@@ -580,7 +600,7 @@ export default function AdminPage() {
                       <span className="inline-flex items-center gap-1"><Package className="h-3.5 w-3.5" /> {u._count.orders} orders</span>
                       <span className="inline-flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> {u._count.bookings} bookings</span>
                       <span className="inline-flex items-center gap-1"><Ticket className="h-3.5 w-3.5" /> {u._count.redemptions} codes</span>
-                      <span className="text-[#4E0030]/40">{formatDate(u.createdAt)}</span>
+                      <span className="text-[#4E0030]/40">{formatDateTime(u.createdAt)}</span>
                     </div>
                   </div>
                 ))
