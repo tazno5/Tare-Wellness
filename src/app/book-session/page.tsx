@@ -676,7 +676,7 @@ function BookSessionPage() {
       </section>
 
       {/* ============ BOOKING GRID ============ */}
-      <section className="relative w-full px-5 pb-10 sm:px-8 lg:px-12">
+      <section id="booking-form" className="relative w-full scroll-mt-28 px-5 pb-10 sm:px-8 lg:px-12">
         <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:gap-8">
           {/* LEFT: selections */}
           <motion.div
@@ -1271,7 +1271,7 @@ function BookSessionPage() {
       <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 text-center">
           <p className="font-sans text-sm text-maroon/70">
-            Need another gift card or want to redeem a code?
+            Ready to schedule or need another gift card?
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -1282,11 +1282,11 @@ function BookSessionPage() {
               Buy a Gift Card
             </Link>
             <Link
-              href="/redeem"
+              href="#booking-form"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-6 py-3 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95"
             >
-              <Gift className="h-4 w-4" strokeWidth={2.5} />
-              Redeem a Code
+              <CalendarCheck className="h-4 w-4" strokeWidth={2.5} />
+              Book Next Session
             </Link>
           </div>
         </div>
