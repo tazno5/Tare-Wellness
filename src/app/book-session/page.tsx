@@ -1230,77 +1230,77 @@ function BookSessionPage() {
                     <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
                     <span className="font-sans text-sm">Loading schedule…</span>
                   </div>
-                ) : availableSlots.length === 0 ? (
-                  <div className="rounded-2xl bg-[#FFE0C2]/30 p-4 text-center">
-                    <p className="font-sans text-sm font-bold text-[#cc6600]">
-                      No sessions available on this day
-                    </p>
-                    <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
-                      The counselor is not available on {selectedDayName}s. Please pick a different date.
-                    </p>
-                  </div>
                 ) : !monthBookedTimesLoaded ? (
-                  // LOADING STATE: the month pre-fetch hasn't completed yet.
-                  // Show a spinner instead of the time slots so the user
-                  // can't accidentally select a booked time that hasn't
-                  // been filtered out yet. This is the fix for the race
-                  // condition that caused "Booking failed — You already
-                  // have a booking at this time" errors.
                   <div className="flex items-center gap-2 py-4 text-maroon/60">
                     <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
                     <span className="font-sans text-sm">Checking availability…</span>
                   </div>
-                ) : (
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blush text-[#F10897]">
-                        <Clock className="h-4 w-4" strokeWidth={2.5} />
-                      </span>
-                      <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon">
-                        Available Times ({selectedDayName})
-                      </span>
+                ) : (() => {
+                  // ============ UNIFIED "NO SESSIONS" TREATMENT ============
+                  // Treat a fully-booked date EXACTLY the same as a Sunday
+                  // (no counselor schedule): show the same "No sessions
+                  // available" message. The user never sees booked time
+                  // slots — they just see "no sessions available" if all
+                  // slots are taken, identical to how Sundays look.
+                  //
+                  // This is the user's requested approach: "the best way
+                  // to approach a time or a date that has already been
+                  // booked is the same way we treat sundays."
+                  //
+                  // We compute openSlots = counselor schedule minus
+                  // booked/overlapping slots. If openSlots is empty (or
+                  // the counselor has no schedule for this day at all),
+                  // we show the SAME "No sessions available" message.
+                  const openSlots = availableSlots.filter(
+                    (t) => !isTimeSlotBooked(t),
+                  );
+                  if (availableSlots.length === 0 || openSlots.length === 0) {
+                    return (
+                      <div className="rounded-2xl bg-[#FFE0C2]/30 p-4 text-center">
+                        <p className="font-sans text-sm font-bold text-[#cc6600]">
+                          No sessions available on this day
+                        </p>
+                        <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
+                          {availableSlots.length === 0
+                            ? `The counselor is not available on ${selectedDayName}s. Please pick a different date.`
+                            : `All time slots for this date are fully booked. Please pick a different date.`}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blush text-[#F10897]">
+                          <Clock className="h-4 w-4" strokeWidth={2.5} />
+                        </span>
+                        <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon">
+                          Available Times ({selectedDayName})
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {openSlots.map((t) => {
+                          const active = selectedTime === t;
+                          return (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => setSelectedTime(t)}
+                              aria-pressed={active}
+                              className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
+                                active
+                                  ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(78, 0, 48, 0.25)]"
+                                  : "bg-blush/60 text-maroon hover:bg-blush active:scale-95"
+                              }`}
+                            >
+                              {t}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    {/* ============ INDUSTRY-STANDARD OMISSION METHOD ============
-                        Filter the counselor's schedule against the
-                        monthBookedTimes data (pre-fetched + loaded) to
-                        completely remove booked slots from the UI.
-                        The user only sees slots that are actually available. */}
-                    {(() => {
-                      const openSlots = availableSlots.filter(
-                        (t) => !isTimeSlotBooked(t),
-                      );
-                      if (openSlots.length === 0) {
-                        return (
-                          <p className="mt-4 rounded-2xl bg-[#FFE0C2]/30 p-4 text-center font-sans text-sm text-maroon/60">
-                            No available times for this date. Please select another.
-                          </p>
-                        );
-                      }
-                      return (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {openSlots.map((t) => {
-                            const active = selectedTime === t;
-                            return (
-                              <button
-                                key={t}
-                                type="button"
-                                onClick={() => setSelectedTime(t)}
-                                aria-pressed={active}
-                                className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
-                                  active
-                                    ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(78, 0, 48, 0.25)]"
-                                    : "bg-blush/60 text-maroon hover:bg-blush active:scale-95"
-                                }`}
-                              >
-                                {t}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </motion.article>
 
