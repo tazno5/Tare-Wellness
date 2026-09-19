@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/accordion";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
+import { CopyCodeButton } from "@/components/ui/copy-code-button";
 
 const CARD_LOOKUP: Record<
   string,
@@ -514,9 +515,14 @@ function OrderConfirmationContent() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="mt-3 font-sans text-sm font-bold text-[#F10897]"
+              className="mt-3 flex items-center gap-1.5 font-sans text-sm font-bold text-[#F10897]"
             >
               Order #{apiOrder?.orderNumber ?? searchParams.get("orderNumber")}
+              <CopyCodeButton
+                code={(apiOrder?.orderNumber ?? searchParams.get("orderNumber")) ?? ""}
+                label="order reference"
+                size={14}
+              />
             </motion.p>
           )}
 

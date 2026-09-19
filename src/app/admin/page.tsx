@@ -23,6 +23,7 @@ import {
   Save,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CopyCodeButton } from "@/components/ui/copy-code-button";
 
 type Stats = {
   totalOrders: number;
@@ -484,7 +485,14 @@ export default function AdminPage() {
                             <p className="font-sans text-[11px] text-[#4E0030]/60">→ {item.recipientName} ({item.recipientEmail})</p>
                             {item.redemption && (
                               <div className="mt-1 space-y-0.5">
-                                <p className="font-mono text-[10px] font-bold tracking-wider text-[#F10897]">{item.redemption.code}</p>
+                                <div className="flex items-center gap-1">
+                                  <p className="font-mono text-[10px] font-bold tracking-wider text-[#F10897]">{item.redemption.code}</p>
+                                  <CopyCodeButton
+                                    code={item.redemption.code}
+                                    label="gift card code"
+                                    size={12}
+                                  />
+                                </div>
                                 <p className="font-sans text-[10px] text-[#4E0030]/65">
                                   {/* Map raw status to a clearer label for the admin.
                                       "active" with sessionsRemaining > 0 = card is live and bookable.
@@ -558,7 +566,16 @@ export default function AdminPage() {
                     <div className="flex flex-wrap items-start justify-between gap-2 border-b border-maroon/10 pb-3">
                       <div>
                         <p className="font-sans text-sm font-bold text-[#4E0030]">{b.sessionTitle}</p>
-                        <p className="font-sans text-xs text-[#4E0030]/60">{b.bookingNumber} · {b.user.name} ({b.user.email})</p>
+                        <p className="font-sans text-xs text-[#4E0030]/60">
+                          <span className="font-mono">{b.bookingNumber}</span>
+                          <CopyCodeButton
+                            code={b.bookingNumber}
+                            label="booking reference"
+                            size={12}
+                            className="ml-0.5 align-middle"
+                          />
+                          <span className="opacity-50"> ·</span> {b.user.name} ({b.user.email})
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="font-sans text-sm font-bold text-[#F10897]">{formatPrice(b.sessionPrice)}</p>

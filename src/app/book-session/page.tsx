@@ -258,6 +258,42 @@ function BookSessionPage() {
       .catch(() => {});
   }, []);
 
+  // ============ PRE-FLIGHT BOOKED SLOTS FETCH ============
+  // When the user picks a date, fetch the list of already-booked time
+  // slots for that date (across ALL users — the therapist's schedule
+  // is shared). The booked slots are visually disabled in the time
+  // picker so the user sees which times are taken BEFORE attempting
+  // to confirm their session.
+  //
+  // Format: date is sent as YYYY-MM-DD. The API returns { bookedTimes:
+  // string[] } — e.g. ["10:00 AM", "1:00 PM"]. These times use the
+  // same format as the counselor schedule (e.g. "10:00 AM") so the
+  // comparison is a direct string match.
+  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
+  const [bookedTimesLoading, setBookedTimesLoading] = useState(false);
+
+  useEffect(() => {
+    if (!selectedDate) {
+      setBookedTimes([]);
+      return;
+    }
+    // Format the selected date as YYYY-MM-DD (in the user's local timezone)
+    const yyyy = selectedDate.getFullYear();
+    const mm = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(selectedDate.getDate()).padStart(2, "0");
+    const dateParam = `${yyyy}-${mm}-${dd}`;
+
+    setBookedTimesLoading(true);
+    fetch(`/api/bookings/slots?date=${dateParam}`)
+      .then((r) => (r.ok ? r.json() : { bookedTimes: [] }))
+      .then((data) => setBookedTimes(Array.isArray(data.bookedTimes) ? data.bookedTimes : []))
+      .catch(() => setBookedTimes([]))
+      .finally(() => setBookedTimesLoading(false));
+  }, [selectedDate]);
+
+  // Helper for the time picker: is a given slot already booked?
+  const isTimeSlotBooked = (time: string) => bookedTimes.includes(time);
+
   // Get the day name for the selected date
   const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
   const selectedDayName = selectedDate ? DAY_NAMES[selectedDate.getDay()] : null;
@@ -415,7 +451,13 @@ function BookSessionPage() {
     !!selectedTime &&
     !!selectedGiftCard &&
     availableBalance > 0 &&
-    !isFullyRedeemed;
+    !isFullyRedeemed &&
+    // Block confirm if the user's selected time slot was already booked
+    // (e.g. another user grabbed it between when this user picked it and
+    // when they clicked Confirm). The backend would reject this anyway
+    // with a "therapist conflict" 409, but this defensive check surfaces
+    // the issue earlier + prevents the wasted API round-trip.
+    !isTimeSlotBooked(selectedTime);
 
   const handleConfirmClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -997,23 +1039,46 @@ function BookSessionPage() {
                     <div className="mt-2 flex flex-wrap gap-2">
                       {availableSlots.map((t) => {
                         const active = selectedTime === t;
+                        // PRE-FLIGHT BOOKED SLOT CHECK:
+                        // If this slot is already booked by ANY user on
+                        // the selected date, disable it + apply muted
+                        // styling so the user sees it's taken before
+                        // attempting to confirm. The backend's POST
+                        // /api/bookings would also reject a conflict
+                        // (therapist can't have two bookings at the same
+                        // time), so this is a UI optimization to surface
+                        // the conflict earlier — not a security check.
+                        const booked = isTimeSlotBooked(t);
                         return (
                           <button
                             key={t}
                             type="button"
-                            onClick={() => setSelectedTime(t)}
+                            onClick={() => !booked && setSelectedTime(t)}
                             aria-pressed={active}
+                            disabled={booked}
+                            aria-disabled={booked}
+                            title={booked ? "Already booked — choose another time" : undefined}
                             className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
-                              active
-                                ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(78, 0, 48, 0.25)]"
-                                : "bg-blush/60 text-maroon hover:bg-blush active:scale-95"
+                              booked
+                                ? "cursor-not-allowed bg-[#4E0030]/10 text-[#4E0030]/40 line-through opacity-50"
+                                : active
+                                  ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(78, 0, 48, 0.25)]"
+                                  : "bg-blush/60 text-maroon hover:bg-blush active:scale-95"
                             }`}
                           >
                             {t}
+                            {booked && (
+                              <span className="ml-1 text-[9px] uppercase tracking-wide">Booked</span>
+                            )}
                           </button>
                         );
                       })}
                     </div>
+                    {bookedTimes.length > 0 && (
+                      <p className="mt-2 font-sans text-[11px] text-maroon/55">
+                        {bookedTimes.length} slot{bookedTimes.length === 1 ? "" : "s"} already booked on {selectedDate?.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" })}. Strikethrough times are unavailable.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

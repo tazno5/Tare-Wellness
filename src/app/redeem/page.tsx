@@ -23,6 +23,7 @@ import {
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { CopyCodeButton } from "@/components/ui/copy-code-button";
 
 const OPTIONS = [
   {
@@ -455,6 +456,12 @@ export default function RedeemPage() {
                       <span className="font-mono">
                         …{redemption.code.slice(-4)}
                       </span>
+                      <CopyCodeButton
+                        code={redemption.code}
+                        label="gift card code"
+                        size={12}
+                        className="ml-1 align-middle"
+                      />
                     </p>
                   </div>
                 </div>
