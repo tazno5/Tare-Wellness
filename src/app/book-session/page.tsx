@@ -315,9 +315,31 @@ function BookSessionPage() {
   const selectedDayName = selectedDate ? DAY_NAMES[selectedDate.getDay()] : null;
   const availableSlots = selectedDayName ? (counselorSchedule[selectedDayName] || []) : [];
 
-  // Helper: format a Date as "YYYY-MM-DD" (local timezone, matches the
-  // key format used in the monthBookedTimes map from the API).
+  // Helper: format a Date as "YYYY-MM-DD" using LOCAL timezone.
+  // This matches the calendar date the user sees (e.g. "Oct 15").
+  // Used as the key for looking up booked times from the month pre-fetch.
+  //
+  // CRITICAL: The API must also use LOCAL timezone for grouping (or
+  // we must send a date-only string "YYYY-MM-DD" to the booking API
+  // so the stored date matches the calendar date). We send a
+  // date-only string in the booking POST (see handleConfirmClick),
+  // so the stored `scheduledDate` is at UTC midnight for the same
+  // calendar day the user selected. The API groups by UTC date,
+  // which then matches this local date string.
   const formatDateKey = (d: Date) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  // Helper: send a date-only string "YYYY-MM-DD" (not toISOString())
+  // to the booking API so the stored date matches the calendar date.
+  // If we use toISOString(), a local Oct 15 midnight becomes UTC
+  // Oct 14 23:00 — and the booking gets stored on the wrong calendar
+  // day. Sending "2026-10-15" ensures the API stores it as
+  // 2026-10-15T00:00:00Z, which matches the user's calendar view.
+  const formatDateForAPI = (d: Date) => {
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
@@ -641,7 +663,7 @@ function BookSessionPage() {
           sessionType,
           sessionTitle: session.title,
           sessionPrice: session.price,
-          scheduledDate: selectedDate.toISOString(),
+          scheduledDate: formatDateForAPI(selectedDate),
           scheduledTime: selectedTime,
           therapistName: "Your Provider",
           // Send the SERVER-VALIDATED gift card code (not the store's),
