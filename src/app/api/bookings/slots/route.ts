@@ -3,27 +3,26 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-// ============ GET /api/bookings/slots?date=YYYY-MM-DD ============
+// ============ GET /api/bookings/slots?date=YYYY-MM-DD | ?month=YYYY-MM ============
 //
-// Returns the list of already-booked time slots for a given date.
-// Used by /book-session to visually disable already-taken time slots
-// in the time picker, so users immediately see which times are taken
-// before attempting to confirm their session.
+// Returns already-booked time slots.
 //
-// Query params:
-//   date: YYYY-MM-DD (required) — the calendar date the user picked.
+// Two modes:
+//   ?date=YYYY-MM-DD  → returns { bookedTimes: string[] } for that day
+//   ?month=YYYY-MM    → returns { monthBookedTimes: { "YYYY-MM-DD": string[] } }
+//                       for EVERY day in that month (keys with zero bookings
+//                       are omitted to keep the response small)
 //
-// Returns: { bookedTimes: string[] } — e.g. ["10:00 AM", "1:00 PM"]
+// The month mode is used by /book-session to PRE-FETCH the entire month
+// when the user navigates the calendar. This lets the calendar show
+// which dates are fully booked (all available slots taken) BEFORE the
+// user clicks on them — no flash of "all available" when a date is
+// selected.
 //
-// Auth: required. We only return booked times (not who booked them or
-// any other booking details) so there's no privacy leak — the user
-// just learns "this slot is taken". The booked times come from ALL
-// users (not just the current user) because the therapist's schedule
-// is shared across everyone — if Alice books 10am, Bob can't also
-// book 10am.
-//
-// Only "confirmed" bookings count — cancelled / no-show bookings don't
-// block the slot.
+// Auth: required. Only returns booked times (not who booked them or
+// any other booking details) — no privacy leak. Bookings from ALL
+// users are included because the therapist's schedule is shared.
+// Only "confirmed" bookings count — cancelled/no-show don't block.
 
 export async function GET(req: Request) {
   try {
@@ -38,31 +37,65 @@ export async function GET(req: Request) {
 
     const url = new URL(req.url);
     const dateParam = url.searchParams.get("date");
+    const monthParam = url.searchParams.get("month");
 
-    if (!dateParam) {
+    if (!dateParam && !monthParam) {
       return NextResponse.json(
-        { error: "date query parameter is required (YYYY-MM-DD)" },
+        { error: "date or month query parameter is required (YYYY-MM-DD or YYYY-MM)" },
         { status: 400 },
       );
     }
 
-    // Parse the date and build a range that covers the whole calendar day
-    // in UTC. Bookings are stored with scheduledDate as a DateTime, and we
-    // want to match any booking whose scheduledDate falls on the same
-    // calendar day as the user's selected date.
-    //
-    // The client sends "YYYY-MM-DD" (e.g. "2026-10-15"). We construct:
-    //   start = 2026-10-15T00:00:00.000Z
-    //   end   = 2026-10-15T23:59:59.999Z
-    // and query for bookings where scheduledDate is between start and end.
-    //
-    // Note: this is a UTC interpretation of the date. The client-side
-    // /book-session page sends the date in the user's local timezone
-    // (Africa/Lagos) via toISOString() after constructing a Date from the
-    // selected calendar day. For the purpose of slot-blocking, we
-    // match on the same calendar day the user picked — any timezone
-    // drift would be at most a few hours and would only affect edge
-    // cases around midnight.
+    // ---- MONTH MODE: return booked times for every day in the month ----
+    if (monthParam) {
+      // Parse "YYYY-MM" (e.g. "2026-10")
+      const [yearStr, monthStr] = monthParam.split("-");
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10) - 1; // JS months are 0-indexed
+
+      if (isNaN(year) || isNaN(month) || month < 0 || month > 11) {
+        return NextResponse.json(
+          { error: "Invalid month format. Use YYYY-MM (e.g. 2026-10)." },
+          { status: 400 },
+        );
+      }
+
+      // Build a date range covering the entire month (in UTC)
+      const monthStart = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0));
+      const monthEnd = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999));
+
+      const bookings = await db.booking.findMany({
+        where: {
+          scheduledDate: {
+            gte: monthStart,
+            lte: monthEnd,
+          },
+          status: "confirmed",
+        },
+        select: {
+          scheduledDate: true,
+          scheduledTime: true,
+        },
+      });
+
+      // Group by date string (YYYY-MM-DD) → array of booked times
+      const monthBookedTimes: Record<string, string[]> = {};
+      for (const b of bookings) {
+        const d = b.scheduledDate;
+        const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+        if (!monthBookedTimes[key]) monthBookedTimes[key] = [];
+        monthBookedTimes[key].push(b.scheduledTime);
+      }
+
+      // Dedupe each day's times
+      for (const key of Object.keys(monthBookedTimes)) {
+        monthBookedTimes[key] = Array.from(new Set(monthBookedTimes[key])).sort();
+      }
+
+      return NextResponse.json({ monthBookedTimes });
+    }
+
+    // ---- DATE MODE: return booked times for a single date ----
     const startOfDay = new Date(`${dateParam}T00:00:00.000Z`);
     const endOfDay = new Date(`${dateParam}T23:59:59.999Z`);
 
@@ -86,8 +119,6 @@ export async function GET(req: Request) {
       },
     });
 
-    // Dedupe (shouldn't be duplicates, but defensive) + sort for a stable
-    // response. Return as a Set→array to remove any duplicates.
     const bookedTimes = Array.from(
       new Set(bookings.map((b) => b.scheduledTime)),
     ).sort();

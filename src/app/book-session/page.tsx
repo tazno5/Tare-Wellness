@@ -258,46 +258,75 @@ function BookSessionPage() {
       .catch(() => {});
   }, []);
 
-  // ============ PRE-FLIGHT BOOKED SLOTS FETCH ============
-  // When the user picks a date, fetch the list of already-booked time
-  // slots for that date (across ALL users — the therapist's schedule
-  // is shared). The booked slots are visually disabled in the time
-  // picker so the user sees which times are taken BEFORE attempting
-  // to confirm their session.
+  // ============ MONTH-LEVEL PRE-FETCH OF BOOKED SLOTS ============
+  // Instead of fetching booked times one-date-at-a-time when the user
+  // clicks a date (which caused a flash of "all available" before the
+  // fetch completed), we pre-fetch the ENTIRE visible month's booked
+  // times when the calendar month changes. This gives us the data
+  // BEFORE the user clicks any date, so:
+  //   1. The calendar can show fully-booked dates as disabled/struck-
+  //      through at face value (before the user clicks them).
+  //   2. When the user clicks a date, the time slots immediately show
+  //      the correct strikethroughs (no flash — the data is already
+  //      in memory from the month pre-fetch).
   //
-  // Format: date is sent as YYYY-MM-DD. The API returns { bookedTimes:
-  // string[] } — e.g. ["10:00 AM", "1:00 PM"]. These times use the
-  // same format as the counselor schedule (e.g. "10:00 AM") so the
-  // comparison is a direct string match.
-  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
-  const [bookedTimesLoading, setBookedTimesLoading] = useState(false);
+  // The API returns { monthBookedTimes: { "YYYY-MM-DD": string[] } } —
+  // a map of date→bookedTimes for every day in the month that has at
+  // least one booking. Days with zero bookings are omitted (smaller
+  // response).
+  const [monthBookedTimes, setMonthBookedTimes] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
-    if (!selectedDate) {
-      setBookedTimes([]);
-      return;
-    }
-    // Format the selected date as YYYY-MM-DD (in the user's local timezone)
-    const yyyy = selectedDate.getFullYear();
-    const mm = String(selectedDate.getMonth() + 1).padStart(2, "0");
-    const dd = String(selectedDate.getDate()).padStart(2, "0");
-    const dateParam = `${yyyy}-${mm}-${dd}`;
+    if (!user) return;
+    const yyyy = viewMonth.getFullYear();
+    const mm = String(viewMonth.getMonth() + 1).padStart(2, "0");
+    const monthParam = `${yyyy}-${mm}`;
 
-    setBookedTimesLoading(true);
-    fetch(`/api/bookings/slots?date=${dateParam}`)
-      .then((r) => (r.ok ? r.json() : { bookedTimes: [] }))
-      .then((data) => setBookedTimes(Array.isArray(data.bookedTimes) ? data.bookedTimes : []))
-      .catch(() => setBookedTimes([]))
-      .finally(() => setBookedTimesLoading(false));
-  }, [selectedDate]);
-
-  // Helper for the time picker: is a given slot already booked?
-  const isTimeSlotBooked = (time: string) => bookedTimes.includes(time);
+    fetch(`/api/bookings/slots?month=${monthParam}`)
+      .then((r) => (r.ok ? r.json() : { monthBookedTimes: {} }))
+      .then((data) =>
+        setMonthBookedTimes(
+          data.monthBookedTimes && typeof data.monthBookedTimes === "object"
+            ? data.monthBookedTimes
+            : {},
+        ),
+      )
+      .catch(() => setMonthBookedTimes({}));
+  }, [viewMonth, user]);
 
   // Get the day name for the selected date
   const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
   const selectedDayName = selectedDate ? DAY_NAMES[selectedDate.getDay()] : null;
   const availableSlots = selectedDayName ? (counselorSchedule[selectedDayName] || []) : [];
+
+  // Helper: format a Date as "YYYY-MM-DD" (local timezone, matches the
+  // key format used in the monthBookedTimes map from the API).
+  const formatDateKey = (d: Date) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  // Helper: is a given time slot already booked on the SELECTED date?
+  // Uses the month pre-fetch data — no separate per-date fetch needed.
+  const bookedTimesForSelected = selectedDate
+    ? monthBookedTimes[formatDateKey(selectedDate)] ?? []
+    : [];
+  const isTimeSlotBooked = (time: string) => bookedTimesForSelected.includes(time);
+
+  // Helper: is a given calendar date FULLY BOOKED?
+  // True when ALL available time slots for that day (from the counselor
+  // schedule) are in the bookedTimes for that date. Used to visually
+  // disable the date in the calendar BEFORE the user clicks it.
+  const isDateFullyBooked = (d: Date): boolean => {
+    const dayName = DAY_NAMES[d.getDay()];
+    const daySlots = counselorSchedule[dayName] ?? [];
+    if (daySlots.length === 0) return false; // no schedule for this day = not "fully booked", just unavailable
+    const booked = monthBookedTimes[formatDateKey(d)] ?? [];
+    // Fully booked when every available slot is in the booked list
+    return daySlots.every((slot) => booked.includes(slot));
+  };
 
   // Set gradient — render + useEffect
   useMemo(() => {
@@ -971,25 +1000,51 @@ function BookSessionPage() {
                     const past = isPast(day);
                     const selected = selectedDate && isSameDay(day, selectedDate);
                     const isToday = isSameDay(day, today);
+                    // Check if this date is fully booked (all available
+                    // slots taken). Uses the month pre-fetch data so the
+                    // calendar shows it at face value — BEFORE the user
+                    // clicks. Also check if the counselor has NO schedule
+                    // for this day (dayName has empty slots) — that means
+                    // the day is unavailable (not "fully booked" per se,
+                    // but the user still can't book on it).
+                    const dayName = DAY_NAMES[day.getDay()];
+                    const dayHasSchedule = (counselorSchedule[dayName] ?? []).length > 0;
+                    const fullyBooked = !past && dayHasSchedule && isDateFullyBooked(day);
+                    const noSchedule = !past && !dayHasSchedule;
+                    const isDisabled = past || fullyBooked || noSchedule;
                     return (
                       <button
                         key={day.toISOString()}
                         type="button"
-                        disabled={past}
+                        disabled={isDisabled}
                         onClick={() => setSelectedDate(day)}
                         aria-label={day.toDateString()}
                         aria-pressed={!!selected}
+                        title={
+                          fullyBooked
+                            ? "Fully booked — no available times"
+                            : noSchedule
+                              ? "No sessions available on this day"
+                              : undefined
+                        }
                         className={`relative flex aspect-square items-center justify-center rounded-xl font-sans text-sm font-semibold transition-all ${
                           selected
                             ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
                             : past
                               ? "cursor-not-allowed text-maroon/25"
-                              : "text-maroon hover:bg-blush active:scale-95"
+                              : fullyBooked
+                                ? "cursor-not-allowed text-maroon/30 line-through opacity-50"
+                                : noSchedule
+                                  ? "cursor-not-allowed text-maroon/20"
+                                  : "text-maroon hover:bg-blush active:scale-95"
                         }`}
                       >
                         {day.getDate()}
                         {isToday && !selected && (
                           <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#F10897]" />
+                        )}
+                        {fullyBooked && !selected && (
+                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#F10897]/40" title="Fully booked" />
                         )}
                       </button>
                     );
@@ -1074,9 +1129,9 @@ function BookSessionPage() {
                         );
                       })}
                     </div>
-                    {bookedTimes.length > 0 && (
+                    {bookedTimesForSelected.length > 0 && (
                       <p className="mt-2 font-sans text-[11px] text-maroon/55">
-                        {bookedTimes.length} slot{bookedTimes.length === 1 ? "" : "s"} already booked on {selectedDate?.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" })}. Strikethrough times are unavailable.
+                        {bookedTimesForSelected.length} slot{bookedTimesForSelected.length === 1 ? "" : "s"} already booked on {selectedDate?.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" })}. Strikethrough times are unavailable.
                       </p>
                     )}
                   </div>
