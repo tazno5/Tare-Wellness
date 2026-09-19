@@ -1011,6 +1011,14 @@ function BookSessionPage() {
                     const dayHasSchedule = (counselorSchedule[dayName] ?? []).length > 0;
                     const fullyBooked = !past && dayHasSchedule && isDateFullyBooked(day);
                     const noSchedule = !past && !dayHasSchedule;
+                    // Any date that's in the past, fully booked, or has no
+                    // counselor schedule at all is treated as "unavailable"
+                    // and gets the muted + non-interactive Tailwind spec
+                    // from the user request:
+                    //   opacity-30 text-gray-400 cursor-not-allowed
+                    //   pointer-events-none hover:bg-transparent
+                    // The native `disabled` attribute is set so the button
+                    // can't be focused or clicked.
                     const isDisabled = past || fullyBooked || noSchedule;
                     return (
                       <button
@@ -1025,37 +1033,21 @@ function BookSessionPage() {
                             ? "Fully booked — no available times"
                             : noSchedule
                               ? "No sessions available on this day"
-                              : undefined
+                              : past
+                                ? "Past date"
+                                : undefined
                         }
-                        // DISABLED STYLING AT FACE VALUE:
-                        // - line-through + opacity-40 + cursor-not-allowed +
-                        //   pointer-events-none — matches the user spec for
-                        //   disabled time slots so the visual language is
-                        //   consistent across the calendar + time picker.
-                        // - past dates use a lighter fade (opacity-25) since
-                        //   they're unavailable for a different reason (time
-                        //   already passed) — visually distinct from
-                        //   "fully booked" (which is a fresh unavailability).
-                        // - noSchedule days use opacity-30 — distinct from
-                        //   both past + fully booked.
                         className={`relative flex aspect-square items-center justify-center rounded-xl font-sans text-sm font-semibold transition-all ${
                           selected
                             ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
-                            : past
-                              ? "cursor-not-allowed text-maroon/25"
-                              : fullyBooked
-                                ? "line-through opacity-40 cursor-not-allowed pointer-events-none text-maroon/40"
-                                : noSchedule
-                                  ? "cursor-not-allowed pointer-events-none text-maroon/20"
-                                  : "text-maroon hover:bg-blush active:scale-95"
+                            : isDisabled
+                              ? "opacity-30 text-gray-400 cursor-not-allowed pointer-events-none hover:bg-transparent"
+                              : "text-maroon hover:bg-blush active:scale-95"
                         }`}
                       >
                         {day.getDate()}
-                        {isToday && !selected && (
+                        {isToday && !selected && !isDisabled && (
                           <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#F10897]" />
-                        )}
-                        {fullyBooked && !selected && (
-                          <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#F10897]/40" title="Fully booked" />
                         )}
                       </button>
                     );
@@ -1102,60 +1094,61 @@ function BookSessionPage() {
                         Available Times ({selectedDayName})
                       </span>
                     </div>
-                    {/* ============ COUNSELOR-SCHEDULE TIME-SLOT RENDERING ============
-                        We map over the counselor's specific available time
-                        slots for the selected day (from the admin-configured
-                        counselorSchedule). For each slot:
-                          - Cross-reference against the monthBookedTimes data
-                            (pre-fetched from /api/bookings/slots?month=YYYY-MM)
-                            to check if this specific slot is already booked.
-                          - If booked → render as DISABLED immediately on
-                            initial render with the user's exact spec:
-                            line-through opacity-40 cursor-not-allowed
-                            pointer-events-none. The disabled visual is the
-                            DEFAULT resting state — no focus/active/
-                            post-selection conditional logic.
-                          - If available → render as a normal clickable
-                            button (no disabled classes).
-                        We do NOT iterate over a generic full-day array of
-                        hours — only the counselor's actual schedule is
-                        shown. Slots the counselor doesn't offer on this
-                        day simply don't appear (per the user's revert
-                        request). */}
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {availableSlots.map((t) => {
-                        const active = selectedTime === t;
-                        const booked = isTimeSlotBooked(t);
+                    {/* ============ INDUSTRY-STANDARD OMISSION METHOD ============
+                        Instead of rendering booked slots with disabled
+                        styling, we FILTER the counselor's schedule array
+                        BEFORE rendering. Booked time slots are completely
+                        removed from the UI — the user only sees the slots
+                        that are actually available to book.
+
+                        Why omission (not disabled):
+                          - Industry standard for booking UIs (Calendly,
+                            Cal.com, OpenTable all omit, not disable).
+                          - Reduces cognitive load — the user doesn't have
+                            to mentally filter out struck-through options.
+                          - Prevents the "all slots are taken" gut-punch
+                            where the time picker is full of disabled slots
+                            with no clear path forward.
+
+                        Implementation: compute `openSlots` by filtering
+                        `availableSlots` against `bookedTimesForSelected`
+                        (the pre-fetched booked times for the selected date).
+                        If `openSlots` is empty, render the empty-state
+                        fallback message instead of an empty container. */}
+                    {(() => {
+                      const openSlots = availableSlots.filter(
+                        (t) => !isTimeSlotBooked(t),
+                      );
+                      if (openSlots.length === 0) {
                         return (
-                          <button
-                            key={t}
-                            type="button"
-                            onClick={() => !booked && setSelectedTime(t)}
-                            aria-pressed={active}
-                            disabled={booked}
-                            aria-disabled={booked}
-                            title={booked ? "Already booked — choose another time" : undefined}
-                            className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
-                              booked
-                                ? "line-through opacity-40 cursor-not-allowed pointer-events-none bg-transparent text-maroon/40"
-                                : active
-                                  ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(78, 0, 48, 0.25)]"
-                                  : "bg-blush/60 text-maroon hover:bg-blush active:scale-95"
-                            }`}
-                          >
-                            {t}
-                            {booked && (
-                              <span className="ml-1 text-[9px] uppercase tracking-wide">Booked</span>
-                            )}
-                          </button>
+                          <p className="mt-4 rounded-2xl bg-[#FFE0C2]/30 p-4 text-center font-sans text-sm text-maroon/60">
+                            No available times for this date. Please select another.
+                          </p>
                         );
-                      })}
-                    </div>
-                    {bookedTimesForSelected.length > 0 && (
-                      <p className="mt-2 font-sans text-[11px] text-maroon/55">
-                        {bookedTimesForSelected.length} slot{bookedTimesForSelected.length === 1 ? "" : "s"} already booked on {selectedDate?.toLocaleDateString("en-NG", { weekday: "short", day: "numeric", month: "short" })}. Strikethrough times are unavailable.
-                      </p>
-                    )}
+                      }
+                      return (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {openSlots.map((t) => {
+                            const active = selectedTime === t;
+                            return (
+                              <button
+                                key={t}
+                                type="button"
+                                onClick={() => setSelectedTime(t)}
+                                aria-pressed={active}
+                                className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
+                                  active
+                                    ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(78, 0, 48, 0.25)]"
+                                    : "bg-blush/60 text-maroon hover:bg-blush active:scale-95"
+                                }`}
+                              >
+                                {t}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
