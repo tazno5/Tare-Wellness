@@ -24,6 +24,7 @@ import {
   X,
   HelpCircle,
   Loader2,
+  PartyPopper,
 } from "lucide-react";
 import {
   Accordion,
@@ -846,7 +847,12 @@ function BookSessionPage() {
               href="/redeem"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white border-2 border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78,0,48,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95"
             >
-              <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+              >
+                <PartyPopper className="h-4 w-4" strokeWidth={2.5} />
+              </motion.div>
               Redeem a Code
             </Link>
           </div>

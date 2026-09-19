@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Lock,
   Heart,
+  PartyPopper,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
@@ -419,7 +420,12 @@ export default function RedeemPage() {
                       </>
                     ) : (
                       <>
-                        <Gift className="h-5 w-5" strokeWidth={2.5} />
+                        <motion.div
+                          animate={{ scale: [1, 1.1, 1] }}
+                          transition={{ repeat: Infinity, duration: 2 }}
+                        >
+                          <PartyPopper className="h-5 w-5" strokeWidth={2.5} />
+                        </motion.div>
                         {user ? "Redeem Gift" : "Sign in to Redeem"}
                       </>
                     )}

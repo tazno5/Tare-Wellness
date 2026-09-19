@@ -18,6 +18,7 @@ import {
   BadgeCheck,
   Headphones,
   Clock,
+  PartyPopper,
 } from "lucide-react";
 
 const container = {
@@ -54,7 +55,7 @@ const TIMELINE = [
     body: "Send it instantly or schedule it for the right moment. They'll get a keepsake they can reopen.",
   },
   {
-    icon: <Ticket className="h-5 w-5" strokeWidth={2.5} />,
+    icon: <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 2 }}><PartyPopper className="h-5 w-5" strokeWidth={2.5} /></motion.div>,
     title: "Redeem the Gift",
     body: "They enter their code on Tare and unlock session credit.",
   },
