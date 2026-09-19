@@ -360,11 +360,22 @@ function BookSessionPage() {
     return hours * 60 + minutes;
   };
 
-  // The currently-selected session type's duration (in minutes).
+  // The currently-selected session type's duration (in minutes, as a NUMBER).
   // Used for overlap detection — if the user selects a 60-min session
   // type and there's a 50-min booking ending at 10:50, a 10:30 AM slot
   // would overlap (10:30 + 60 = 11:30 > 10:50). We need to block it.
-  const selectedSessionDuration = SESSION_TYPES.find((s) => s.id === sessionType)?.duration ?? 50;
+  //
+  // CRITICAL: SESSION_TYPES stores duration as a STRING like "50 min"
+  // (for display). We must parse it to a NUMBER for math. Without this,
+  // `slotStart + selectedSessionDuration` would concatenate a number
+  // with a string (900 + "50 min" = "90050 min") instead of adding
+  // (900 + 50 = 950). The overlap check would silently fail because
+  // `anything < NaN` is always false.
+  const selectedSessionDuration = (() => {
+    const durationStr = SESSION_TYPES.find((s) => s.id === sessionType)?.duration ?? "50 min";
+    const parsed = parseInt(durationStr, 10);
+    return isNaN(parsed) ? 50 : parsed;
+  })();
 
   // Check if a given time slot would overlap with ANY existing booking
   // on the selected date. Overlap = the proposed session's time range
