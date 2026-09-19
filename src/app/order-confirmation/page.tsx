@@ -1243,35 +1243,6 @@ function OrderMergedCard({
           </div>
         </div>
 
-        {/* Dynamic gift code + copy button */}
-        <div className="mt-4 rounded-2xl border-2 border-dashed border-[#F10897]/50 bg-blush/30 p-4">
-          <p className="font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-maroon/60">
-            Your Gift Code
-          </p>
-          <div className="mt-1.5 flex items-center justify-between gap-2">
-            <code className="font-mono text-base font-bold tracking-wider text-maroon sm:text-lg">
-              {code}
-            </code>
-            <button
-              type="button"
-              onClick={handleCopyCode}
-              aria-label="Copy gift code"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-maroon shadow-sm transition-all hover:bg-[#F10897] hover:text-white active:scale-90"
-            >
-              {copied ? (
-                <Check className="h-4 w-4" strokeWidth={2.5} />
-              ) : (
-                <Copy className="h-4 w-4" strokeWidth={2.5} />
-              )}
-            </button>
-          </div>
-          {copied && (
-            <p className="mt-1.5 font-sans text-[11px] font-bold text-[#F10897]">
-              Copied!
-            </p>
-          )}
-        </div>
-
         {/* Personal message — CONDITIONAL */}
         {hasNote && (
           <div className="mt-4 rounded-2xl border-l-4 border-[#F10897] bg-blush/40 p-4">
@@ -1283,26 +1254,6 @@ function OrderMergedCard({
             </p>
           </div>
         )}
-
-        {/* Redeem button — links to /redeem */}
-        <Link
-          href="/redeem"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(241,8,151,0.35)] transition-all duration-200 hover:scale-[1.01] hover:bg-[#d4007d] active:scale-95"
-        >
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-          >
-            <PartyPopper className="h-4 w-4" strokeWidth={2.5} />
-          </motion.div>
-          Open My Gift
-          <ArrowRight
-            className="h-4 w-4 transition-transform group-hover:translate-x-1"
-            strokeWidth={2.5}
-          />
-        </Link>
       </div>
     </div>
   );
