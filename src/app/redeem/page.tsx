@@ -101,7 +101,7 @@ const itemUp = {
 
 export default function RedeemPage() {
   const { toast } = useToast();
-  const { redemption, setRedemption, demoCodes, user } = useStore();
+  const { redemption, setRedemption, clearRedemption, demoCodes, user } = useStore();
   const router = useRouter();
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -112,6 +112,26 @@ export default function RedeemPage() {
       router.replace("/login?callbackUrl=/redeem");
     }
   }, [user, router]);
+
+  // Reset the redemption state on mount so the page always starts fresh.
+  //
+  // Without this, a previous redemption (stored in the Zustand persist
+  // middleware → localStorage) would carry over — the button would
+  // show "Book a Session" + the success banner would say "Your gift is
+  // unlocked" from the PREVIOUS code, not the current one. The user
+  // would see the "already redeemed" state without having entered a
+  // new code on this visit.
+  //
+  // With this reset:
+  //   - Every visit to /redeem starts with the button saying "Redeem Gift"
+  //   - The user enters a code + clicks "Redeem Gift"
+  //   - Only after a successful redemption does the button morph to
+  //     "Book a Session" + the success banner appears
+  //   - If the user leaves and comes back, the state resets again
+  useEffect(() => {
+    clearRedemption();
+    setCode("");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Set gradient — render + useEffect
   useMemo(() => {
