@@ -864,7 +864,7 @@ function OrderConfirmationContent() {
 
       {/* ============ BOTTOM NAV ============ */}
       <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-center">
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4 sm:flex-row sm:justify-center sm:gap-6">
           <Link
             href="/account?tab=orders"
             className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_10px_30px_rgba(78, 0, 48, 0.25)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#d4007d] active:scale-95 sm:w-auto"
@@ -880,30 +880,6 @@ function OrderConfirmationContent() {
             <Gift className="h-4 w-4" strokeWidth={2.5} />
             Send Another Gift
           </button>
-          <Link
-            href="/redeem"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95 sm:w-auto"
-          >
-            <Sparkles className="h-4 w-4" strokeWidth={2.5} />
-            Redeem a Card
-          </Link>
-          <button
-            type="button"
-            onClick={handleResendEmail}
-            disabled={resendingEmail}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-          >
-            <Mail className="h-4 w-4" strokeWidth={2.5} />
-            {resendingEmail ? "Sending..." : "Resend Email"}
-          </button>
-          {resendResult === "success" && (
-            <span className="inline-flex items-center gap-1 font-sans text-xs font-bold text-[#2d6e4f]">
-              <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> Sent!
-            </span>
-          )}
-          {resendResult === "error" && (
-            <span className="font-sans text-xs font-bold text-red-400">Failed — try again</span>
-          )}
         </div>
       </section>
       </>
