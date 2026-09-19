@@ -275,23 +275,36 @@ function BookSessionPage() {
   // least one booking. Days with zero bookings are omitted (smaller
   // response).
   const [monthBookedTimes, setMonthBookedTimes] = useState<Record<string, string[]>>({});
+  // Track whether the month pre-fetch has completed. Until it has,
+  // the time picker shows a loading state instead of showing all slots
+  // (which might include already-booked ones that haven't been filtered
+  // out yet). This prevents the race condition where the user picks a
+  // time slot before the booked-times data has loaded, tries to confirm,
+  // and gets a backend rejection ("You already have a booking at this
+  // time" or "This time slot is already booked").
+  const [monthBookedTimesLoaded, setMonthBookedTimesLoaded] = useState(false);
 
   useEffect(() => {
     if (!user) return;
+    setMonthBookedTimesLoaded(false);
     const yyyy = viewMonth.getFullYear();
     const mm = String(viewMonth.getMonth() + 1).padStart(2, "0");
     const monthParam = `${yyyy}-${mm}`;
 
     fetch(`/api/bookings/slots?month=${monthParam}`)
       .then((r) => (r.ok ? r.json() : { monthBookedTimes: {} }))
-      .then((data) =>
+      .then((data) => {
         setMonthBookedTimes(
           data.monthBookedTimes && typeof data.monthBookedTimes === "object"
             ? data.monthBookedTimes
             : {},
-        ),
-      )
-      .catch(() => setMonthBookedTimes({}));
+        );
+        setMonthBookedTimesLoaded(true);
+      })
+      .catch(() => {
+        setMonthBookedTimes({});
+        setMonthBookedTimesLoaded(true);
+      });
   }, [viewMonth, user]);
 
   // Get the day name for the selected date
@@ -481,6 +494,12 @@ function BookSessionPage() {
     !!selectedGiftCard &&
     availableBalance > 0 &&
     !isFullyRedeemed &&
+    // Block confirm until the month's booked-times data has loaded.
+    // Without this, the user could pick a time slot before the
+    // omission filter has run, then confirm a booked slot — the backend
+    // would reject with "You already have a booking at this time" or
+    // "This time slot is already booked".
+    monthBookedTimesLoaded &&
     // Block confirm if the user's selected time slot was already booked
     // (e.g. another user grabbed it between when this user picked it and
     // when they clicked Confirm). The backend would reject this anyway
@@ -1084,6 +1103,17 @@ function BookSessionPage() {
                       The counselor is not available on {selectedDayName}s. Please pick a different date.
                     </p>
                   </div>
+                ) : !monthBookedTimesLoaded ? (
+                  // LOADING STATE: the month pre-fetch hasn't completed yet.
+                  // Show a spinner instead of the time slots so the user
+                  // can't accidentally select a booked time that hasn't
+                  // been filtered out yet. This is the fix for the race
+                  // condition that caused "Booking failed — You already
+                  // have a booking at this time" errors.
+                  <div className="flex items-center gap-2 py-4 text-maroon/60">
+                    <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
+                    <span className="font-sans text-sm">Checking availability…</span>
+                  </div>
                 ) : (
                   <div>
                     <div className="flex items-center gap-2">
@@ -1095,26 +1125,10 @@ function BookSessionPage() {
                       </span>
                     </div>
                     {/* ============ INDUSTRY-STANDARD OMISSION METHOD ============
-                        Instead of rendering booked slots with disabled
-                        styling, we FILTER the counselor's schedule array
-                        BEFORE rendering. Booked time slots are completely
-                        removed from the UI — the user only sees the slots
-                        that are actually available to book.
-
-                        Why omission (not disabled):
-                          - Industry standard for booking UIs (Calendly,
-                            Cal.com, OpenTable all omit, not disable).
-                          - Reduces cognitive load — the user doesn't have
-                            to mentally filter out struck-through options.
-                          - Prevents the "all slots are taken" gut-punch
-                            where the time picker is full of disabled slots
-                            with no clear path forward.
-
-                        Implementation: compute `openSlots` by filtering
-                        `availableSlots` against `bookedTimesForSelected`
-                        (the pre-fetched booked times for the selected date).
-                        If `openSlots` is empty, render the empty-state
-                        fallback message instead of an empty container. */}
+                        Filter the counselor's schedule against the
+                        monthBookedTimes data (pre-fetched + loaded) to
+                        completely remove booked slots from the UI.
+                        The user only sees slots that are actually available. */}
                     {(() => {
                       const openSlots = availableSlots.filter(
                         (t) => !isTimeSlotBooked(t),
