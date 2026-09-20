@@ -124,13 +124,9 @@ export default function RootLayout({
           <SessionSync />
           <Toaster />
         </Providers>
-        {/* Paystack Inline JS — loaded lazily so it doesn't block page render.
-            Used by /checkout to open the Paystack popup for card payments.
-            Safe to load on every page — it just defines window.PaystackPop. */}
-        <Script
-          src="https://js.paystack.co/v1/inline.js"
-          strategy="lazyOnload"
-        />
+        {/* Paystack Inline JS — only loaded when ENABLE_PAYSTACK is true.
+            Moved to /checkout page (conditionally rendered there) instead
+            of loading on every page. See src/app/checkout/page.tsx. */}
       </body>
     </html>
   );

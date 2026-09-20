@@ -89,7 +89,7 @@ export default function Navbar() {
         <ul className="hidden items-center gap-9 md:flex">
           {NAV_LINKS.map((link) => { const active = isActive(link.href); return (
             <li key={link.label}>
-              <Link href={link.href} target="_blank" rel="noopener noreferrer" className={active ? activeClass(link.href) : "relative font-sans text-sm font-medium text-maroon transition-colors hover:text-[#C7B2E2] after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-0 after:bg-[#C7B2E2] after:transition-all after:duration-300 hover:after:w-full"}>
+              <Link href={link.href} className={active ? activeClass(link.href) : "relative font-sans text-sm font-medium text-maroon transition-colors hover:text-[#C7B2E2] after:absolute after:-bottom-1 after:left-0 after:h-[2px] after:w-0 after:bg-[#C7B2E2] after:transition-all after:duration-300 hover:after:w-full"}>
                 {link.label}
               </Link>
             </li>
@@ -192,7 +192,7 @@ export default function Navbar() {
             <motion.ul initial="hidden" animate="show" variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } } }} className="mt-4 flex flex-col gap-2 px-5 sm:px-8">
               {NAV_LINKS.map((link) => { const active = isActive(link.href); return (
                 <motion.li key={link.label} variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
-                  <Link href={link.href} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className={active ? (link.href === "/redeem" || link.href === "/how-it-works" || link.href === "/faq" ? "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F20997] underline decoration-[#E8B6D5] decoration-2 underline-offset-4" : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F10897] underline decoration-[#E8B6D5] decoration-2 underline-offset-4") : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-maroon transition-colors hover:bg-[#C7B2E2]/15"}>
+                  <Link href={link.href} onClick={() => setOpen(false)} className={active ? (link.href === "/redeem" || link.href === "/how-it-works" || link.href === "/faq" ? "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F20997] underline decoration-[#E8B6D5] decoration-2 underline-offset-4" : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F10897] underline decoration-[#E8B6D5] decoration-2 underline-offset-4") : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-maroon transition-colors hover:bg-[#C7B2E2]/15"}>
                     {link.label}
                   </Link>
                 </motion.li>

@@ -370,13 +370,11 @@ export async function GET(req: Request) {
       );
     }
 
-    const url = new URL(req.url);
-    const email = url.searchParams.get("email");
-
-    // If no auth session, allow lookup by buyer email (for guest checkout)
-    const where = email
-      ? { buyerEmail: email }
-      : { userId: (session.user as { id: string }).id };
+    // SECURITY FIX (C1): Removed the ?email= query param branch that
+    // allowed IDOR — any authenticated user could read any other user's
+    // orders by passing ?email=victim@example.com. Now we ONLY return
+    // orders belonging to the authenticated user's userId.
+    const where = { userId: (session.user as { id: string }).id };
 
     const orders = await db.order.findMany({
       where,

@@ -72,36 +72,37 @@ export async function POST(req: Request) {
     });
     const orderIds = userOrders.map((o) => o.id);
 
-    // Delete in dependency order
-    // 1. Bookings (reference userId + redemptionId)
-    await db.booking.deleteMany({ where: { userId } });
+    // C7 FIX: Wrap ALL deletes in a transaction so partial failures
+    // don't leave inconsistent state. Also, only delete redemptions
+    // where userId === this user (self-redeemed cards) — NOT redemptions
+    // on this user's orders that were redeemed by OTHER users (gifts
+    // sent to friends). Those belong to the recipients, not the buyer.
+    await db.$transaction(async (tx) => {
+      // 1. Bookings (reference userId + redemptionId)
+      await tx.booking.deleteMany({ where: { userId } });
 
-    // 2. Redemptions linked to user OR linked to user's orders
-    await db.redemption.deleteMany({
-      where: {
-        OR: [
-          { userId },
-          { orderId: { in: orderIds } },
-        ],
-      },
+      // 2. Redemptions linked to the user (self-redeemed cards only)
+      // Do NOT delete redemptions on the user's orders that were
+      // redeemed by other users — those are THEIR gift cards.
+      await tx.redemption.deleteMany({ where: { userId } });
+
+      // 3. Order items for user's orders
+      if (orderIds.length > 0) {
+        await tx.orderItem.deleteMany({
+          where: { orderId: { in: orderIds } },
+        });
+      }
+
+      // 4. Orders placed by user
+      await tx.order.deleteMany({ where: { userId } });
+
+      // 5. NextAuth Session + Account tables
+      await tx.session.deleteMany({ where: { userId } });
+      await tx.account.deleteMany({ where: { userId } });
+
+      // 6. Finally, the user record
+      await tx.user.delete({ where: { id: userId } });
     });
-
-    // 3. Order items for user's orders
-    if (orderIds.length > 0) {
-      await db.orderItem.deleteMany({
-        where: { orderId: { in: orderIds } },
-      });
-    }
-
-    // 4. Orders placed by user
-    await db.order.deleteMany({ where: { userId } });
-
-    // 5. NextAuth Session + Account tables
-    await db.session.deleteMany({ where: { userId } });
-    await db.account.deleteMany({ where: { userId } });
-
-    // 6. Finally, the user record
-    await db.user.delete({ where: { id: userId } });
 
     return NextResponse.json({
       success: true,

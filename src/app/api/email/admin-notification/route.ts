@@ -38,6 +38,9 @@ function parseSender(): { name: string; email: string } {
 
 export async function POST(req: Request) {
   try {
+    if (!verifyInternalAuth(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await req.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -52,7 +55,12 @@ export async function POST(req: Request) {
     const adminRaw = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || "hello@tarewellness.com";
     const adminEmail = adminRaw.match(/<([^>]+)>/)?.[1] || adminRaw;
 
-    const subject = `New Order ${orderNumber} - ${paymentMethod === "transfer" ? "Bank Transfer" : "Payment"} - \u20a6${amountNaira}`;
+    function escapeHtml(str: string | null | undefined): string {
+  if (!str) return "";
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+const subject = `New Order ${orderNumber} - ${paymentMethod === "transfer" ? "Bank Transfer" : "Payment"} - \u20a6${amountNaira}`;
     const siteUrl = process.env.NEXTAUTH_URL || "https://www.tarewellness.com";
 
     // Email-safe HTML template: use a <table> instead of flexbox.
@@ -106,7 +114,7 @@ export async function POST(req: Request) {
                           Buyer:&nbsp;
                         </td>
                         <td style="vertical-align: top; color: #4E0030; font-size: 14px; font-weight: bold; text-align: right;">
-                          ${buyerName} &lt;${buyerEmail}&gt;
+                          ${escapeHtml(buyerName)} &lt;${buyerEmail}&gt;
                         </td>
                       </tr>
                     </tbody>
@@ -138,7 +146,7 @@ export async function POST(req: Request) {
                           Recipients:&nbsp;
                         </td>
                         <td style="vertical-align: top; color: #4E0030; font-size: 14px; font-weight: bold; text-align: right;">
-                          ${recipientCount} (${recipientNames.join(", ")})
+                          ${recipientCount} (${recipientNames.map(escapeHtml).join(", ")})
                         </td>
                       </tr>
                     </tbody>
@@ -168,6 +176,9 @@ export async function POST(req: Request) {
     const brevo = getBrevo();
     if (brevo) {
       try {
+    if (!verifyInternalAuth(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
         const sender = parseSender();
         await brevo.transactionalEmails.sendTransacEmail({
           sender: { name: "Tare Admin Alerts", email: sender.email },

@@ -50,6 +50,9 @@ function escapeHtml(str: string | null | undefined): string {
 
 export async function POST(req: Request) {
   try {
+    if (!verifyInternalAuth(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     // NOTE: We intentionally do NOT call checkRateLimit() here.
     //
     // This endpoint is called server-to-server from /api/bookings after a
@@ -216,6 +219,9 @@ export async function POST(req: Request) {
 
     if (brevo) {
       try {
+    if (!verifyInternalAuth(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
         const sender = parseSender();
         const response = await brevo.transactionalEmails.sendTransacEmail({
           sender: { name: sender.name, email: sender.email },
