@@ -21,6 +21,7 @@ import {
   Settings as SettingsIcon,
   Building2,
   Save,
+  Trash2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CopyCodeButton } from "@/components/ui/copy-code-button";
