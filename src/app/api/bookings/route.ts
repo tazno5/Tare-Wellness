@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { internalFetch } from "@/lib/internal-fetch";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
@@ -361,7 +362,7 @@ export async function POST(req: Request) {
           ? `https://${process.env.VERCEL_URL}`
           : "http://localhost:3000";
 
-    fetch(`${baseUrl}/api/email/booking-confirmation`, {
+    internalFetch(`/api/email/booking-confirmation`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

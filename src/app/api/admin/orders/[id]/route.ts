@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { internalFetch } from "@/lib/internal-fetch";
 import { db } from "@/lib/db";
 import { verifyAdminToken } from "@/lib/admin-auth";
 
@@ -143,7 +144,7 @@ export async function PATCH(
         const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
         await Promise.all(
           completedOrder.orderItems.map((item) =>
-            fetch(`${baseUrl}/api/email/send`, {
+            internalFetch(`/api/email/send`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ orderItemId: item.id }),

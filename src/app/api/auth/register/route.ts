@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { internalFetch } from "@/lib/internal-fetch";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
     // production, preview deploys, and local dev (where the Next.js server
     // is at http://localhost:3000).
     const origin = new URL(req.url || "http://localhost:3000").origin;
-    fetch(`${origin}/api/email/welcome`, {
+    internalFetch(`/api/email/welcome`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: user.name, email: user.email }),
