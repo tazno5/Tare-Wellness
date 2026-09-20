@@ -100,6 +100,39 @@ export default function AdminPage() {
   const [bankDetails, setBankDetails] = useState({ bankName: "", accountName: "", accountNumber: "", whatsappNumber: "", therapistName: "" });
   const [savingBank, setSavingBank] = useState(false);
   const [bankLoaded, setBankLoaded] = useState(false);
+
+  // Danger Zone — Clear All Data state
+  const [clearDataConfirm, setClearDataConfirm] = useState(false);
+  const [clearDataText, setClearDataText] = useState("");
+  const [clearingData, setClearingData] = useState(false);
+  const [clearDataResult, setClearDataResult] = useState<{ message: string; deleted: { bookings: number; redemptions: number; orderItems: number; orders: number; users: number } } | null>(null);
+
+  const handleClearData = async () => {
+    setClearingData(true);
+    try {
+      const res = await fetch("/api/admin/clear-data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${secret}`,
+        },
+        body: JSON.stringify({ confirm: "DELETE ALL DATA" }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to clear data");
+      setClearDataResult(data);
+      toast({ title: "Data cleared", description: "All test data has been permanently deleted." });
+      // Refresh stats + orders + bookings + users (all now empty)
+      setStats(null);
+      setOrders(null);
+      setBookings(null);
+      setUsers(null);
+    } catch (error) {
+      toast({ title: "Failed to clear data", description: error instanceof Error ? error.message : "Please try again.", variant: "destructive" });
+    } finally {
+      setClearingData(false);
+    }
+  };
   const [schedule, setSchedule] = useState<Record<string, string[]>>({
     monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: [],
   });
@@ -777,6 +810,60 @@ export default function AdminPage() {
                 <p className="mt-3 font-sans text-[11px] text-[#4E0030]/50">
                   Changes take effect immediately on the checkout + order confirmation pages.
                 </p>
+              </div>
+
+              {/* ============ DANGER ZONE ============ */}
+              <div className="mt-6 rounded-2xl border-2 border-red-200 bg-red-50/50 p-5">
+                <h3 className="font-fraunces text-lg font-bold text-red-700">Danger Zone</h3>
+                <p className="mt-1 font-sans text-xs text-red-700/70">
+                  Clear ALL data — every user, order, booking, and gift card redemption. This cannot be undone. Gift card types and settings are preserved.
+                </p>
+                {clearDataConfirm ? (
+                  <div className="mt-4">
+                    <p className="font-sans text-sm font-bold text-red-700">⚠️ Type DELETE ALL DATA to confirm:</p>
+                    <input
+                      type="text"
+                      value={clearDataText}
+                      onChange={(e) => setClearDataText(e.target.value)}
+                      placeholder="DELETE ALL DATA"
+                      className="mt-2 h-10 w-full rounded-lg border-2 border-red-200 bg-white px-3 font-mono text-sm font-bold uppercase text-red-700 placeholder:font-sans placeholder:normal-case placeholder:font-normal placeholder:text-[#4E0030]/40 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200"
+                    />
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleClearData}
+                        disabled={clearDataText !== "DELETE ALL DATA" || clearingData}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-5 py-2 font-sans text-xs font-bold uppercase tracking-[0.12em] text-white transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {clearingData ? (<><Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />Clearing...</>) : (<><Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />Permanently Delete All Data</>)}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setClearDataConfirm(false); setClearDataText(""); }}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-white border border-[#4E0030]/20 px-5 py-2 font-sans text-xs font-bold uppercase tracking-[0.12em] text-[#4E0030] transition-all hover:bg-[#FFF5EE]"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                    {clearDataResult && (
+                      <div className="mt-3 rounded-lg bg-white p-3">
+                        <p className="font-sans text-xs font-bold text-[#2d6e4f]">✅ {clearDataResult.message}</p>
+                        <p className="mt-1 font-sans text-[11px] text-[#4E0030]/60">
+                          Deleted: {clearDataResult.deleted.bookings} bookings, {clearDataResult.deleted.redemptions} redemptions, {clearDataResult.deleted.orderItems} order items, {clearDataResult.deleted.orders} orders, {clearDataResult.deleted.users} users
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setClearDataConfirm(true)}
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-5 py-2.5 font-sans text-xs font-bold uppercase tracking-[0.12em] text-white transition-all hover:bg-red-700 active:scale-95"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    Clear All Data
+                  </button>
+                )}
               </div>
             </div>
           )}

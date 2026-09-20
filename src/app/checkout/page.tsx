@@ -14,7 +14,7 @@
 // NOTE: This is a UI flag only. The API route (/api/orders) has its
 // own ENABLE_PAYSTACK constant that controls server-side Paystack
 // verification. Both must be set to `true` to fully re-enable.
-const ENABLE_PAYSTACK = false;
+const ENABLE_PAYSTACK = true;
 // ============================================================
 
 import { Suspense, useEffect, useMemo, useState } from "react";

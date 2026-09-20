@@ -18,7 +18,7 @@ import { verifyTransaction } from "@/lib/paystack";
 // NOTE: The checkout UI has its own ENABLE_PAYSTACK flag at the top
 // of src/app/checkout/page.tsx. Both must be `true` for the full
 // Paystack flow to work.
-const ENABLE_PAYSTACK = false;
+const ENABLE_PAYSTACK = true;
 // ============================================================
 
 // ============ Validation (HIGH #4) ============
@@ -156,15 +156,17 @@ export async function POST(req: Request) {
         );
       }
 
-      // Amount check — totalAmount is in kobo (NGN × 100), Paystack returns
-      // amount in kobo too. Skip in demo mode (no secret key).
+      // Amount check — totalAmount is in NAIRA (e.g. 20000 = ₦20,000).
+      // Paystack returns amount in KOBO (e.g. 2,000,000 = ₦20,000).
+      // So we multiply our Naira total by 100 to compare with Paystack's kobo.
+      // Skip in demo mode (no secret key).
       const secretKey = process.env.PAYSTACK_SECRET_KEY;
       const isDemoMode = !secretKey || secretKey === "sk_test_placeholder";
-      if (!isDemoMode && verification.data?.amount !== totalAmount) {
+      if (!isDemoMode && verification.data?.amount !== totalAmount * 100) {
         return NextResponse.json(
           {
             error: "Payment amount mismatch",
-            details: `Expected ₦${(totalAmount / 100).toLocaleString()} but received ₦${((verification.data?.amount ?? 0) / 100).toLocaleString()}`,
+            details: `Expected ₦${totalAmount.toLocaleString()} (kobo: ${totalAmount * 100}) but received kobo: ${verification.data?.amount ?? 0}`,
           },
           { status: 400 },
         );
