@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyInternalAuth } from "@/lib/internal-auth";
 import { BrevoClient } from "@getbrevo/brevo";
 import { z } from "zod";
 import { db } from "@/lib/db";

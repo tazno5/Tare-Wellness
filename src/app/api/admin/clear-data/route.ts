@@ -60,17 +60,10 @@ export async function POST(req: Request) {
 
     // Use a transaction so partial failures don't leave inconsistent state
     await db.$transaction(async (tx) => {
-      results.bookings = await tx.booking.deleteMany({});
-      results.bookings = results.bookings.count;
-
-      results.redemptions = await tx.redemption.deleteMany({});
-      results.redemptions = results.redemptions.count;
-
-      results.orderItems = await tx.orderItem.deleteMany({});
-      results.orderItems = results.orderItems.count;
-
-      results.orders = await tx.order.deleteMany({});
-      results.orders = results.orders.count;
+      results.bookings = (await tx.booking.deleteMany({})).count;
+      results.redemptions = (await tx.redemption.deleteMany({})).count;
+      results.orderItems = (await tx.orderItem.deleteMany({})).count;
+      results.orders = (await tx.order.deleteMany({})).count;
 
       // Delete NextAuth accounts + sessions (if they exist)
       try {
@@ -84,8 +77,7 @@ export async function POST(req: Request) {
         // Table might not exist in all deployments
       }
 
-      results.users = await tx.user.deleteMany({});
-      results.users = results.users.count;
+      results.users = (await tx.user.deleteMany({})).count;
     });
 
     return NextResponse.json({
