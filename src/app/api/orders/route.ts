@@ -18,7 +18,7 @@ import { verifyTransaction } from "@/lib/paystack";
 // NOTE: The checkout UI has its own ENABLE_PAYSTACK flag at the top
 // of src/app/checkout/page.tsx. Both must be `true` for the full
 // Paystack flow to work.
-const ENABLE_PAYSTACK = true;
+const ENABLE_PAYSTACK = false;
 // ============================================================
 
 // ============ Validation (HIGH #4) ============
