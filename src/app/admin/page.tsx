@@ -106,7 +106,27 @@ export default function AdminPage() {
   const [clearDataConfirm, setClearDataConfirm] = useState(false);
   const [clearDataText, setClearDataText] = useState("");
   const [clearingData, setClearingData] = useState(false);
+  const [clearDataPhrase, setClearDataPhrase] = useState("DELETE ALL DATA");
   const [clearDataResult, setClearDataResult] = useState<{ message: string; deleted: { bookings: number; redemptions: number; orderItems: number; orders: number; users: number } } | null>(null);
+
+  // Fetch the confirmation phrase from the server when the Danger Zone
+  // is opened. The phrase is set via CLEAR_DATA_PHRASE env var on Vercel.
+  // If not set, defaults to "DELETE ALL DATA".
+  const handleOpenDangerZone = async () => {
+    setClearDataConfirm(true);
+    setClearDataText("");
+    setClearDataResult(null);
+    try {
+      const res = await fetch("/api/admin/clear-data", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${secret}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.phrase) setClearDataPhrase(data.phrase);
+      }
+    } catch {}
+  };
 
   const handleClearData = async () => {
     setClearingData(true);
@@ -117,7 +137,7 @@ export default function AdminPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${secret}`,
         },
-        body: JSON.stringify({ confirm: "DELETE ALL DATA" }),
+        body: JSON.stringify({ confirm: clearDataPhrase }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to clear data");
@@ -821,19 +841,19 @@ export default function AdminPage() {
                 </p>
                 {clearDataConfirm ? (
                   <div className="mt-4">
-                    <p className="font-sans text-sm font-bold text-red-700">⚠️ Type DELETE ALL DATA to confirm:</p>
+                    <p className="font-sans text-sm font-bold text-red-700">⚠️ Type <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded">{clearDataPhrase}</span> to confirm:</p>
                     <input
                       type="text"
                       value={clearDataText}
                       onChange={(e) => setClearDataText(e.target.value)}
-                      placeholder="DELETE ALL DATA"
+                      placeholder={clearDataPhrase}
                       className="mt-2 h-10 w-full rounded-lg border-2 border-red-200 bg-white px-3 font-mono text-sm font-bold uppercase text-red-700 placeholder:font-sans placeholder:normal-case placeholder:font-normal placeholder:text-[#4E0030]/40 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200"
                     />
                     <div className="mt-3 flex gap-2">
                       <button
                         type="button"
                         onClick={handleClearData}
-                        disabled={clearDataText !== "DELETE ALL DATA" || clearingData}
+                        disabled={clearDataText !== clearDataPhrase || clearingData}
                         className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-5 py-2 font-sans text-xs font-bold uppercase tracking-[0.12em] text-white transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {clearingData ? (<><Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />Clearing...</>) : (<><Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />Permanently Delete All Data</>)}
@@ -858,7 +878,7 @@ export default function AdminPage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setClearDataConfirm(true)}
+                    onClick={handleOpenDangerZone}
                     className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-red-600 px-5 py-2.5 font-sans text-xs font-bold uppercase tracking-[0.12em] text-white transition-all hover:bg-red-700 active:scale-95"
                   >
                     <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />
