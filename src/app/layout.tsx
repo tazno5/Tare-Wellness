@@ -8,6 +8,7 @@ import ConditionalChrome from "@/components/site/ConditionalChrome";
 import CookieConsent from "@/components/site/CookieConsent";
 import InactivityLogout from "@/components/site/InactivityLogout";
 import SessionSync from "@/components/site/SessionSync";
+import { ScrollToTop } from "@/components/site/ScrollToTop";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-plus-jakarta",
@@ -122,6 +123,7 @@ export default function RootLayout({
           <CookieConsent />
           <InactivityLogout />
           <SessionSync />
+          <ScrollToTop />
           <Toaster />
         </Providers>
         {/* Paystack Inline JS — only loaded when ENABLE_PAYSTACK is true.
