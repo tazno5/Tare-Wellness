@@ -106,26 +106,40 @@ export default function AdminPage() {
   const [clearDataConfirm, setClearDataConfirm] = useState(false);
   const [clearDataText, setClearDataText] = useState("");
   const [clearingData, setClearingData] = useState(false);
-  const [clearDataPhrase, setClearDataPhrase] = useState("DELETE ALL DATA");
   const [clearDataResult, setClearDataResult] = useState<{ message: string; deleted: { bookings: number; redemptions: number; orderItems: number; orders: number; users: number } } | null>(null);
+  const [regeneratingCode, setRegeneratingCode] = useState(false);
 
-  // Fetch the confirmation phrase from the server when the Danger Zone
-  // is opened. The phrase is set via CLEAR_DATA_PHRASE env var on Vercel.
-  // If not set, defaults to "DELETE ALL DATA".
-  const handleOpenDangerZone = async () => {
+  const handleOpenDangerZone = () => {
     setClearDataConfirm(true);
     setClearDataText("");
     setClearDataResult(null);
+  };
+
+  // "Forgot Code?" — generates a new confirmation phrase and emails it
+  // to the admin address. The phrase is NOT shown in the UI — it's
+  // only sent via email so nobody watching the screen can see it.
+  const handleForgotCode = async () => {
+    setRegeneratingCode(true);
     try {
       const res = await fetch("/api/admin/clear-data", {
-        method: "GET",
+        method: "PATCH",
         headers: { Authorization: `Bearer ${secret}` },
       });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.phrase) setClearDataPhrase(data.phrase);
-      }
-    } catch {}
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate new code");
+      toast({
+        title: "New code sent",
+        description: "A new confirmation code has been emailed to the admin address. Check your inbox.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to send new code",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setRegeneratingCode(false);
+    }
   };
 
   const handleClearData = async () => {
@@ -137,13 +151,12 @@ export default function AdminPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${secret}`,
         },
-        body: JSON.stringify({ confirm: clearDataPhrase }),
+        body: JSON.stringify({ confirm: clearDataText }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to clear data");
       setClearDataResult(data);
       toast({ title: "Data cleared", description: "All test data has been permanently deleted." });
-      // Refresh stats + orders + bookings + users (all now empty)
       setStats(null);
       setOrders(null);
       setBookings(null);
@@ -841,22 +854,31 @@ export default function AdminPage() {
                 </p>
                 {clearDataConfirm ? (
                   <div className="mt-4">
-                    <p className="font-sans text-sm font-bold text-red-700">⚠️ Type <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded">{clearDataPhrase}</span> to confirm:</p>
+                    <p className="font-sans text-sm font-bold text-red-700">⚠️ Enter your confirmation code to proceed:</p>
                     <input
-                      type="text"
+                      type="password"
                       value={clearDataText}
                       onChange={(e) => setClearDataText(e.target.value)}
-                      placeholder={clearDataPhrase}
-                      className="mt-2 h-10 w-full rounded-lg border-2 border-red-200 bg-white px-3 font-mono text-sm font-bold uppercase text-red-700 placeholder:font-sans placeholder:normal-case placeholder:font-normal placeholder:text-[#4E0030]/40 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200"
+                      placeholder="Enter code"
+                      autoComplete="off"
+                      className="mt-2 h-10 w-full rounded-lg border-2 border-red-200 bg-white px-3 font-mono text-sm font-bold text-red-700 placeholder:font-sans placeholder:font-normal placeholder:text-[#4E0030]/40 focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-200"
                     />
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={handleClearData}
-                        disabled={clearDataText !== clearDataPhrase || clearingData}
+                        disabled={!clearDataText || clearingData}
                         className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-5 py-2 font-sans text-xs font-bold uppercase tracking-[0.12em] text-white transition-all hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {clearingData ? (<><Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />Clearing...</>) : (<><Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />Permanently Delete All Data</>)}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleForgotCode}
+                        disabled={regeneratingCode}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-white border border-red-300 px-4 py-2 font-sans text-xs font-semibold text-red-600 transition-all hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {regeneratingCode ? (<><Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2.5} />Sending...</>) : (<>Forgot Code?</>)}
                       </button>
                       <button
                         type="button"
@@ -866,6 +888,9 @@ export default function AdminPage() {
                         Cancel
                       </button>
                     </div>
+                    <p className="mt-2 font-sans text-[11px] text-red-600/60">
+                      Don't know the code? Click "Forgot Code?" and a new one will be emailed to the admin address.
+                    </p>
                     {clearDataResult && (
                       <div className="mt-3 rounded-lg bg-white p-3">
                         <p className="font-sans text-xs font-bold text-[#2d6e4f]">✅ {clearDataResult.message}</p>
