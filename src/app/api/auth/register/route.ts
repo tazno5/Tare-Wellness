@@ -76,22 +76,24 @@ export async function POST(req: Request) {
     });
 
     // Send welcome email (best-effort, never throws).
-    // We do NOT await this in production — fire it off and let it run.
-    // The helper catches its own errors internally and returns a result,
-    // so even if Brevo is down, signup succeeds.
+    // We AWAIT it here so any rejection inside sendWelcomeEmail is fully
+    // observed by THIS try/catch — not leaked as an unhandled rejection
+    // that crashes the serverless function after we've returned.
     //
-    // We do await it here for two reasons:
-    //   1. We want errors to be logged (the helper does console.error on failure)
-    //   2. The helper never throws, so awaiting it is safe and fast (~50ms typical)
-    sendWelcomeEmail({ name: user.name, email: user.email })
-      .then((result) => {
-        if (result.warning) {
-          console.warn("[signup] Welcome email warning:", result.warning);
-        }
-      })
-      .catch(() => {
-        // Defensive — the helper should never throw, but just in case
-      });
+    // sendWelcomeEmail is designed to NEVER throw — its internal try/catch
+    // returns a result object even on Brevo failure. So awaiting it is
+    // safe AND fast (~50ms typical for the Brevo roundtrip when configured,
+    // near-instant when not).
+    try {
+      const result = await sendWelcomeEmail({ name: user.name, email: user.email });
+      if (result.warning) {
+        console.warn("[signup] Welcome email warning:", result.warning);
+      }
+    } catch (emailErr) {
+      // Defensive: the helper should never throw, but if it does, log it
+      // and continue — signup must not fail because of an email problem.
+      console.error("[signup] sendWelcomeEmail threw (defensive catch):", emailErr);
+    }
 
     return NextResponse.json(
       {
@@ -104,18 +106,23 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Registration error:", error);
     // TEMPORARY DIAGNOSTIC MODE — return the actual error so we can see what's failing.
-    // Once we've fixed the bug, we'll revert this back to the generic message.
     const errorDetail =
       error instanceof Error
         ? `${error.name}: ${error.message}`
         : typeof error === "string"
           ? error
           : "unknown error";
+    // Also include the `cause` field if present (e.g. fetch errors have
+    // cause: Error: getaddrinfo ENOTFOUND ...). This is the actual root cause.
+    const causeDetail =
+      error instanceof Error && error.cause instanceof Error
+        ? `cause: ${error.cause.name}: ${error.cause.message}`
+        : "";
     return NextResponse.json(
       {
         error: "Failed to create account",
-        // Diagnostic info (safe to expose briefly while debugging):
         detail: errorDetail,
+        ...(causeDetail && { cause: causeDetail }),
         // Stack trace only in non-production:
         ...(process.env.NODE_ENV !== "production" && {
           stack: error instanceof Error ? error.stack : undefined,
