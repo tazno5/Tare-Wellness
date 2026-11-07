@@ -103,8 +103,24 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     console.error("Registration error:", error);
+    // TEMPORARY DIAGNOSTIC MODE — return the actual error so we can see what's failing.
+    // Once we've fixed the bug, we'll revert this back to the generic message.
+    const errorDetail =
+      error instanceof Error
+        ? `${error.name}: ${error.message}`
+        : typeof error === "string"
+          ? error
+          : "unknown error";
     return NextResponse.json(
-      { error: "Failed to create account" },
+      {
+        error: "Failed to create account",
+        // Diagnostic info (safe to expose briefly while debugging):
+        detail: errorDetail,
+        // Stack trace only in non-production:
+        ...(process.env.NODE_ENV !== "production" && {
+          stack: error instanceof Error ? error.stack : undefined,
+        }),
+      },
       { status: 500 },
     );
   }
