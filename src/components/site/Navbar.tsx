@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { label: "Gift Cards", href: "/gift-cards" },
   { label: "Redeem", href: "/redeem" },
   { label: "How It Works", href: "/how-it-works" },
+  { label: "Blog", href: "/blog" },
   { label: "FAQ", href: "/faq" },
 ];
 
@@ -39,12 +40,13 @@ export default function Navbar() {
     if (href === "/redeem") return ["/redeem", "/book-session", "/booking-confirmation"].includes(pathname);
     if (href === "/how-it-works") return pathname === "/how-it-works";
     if (href === "/faq") return pathname === "/faq";
+    if (href === "/blog") return pathname === "/blog" || pathname.startsWith("/blog/");
     if (href === "/") return pathname === "/";
     return pathname === href || pathname.startsWith(href + "/");
   };
 
   const activeClass = (href: string) => {
-    if (href === "/redeem" || href === "/how-it-works" || href === "/faq")
+    if (href === "/redeem" || href === "/how-it-works" || href === "/faq" || href === "/blog")
       return "relative font-sans text-sm font-semibold text-[#F20997] underline decoration-[#E8B6D5] decoration-2 underline-offset-4";
     return "relative font-sans text-sm font-semibold text-[#F10897] underline decoration-[#E8B6D5] decoration-2 underline-offset-4";
   };
@@ -192,7 +194,7 @@ export default function Navbar() {
             <motion.ul initial="hidden" animate="show" variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08, delayChildren: 0.1 } } }} className="mt-4 flex flex-col gap-2 px-5 sm:px-8">
               {NAV_LINKS.map((link) => { const active = isActive(link.href); return (
                 <motion.li key={link.label} variants={{ hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }}>
-                  <Link href={link.href} onClick={() => setOpen(false)} className={active ? (link.href === "/redeem" || link.href === "/how-it-works" || link.href === "/faq" ? "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F20997] underline decoration-[#E8B6D5] decoration-2 underline-offset-4" : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F10897] underline decoration-[#E8B6D5] decoration-2 underline-offset-4") : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-maroon transition-colors hover:bg-[#C7B2E2]/15"}>
+                  <Link href={link.href} onClick={() => setOpen(false)} className={active ? (link.href === "/redeem" || link.href === "/how-it-works" || link.href === "/faq" || link.href === "/blog" ? "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F20997] underline decoration-[#E8B6D5] decoration-2 underline-offset-4" : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-[#F10897] underline decoration-[#E8B6D5] decoration-2 underline-offset-4") : "block rounded-2xl px-4 py-3 font-fraunces text-3xl font-bold text-maroon transition-colors hover:bg-[#C7B2E2]/15"}>
                     {link.label}
                   </Link>
                 </motion.li>
