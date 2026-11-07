@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { internalFetch } from "@/lib/internal-fetch";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
@@ -156,15 +157,17 @@ export async function POST(req: Request) {
         );
       }
 
-      // Amount check — totalAmount is in kobo (NGN × 100), Paystack returns
-      // amount in kobo too. Skip in demo mode (no secret key).
+      // Amount check — totalAmount is in NAIRA (e.g. 20000 = ₦20,000).
+      // Paystack returns amount in KOBO (e.g. 2,000,000 = ₦20,000).
+      // So we multiply our Naira total by 100 to compare with Paystack's kobo.
+      // Skip in demo mode (no secret key).
       const secretKey = process.env.PAYSTACK_SECRET_KEY;
       const isDemoMode = !secretKey || secretKey === "sk_test_placeholder";
-      if (!isDemoMode && verification.data?.amount !== totalAmount) {
+      if (!isDemoMode && verification.data?.amount !== totalAmount * 100) {
         return NextResponse.json(
           {
             error: "Payment amount mismatch",
-            details: `Expected ₦${(totalAmount / 100).toLocaleString()} but received ₦${((verification.data?.amount ?? 0) / 100).toLocaleString()}`,
+            details: `Expected ₦${totalAmount.toLocaleString()} (kobo: ${totalAmount * 100}) but received kobo: ${verification.data?.amount ?? 0}`,
           },
           { status: 400 },
         );
@@ -295,7 +298,7 @@ export async function POST(req: Request) {
       const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
       await Promise.all(
         order.orderItems.map((item) =>
-          fetch(`${baseUrl}/api/email/send`, {
+          internalFetch(`/api/email/send`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ orderItemId: item.id }),
@@ -310,7 +313,7 @@ export async function POST(req: Request) {
     // bank account + confirm in the admin dashboard."
     if (order) {
       const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-      fetch(`${baseUrl}/api/email/admin-notification`, {
+      internalFetch(`/api/email/admin-notification`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -330,7 +333,7 @@ export async function POST(req: Request) {
       // with the bank details + order reference so they have a permanent
       // record (even if they close the browser tab).
       if (order.status === "pending") {
-        fetch(`${baseUrl}/api/email/bank-transfer-instructions`, {
+        internalFetch(`/api/email/bank-transfer-instructions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -368,13 +371,11 @@ export async function GET(req: Request) {
       );
     }
 
-    const url = new URL(req.url);
-    const email = url.searchParams.get("email");
-
-    // If no auth session, allow lookup by buyer email (for guest checkout)
-    const where = email
-      ? { buyerEmail: email }
-      : { userId: (session.user as { id: string }).id };
+    // SECURITY FIX (C1): Removed the ?email= query param branch that
+    // allowed IDOR — any authenticated user could read any other user's
+    // orders by passing ?email=victim@example.com. Now we ONLY return
+    // orders belonging to the authenticated user's userId.
+    const where = { userId: (session.user as { id: string }).id };
 
     const orders = await db.order.findMany({
       where,

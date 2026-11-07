@@ -24,6 +24,7 @@ import {
   X,
   HelpCircle,
   Loader2,
+  PartyPopper,
 } from "lucide-react";
 import {
   Accordion,
@@ -246,6 +247,12 @@ function BookSessionPage() {
   const [counselorSchedule, setCounselorSchedule] = useState<Record<string, string[]>>({
     monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: [],
   });
+  // Track whether the counselor schedule has loaded. Until it has, we
+  // can't know which slots are available for any given day, so the time
+  // picker shows a loading state. This prevents the user from seeing
+  // an empty schedule (which would look like "no sessions available")
+  // when the schedule just hasn't loaded yet.
+  const [counselorScheduleLoaded, setCounselorScheduleLoaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings/bank-details")
@@ -255,13 +262,200 @@ function BookSessionPage() {
           setCounselorSchedule(data.counselorSchedule);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setCounselorScheduleLoaded(true));
   }, []);
+
+  // ============ MONTH-LEVEL PRE-FETCH OF BOOKED SLOTS ============
+  // Pre-fetch the ENTIRE visible month's booked times when the calendar
+  // month changes. The API returns BookingSlot objects with:
+  //   - scheduledTime: string (e.g. "3:00 PM")
+  //   - durationMinutes: number (30, 50, 60, 75)
+  //   - userId: string (to distinguish "your booking" vs "someone else's")
+  // The client uses all three to:
+  //   1. Filter out booked slots from the time picker (omission method)
+  //   2. Compute overlaps — a 60-min booking at 10:00 AM blocks 10:30 AM
+  //      even though there's no booking AT 10:30 AM
+  //   3. Block the user's own existing bookings (so they don't get a
+  //      "You already have a booking at this time" error)
+  type BookingSlot = {
+    scheduledTime: string;
+    durationMinutes: number;
+    userId: string;
+  };
+  const [monthBookedTimes, setMonthBookedTimes] = useState<Record<string, BookingSlot[]>>({});
+  const [monthBookedTimesLoaded, setMonthBookedTimesLoaded] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    setMonthBookedTimesLoaded(false);
+    const yyyy = viewMonth.getFullYear();
+    const mm = String(viewMonth.getMonth() + 1).padStart(2, "0");
+    const monthParam = `${yyyy}-${mm}`;
+
+    fetch(`/api/bookings/slots?month=${monthParam}`)
+      .then((r) => (r.ok ? r.json() : { monthBookedTimes: {} }))
+      .then((data) => {
+        setMonthBookedTimes(
+          data.monthBookedTimes && typeof data.monthBookedTimes === "object"
+            ? (data.monthBookedTimes as Record<string, BookingSlot[]>)
+            : {},
+        );
+        if (data.currentUserId) setCurrentUserId(data.currentUserId);
+        setMonthBookedTimesLoaded(true);
+      })
+      .catch(() => {
+        setMonthBookedTimes({});
+        setMonthBookedTimesLoaded(true);
+      });
+  }, [viewMonth, user]);
 
   // Get the day name for the selected date
   const DAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
   const selectedDayName = selectedDate ? DAY_NAMES[selectedDate.getDay()] : null;
   const availableSlots = selectedDayName ? (counselorSchedule[selectedDayName] || []) : [];
+
+  // Helper: format a Date as "YYYY-MM-DD" using LOCAL timezone.
+  // This matches the calendar date the user sees (e.g. "Oct 15").
+  // Used as the key for looking up booked times from the month pre-fetch.
+  //
+  // CRITICAL: The API must also use LOCAL timezone for grouping (or
+  // we must send a date-only string "YYYY-MM-DD" to the booking API
+  // so the stored date matches the calendar date). We send a
+  // date-only string in the booking POST (see handleConfirmClick),
+  // so the stored `scheduledDate` is at UTC midnight for the same
+  // calendar day the user selected. The API groups by UTC date,
+  // which then matches this local date string.
+  const formatDateKey = (d: Date) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  // Helper: send a date-only string "YYYY-MM-DD" (not toISOString())
+  // to the booking API so the stored date matches the calendar date.
+  // If we use toISOString(), a local Oct 15 midnight becomes UTC
+  // Oct 14 23:00 — and the booking gets stored on the wrong calendar
+  // day. Sending "2026-10-15" ensures the API stores it as
+  // 2026-10-15T00:00:00Z, which matches the user's calendar view.
+  const formatDateForAPI = (d: Date) => {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  // ============ TIME PARSING + OVERLAP DETECTION ============
+  // Parse a time string like "3:00 PM" into minutes since midnight (e.g. 15*60 = 900).
+  // Returns null if the format is unparseable.
+  const parseTimeToMinutes = (timeStr: string): number | null => {
+    const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+    if (!match) return null;
+    let hours = parseInt(match[1], 10);
+    const minutes = parseInt(match[2], 10);
+    const ampm = match[3].toUpperCase();
+    if (ampm === "PM" && hours !== 12) hours += 12;
+    if (ampm === "AM" && hours === 12) hours = 0;
+    return hours * 60 + minutes;
+  };
+
+  // The currently-selected session type's duration (in minutes, as a NUMBER).
+  // Used for overlap detection — if the user selects a 60-min session
+  // type and there's a 50-min booking ending at 10:50, a 10:30 AM slot
+  // would overlap (10:30 + 60 = 11:30 > 10:50). We need to block it.
+  //
+  // CRITICAL: SESSION_TYPES stores duration as a STRING like "50 min"
+  // (for display). We must parse it to a NUMBER for math. Without this,
+  // `slotStart + selectedSessionDuration` would concatenate a number
+  // with a string (900 + "50 min" = "90050 min") instead of adding
+  // (900 + 50 = 950). The overlap check would silently fail because
+  // `anything < NaN` is always false.
+  const selectedSessionDuration = (() => {
+    const durationStr = SESSION_TYPES.find((s) => s.id === sessionType)?.duration ?? "50 min";
+    const parsed = parseInt(durationStr, 10);
+    return isNaN(parsed) ? 50 : parsed;
+  })();
+
+  // Check if a given time slot would overlap with ANY existing booking
+  // on the selected date. Overlap = the proposed session's time range
+  // intersects with an existing booking's time range.
+  //   proposed: [slotStart, slotStart + selectedSessionDuration)
+  //   existing: [bookingStart, bookingStart + bookingDuration)
+  //   overlap = proposedStart < existingEnd && existingStart < proposedEnd
+  const isSlotOverlapping = (slotTime: string, bookings: BookingSlot[]): boolean => {
+    const slotStart = parseTimeToMinutes(slotTime);
+    if (slotStart === null) return false;
+    const slotEnd = slotStart + selectedSessionDuration;
+    for (const b of bookings) {
+      const bookingStart = parseTimeToMinutes(b.scheduledTime);
+      if (bookingStart === null) continue;
+      const bookingEnd = bookingStart + b.durationMinutes;
+      // Standard interval overlap check
+      if (slotStart < bookingEnd && bookingStart < slotEnd) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Helper: the booked slots for the SELECTED date (from month pre-fetch).
+  // Returns BookingSlot[] (objects with time + duration + userId).
+  const bookedSlotsForSelected: BookingSlot[] = selectedDate
+    ? monthBookedTimes[formatDateKey(selectedDate)] ?? []
+    : [];
+
+  // Helper: is a given time slot already booked (exact match) on the
+  // SELECTED date? This catches the case where the user has an existing
+  // booking at the exact same time — they should see "Your booking" not
+  // just "Booked".
+  const findExactBooking = (time: string): BookingSlot | undefined =>
+    bookedSlotsForSelected.find((b) => b.scheduledTime === time);
+
+  // Helper: would a given time slot OVERLAP with any existing booking?
+  // Uses the selected session type's duration to compute the proposed
+  // session's time range and checks for intersections with existing
+  // bookings. This catches the case where a 60-min booking at 10:00 AM
+  // blocks a 10:30 AM slot (they overlap).
+  const isTimeSlotBooked = (time: string): boolean =>
+    isSlotOverlapping(time, bookedSlotsForSelected);
+
+  // Helper: is the slot blocked because of the user's OWN booking?
+  // Used to show "Your booking" instead of "Booked" so the user
+  // understands why they can't re-book.
+  const isOwnBooking = (time: string): boolean => {
+    const exact = findExactBooking(time);
+    if (exact && exact.userId === currentUserId) return true;
+    // Also check overlap with own bookings
+    const slotStart = parseTimeToMinutes(time);
+    if (slotStart === null) return false;
+    const slotEnd = slotStart + selectedSessionDuration;
+    for (const b of bookedSlotsForSelected) {
+      if (b.userId !== currentUserId) continue;
+      const bookingStart = parseTimeToMinutes(b.scheduledTime);
+      if (bookingStart === null) continue;
+      const bookingEnd = bookingStart + b.durationMinutes;
+      if (slotStart < bookingEnd && bookingStart < slotEnd) return true;
+    }
+    return false;
+  };
+
+  // Helper: is a given calendar date FULLY BOOKED?
+  // True when ALL available time slots for that day would overlap with
+  // an existing booking. Uses the current session type's duration for
+  // the overlap check — so a date might be "fully booked" for a 60-min
+  // session but still have room for a 30-min session.
+  const isDateFullyBooked = (d: Date): boolean => {
+    const dayName = DAY_NAMES[d.getDay()];
+    const daySlots = counselorSchedule[dayName] ?? [];
+    if (daySlots.length === 0) return false; // no schedule = unavailable, not fully booked
+    const booked = monthBookedTimes[formatDateKey(d)] ?? [];
+    if (booked.length === 0) return false;
+    // A date is fully booked when EVERY available slot overlaps with
+    // at least one existing booking.
+    return daySlots.every((slot) => isSlotOverlapping(slot, booked));
+  };
 
   // Set gradient — render + useEffect
   useMemo(() => {
@@ -415,7 +609,20 @@ function BookSessionPage() {
     !!selectedTime &&
     !!selectedGiftCard &&
     availableBalance > 0 &&
-    !isFullyRedeemed;
+    !isFullyRedeemed &&
+    // Block confirm until BOTH the counselor schedule AND the month's
+    // booked-times data have loaded. Without this, the user could pick
+    // a time slot before the omission filter has run, then confirm a
+    // booked slot — the backend would reject with "You already have a
+    // booking at this time" or "This time slot is already booked".
+    counselorScheduleLoaded &&
+    monthBookedTimesLoaded &&
+    // Block confirm if the user's selected time slot was already booked
+    // (e.g. another user grabbed it between when this user picked it and
+    // when they clicked Confirm). The backend would reject this anyway
+    // with a "therapist conflict" 409, but this defensive check surfaces
+    // the issue earlier + prevents the wasted API round-trip.
+    !isTimeSlotBooked(selectedTime);
 
   const handleConfirmClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -468,7 +675,7 @@ function BookSessionPage() {
           sessionType,
           sessionTitle: session.title,
           sessionPrice: session.price,
-          scheduledDate: selectedDate.toISOString(),
+          scheduledDate: formatDateForAPI(selectedDate),
           scheduledTime: selectedTime,
           therapistName: "Your Provider",
           // Send the SERVER-VALIDATED gift card code (not the store's),
@@ -532,12 +739,42 @@ function BookSessionPage() {
 
       router.push("/booking-confirmation");
     } catch (error) {
-      // Show the error — do NOT silently navigate to confirmation
+      // Show the error — do NOT silently navigate to confirmation.
+      // If the error is a conflict ("already booked" / "overlaps"),
+      // also REFRESH the booked-times data so the time picker updates
+      // to show the newly-taken slot as unavailable, and clear the
+      // user's selected time so they have to pick a new one.
+      const errMsg = error instanceof Error ? error.message : "Something went wrong. Please try again.";
+      const isConflict = /already|overlap|booked/i.test(errMsg);
       toast({
         title: "Booking failed",
-        description: error instanceof Error ? error.message : "Something went wrong. Please try again.",
+        description: errMsg,
         variant: "destructive",
       });
+      if (isConflict) {
+        // Clear the selected time — it's no longer available
+        setSelectedTime("");
+        // Force a re-fetch of the month's booked times so the time
+        // picker updates immediately (the slot that was just grabbed
+        // by someone else will now be filtered out)
+        setMonthBookedTimesLoaded(false);
+        const yyyy = viewMonth.getFullYear();
+        const mm = String(viewMonth.getMonth() + 1).padStart(2, "0");
+        const monthParam = `${yyyy}-${mm}`;
+        fetch(`/api/bookings/slots?month=${monthParam}`)
+          .then((r) => (r.ok ? r.json() : { monthBookedTimes: {} }))
+          .then((data) => {
+            setMonthBookedTimes(
+              data.monthBookedTimes && typeof data.monthBookedTimes === "object"
+                ? (data.monthBookedTimes as Record<string, BookingSlot[]>)
+                : {},
+            );
+            setMonthBookedTimesLoaded(true);
+          })
+          .catch(() => {
+            setMonthBookedTimesLoaded(true);
+          });
+      }
     } finally {
       setConfirming(false);
     }
@@ -610,7 +847,12 @@ function BookSessionPage() {
               href="/redeem"
               className="inline-flex items-center justify-center gap-2 rounded-full bg-white border-2 border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78,0,48,0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95"
             >
-              <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+              >
+                <PartyPopper className="h-4 w-4" strokeWidth={2.5} />
+              </motion.div>
               Redeem a Code
             </Link>
           </div>
@@ -929,25 +1171,50 @@ function BookSessionPage() {
                     const past = isPast(day);
                     const selected = selectedDate && isSameDay(day, selectedDate);
                     const isToday = isSameDay(day, today);
+                    const dayName = DAY_NAMES[day.getDay()];
+                    const dayHasSchedule = (counselorSchedule[dayName] ?? []).length > 0;
+                    // Only mark as fullyBooked if the month data has loaded.
+                    // If it hasn't loaded yet, we don't know whether the
+                    // date is fully booked — treat it as available to
+                    // avoid a false "fully booked" state that disappears
+                    // when the data loads.
+                    const fullyBooked = !past && dayHasSchedule && monthBookedTimesLoaded && isDateFullyBooked(day);
+                    const noSchedule = !past && !dayHasSchedule;
+                    const isDisabled = past || fullyBooked || noSchedule;
                     return (
                       <button
                         key={day.toISOString()}
                         type="button"
-                        disabled={past}
+                        disabled={isDisabled}
                         onClick={() => setSelectedDate(day)}
                         aria-label={day.toDateString()}
                         aria-pressed={!!selected}
+                        title={
+                          fullyBooked
+                            ? "Fully booked — no available times"
+                            : noSchedule
+                              ? "No sessions available on this day"
+                              : past
+                                ? "Past date"
+                                : undefined
+                        }
                         className={`relative flex aspect-square items-center justify-center rounded-xl font-sans text-sm font-semibold transition-all ${
                           selected
                             ? "bg-[#F10897] text-white shadow-[0_4px_12px_rgba(241,8,151,0.4)]"
-                            : past
-                              ? "cursor-not-allowed text-maroon/25"
+                            : isDisabled
+                              ? "opacity-30 text-gray-400 cursor-not-allowed pointer-events-none hover:bg-transparent"
                               : "text-maroon hover:bg-blush active:scale-95"
                         }`}
                       >
                         {day.getDate()}
-                        {isToday && !selected && (
+                        {isToday && !selected && !isDisabled && (
                           <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#F10897]" />
+                        )}
+                        {/* "Fully booked" tag — a small red dot under the
+                            date number so the user can see at a glance
+                            which dates are fully booked before clicking. */}
+                        {fullyBooked && !selected && (
+                          <span className="absolute bottom-0.5 h-1.5 w-1.5 rounded-full bg-[#F10897]" title="Fully booked" />
                         )}
                       </button>
                     );
@@ -975,47 +1242,82 @@ function BookSessionPage() {
                   <p className="font-sans text-sm text-maroon/60 py-4 text-center">
                     Pick a date above to see available time slots.
                   </p>
-                ) : availableSlots.length === 0 ? (
-                  <div className="rounded-2xl bg-[#FFE0C2]/30 p-4 text-center">
-                    <p className="font-sans text-sm font-bold text-[#cc6600]">
-                      No sessions available on this day
-                    </p>
-                    <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
-                      The counselor is not available on {selectedDayName}s. Please pick a different date.
-                    </p>
+                ) : !counselorScheduleLoaded ? (
+                  <div className="flex items-center gap-2 py-4 text-maroon/60">
+                    <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
+                    <span className="font-sans text-sm">Loading schedule…</span>
                   </div>
-                ) : (
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blush text-[#F10897]">
-                        <Clock className="h-4 w-4" strokeWidth={2.5} />
-                      </span>
-                      <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon">
-                        Available Times ({selectedDayName})
-                      </span>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {availableSlots.map((t) => {
-                        const active = selectedTime === t;
-                        return (
-                          <button
-                            key={t}
-                            type="button"
-                            onClick={() => setSelectedTime(t)}
-                            aria-pressed={active}
-                            className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
-                              active
-                                ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(78, 0, 48, 0.25)]"
-                                : "bg-blush/60 text-maroon hover:bg-blush active:scale-95"
-                            }`}
-                          >
-                            {t}
-                          </button>
-                        );
-                      })}
-                    </div>
+                ) : !monthBookedTimesLoaded ? (
+                  <div className="flex items-center gap-2 py-4 text-maroon/60">
+                    <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} />
+                    <span className="font-sans text-sm">Checking availability…</span>
                   </div>
-                )}
+                ) : (() => {
+                  // ============ UNIFIED "NO SESSIONS" TREATMENT ============
+                  // Treat a fully-booked date EXACTLY the same as a Sunday
+                  // (no counselor schedule): show the same "No sessions
+                  // available" message. The user never sees booked time
+                  // slots — they just see "no sessions available" if all
+                  // slots are taken, identical to how Sundays look.
+                  //
+                  // This is the user's requested approach: "the best way
+                  // to approach a time or a date that has already been
+                  // booked is the same way we treat sundays."
+                  //
+                  // We compute openSlots = counselor schedule minus
+                  // booked/overlapping slots. If openSlots is empty (or
+                  // the counselor has no schedule for this day at all),
+                  // we show the SAME "No sessions available" message.
+                  const openSlots = availableSlots.filter(
+                    (t) => !isTimeSlotBooked(t),
+                  );
+                  if (availableSlots.length === 0 || openSlots.length === 0) {
+                    return (
+                      <div className="rounded-2xl bg-[#FFE0C2]/30 p-4 text-center">
+                        <p className="font-sans text-sm font-bold text-[#cc6600]">
+                          No sessions available on this day
+                        </p>
+                        <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
+                          {availableSlots.length === 0
+                            ? `The counselor is not available on ${selectedDayName}s. Please pick a different date.`
+                            : `All time slots for this date are fully booked. Please pick a different date.`}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blush text-[#F10897]">
+                          <Clock className="h-4 w-4" strokeWidth={2.5} />
+                        </span>
+                        <span className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-maroon">
+                          Available Times ({selectedDayName})
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {openSlots.map((t) => {
+                          const active = selectedTime === t;
+                          return (
+                            <button
+                              key={t}
+                              type="button"
+                              onClick={() => setSelectedTime(t)}
+                              aria-pressed={active}
+                              className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
+                                active
+                                  ? "bg-[#4E0030] text-white shadow-[0_4px_12px_rgba(78, 0, 48, 0.25)]"
+                                  : "bg-blush/60 text-maroon hover:bg-blush active:scale-95"
+                              }`}
+                            >
+                              {t}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </motion.article>
 

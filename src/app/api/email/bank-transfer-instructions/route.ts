@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyInternalAuth } from "@/lib/internal-auth";
 import { BrevoClient } from "@getbrevo/brevo";
 import { z } from "zod";
 import { db } from "@/lib/db";
@@ -53,6 +54,9 @@ function escapeHtml(str: string | null | undefined): string {
 
 export async function POST(req: Request) {
   try {
+    if (!verifyInternalAuth(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const body = await req.json();
     const parsed = schema.safeParse(body);
     if (!parsed.success) {
@@ -72,6 +76,9 @@ export async function POST(req: Request) {
     let accountName = "Tare Wellness";
     let accountNumber = "0000000000";
     try {
+    if (!verifyInternalAuth(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
       const settings = await db.siteSetting.findMany({
         where: { key: { in: ["bankName", "accountName", "accountNumber"] } },
       });
@@ -167,6 +174,9 @@ export async function POST(req: Request) {
     const brevo = getBrevo();
     if (brevo) {
       try {
+    if (!verifyInternalAuth(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
         const sender = parseSender();
         await brevo.transactionalEmails.sendTransacEmail({
           sender: { name: sender.name, email: sender.email },

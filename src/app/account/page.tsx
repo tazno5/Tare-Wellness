@@ -30,6 +30,7 @@ import {
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { signOut } from "next-auth/react";
+import { CopyCodeButton } from "@/components/ui/copy-code-button";
 
 type Order = {
   id: string;
@@ -437,9 +438,16 @@ function OrdersTab({
                     For {item.recipientName} · {item.recipientEmail}
                   </p>
                   {item.redemption && (
-                    <p className="mt-1.5 inline-block rounded-md bg-white px-2 py-1 font-mono text-[11px] font-bold tracking-wider text-[#F10897]">
-                      {item.redemption.code}
-                    </p>
+                    <div className="mt-1.5 flex items-center gap-1">
+                      <p className="inline-block rounded-md bg-white px-2 py-1 font-mono text-[11px] font-bold tracking-wider text-[#F10897]">
+                        {item.redemption.code}
+                      </p>
+                      <CopyCodeButton
+                        code={item.redemption.code}
+                        label="gift card code"
+                        size={12}
+                      />
+                    </div>
                   )}
                 </div>
                 <div className="text-right">
@@ -599,6 +607,12 @@ function BookingsTab({
                             </p>
                             <p className="mt-0.5 font-sans text-[11px] text-[#4E0030]/60">
                               Code <span className="font-mono">{card.code}</span>
+                              <CopyCodeButton
+                                code={card.code}
+                                label="gift card code"
+                                size={12}
+                                className="ml-0.5 align-middle"
+                              />
                               {card.redeemedAt && (
                                 <> · Redeemed {formatDate(card.redeemedAt)}</>
                               )}
@@ -707,6 +721,12 @@ function BookingsTab({
                               </p>
                               <p className="mt-0.5 font-sans text-[11px] text-[#4E0030]/50">
                                 Code <span className="font-mono">{card.code}</span>
+                                <CopyCodeButton
+                                  code={card.code}
+                                  label="gift card code"
+                                  size={12}
+                                  className="ml-0.5 align-middle"
+                                />
                                 {card.redeemedAt && (
                                   <> · Redeemed {formatDate(card.redeemedAt)}</>
                                 )}
@@ -827,7 +847,14 @@ function BookingsTab({
                         {booking.sessionTitle}
                       </p>
                       <p className="mt-1 font-sans text-xs text-[#4E0030]/60">
-                        {booking.bookingNumber} · {booking.therapistName}
+                        <span className="font-mono">{booking.bookingNumber}</span>
+                        <CopyCodeButton
+                          code={booking.bookingNumber}
+                          label="booking reference"
+                          size={12}
+                          className="ml-0.5 align-middle"
+                        />
+                        <span className="opacity-50"> ·</span> {booking.therapistName}
                       </p>
                     </div>
                     <div className="text-right">

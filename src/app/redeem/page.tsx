@@ -19,10 +19,12 @@ import {
   ShieldCheck,
   Lock,
   Heart,
+  PartyPopper,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { CopyCodeButton } from "@/components/ui/copy-code-button";
 
 const OPTIONS = [
   {
@@ -418,7 +420,12 @@ export default function RedeemPage() {
                       </>
                     ) : (
                       <>
-                        <Gift className="h-5 w-5" strokeWidth={2.5} />
+                        <motion.div
+                          animate={{ scale: [1, 1.1, 1] }}
+                          transition={{ repeat: Infinity, duration: 2 }}
+                        >
+                          <PartyPopper className="h-5 w-5" strokeWidth={2.5} />
+                        </motion.div>
                         {user ? "Redeem Gift" : "Sign in to Redeem"}
                       </>
                     )}
@@ -455,6 +462,12 @@ export default function RedeemPage() {
                       <span className="font-mono">
                         …{redemption.code.slice(-4)}
                       </span>
+                      <CopyCodeButton
+                        code={redemption.code}
+                        label="gift card code"
+                        size={12}
+                        className="ml-1 align-middle"
+                      />
                     </p>
                   </div>
                 </div>

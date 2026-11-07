@@ -1,21 +1,28 @@
 import { NextResponse } from "next/server";
+import { verifyInternalAuth } from "@/lib/internal-auth";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { sendWelcomeEmail } from "@/lib/welcome-email";
 
 // POST /api/email/welcome — Send welcome email to a newly-registered user.
 //
-// This endpoint is kept for backward compat / manual testing, but the
-// /api/auth/register route now calls sendWelcomeEmail() directly
-// (instead of fetching this endpoint internally) to avoid Vercel's
-// internal DNS resolution issues.
+// This endpoint is kept for backward compat / manual testing. The
+// /api/auth/register route now calls sendWelcomeEmail() directly (instead
+// of fetching this endpoint internally) to avoid Vercel's internal DNS
+// resolution issues that broke signup with HTTP 500.
 //
-// You can still call this endpoint manually to test welcome email sends:
-//   curl -X POST https://tarewellness.com/api/email/welcome \
-//     -H "Content-Type: application/json" \
-//     -d '{"name":"Test","email":"test@example.com"}'
+// Authentication: requires an internal auth header (verifyInternalAuth)
+// to prevent external abuse. The register route uses the shared helper
+// directly, so it doesn't need this endpoint anymore — but if you want
+// to test the email send manually via curl, you'll need to pass the
+// INTERNAL_AUTH_TOKEN header.
 
 export async function POST(req: Request) {
   try {
+    // Internal auth — prevents external abuse
+    if (!verifyInternalAuth(req)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     // Rate limiting: 5 welcome emails per minute per IP
     const { success } = await checkRateLimit(req, "welcome-email");
     if (!success) {
@@ -35,6 +42,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // Use the shared helper (never throws)
     const result = await sendWelcomeEmail({ name, email });
     return NextResponse.json(result);
   } catch (error) {

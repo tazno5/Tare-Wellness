@@ -82,7 +82,7 @@ export const giftCardProductLd: Product[] = [
     offers: [
       {
         "@type": "Offer",
-        price: "200.00",
+        price: "20000",
         priceCurrency: "NGN",
         availability: "https://schema.org/InStock",
         url: `${SITE_URL}/gift-cards`,
@@ -99,7 +99,7 @@ export const giftCardProductLd: Product[] = [
     offers: [
       {
         "@type": "Offer",
-        price: "390.00",
+        price: "39000",
         priceCurrency: "NGN",
         availability: "https://schema.org/InStock",
         url: `${SITE_URL}/gift-cards`,
@@ -116,7 +116,7 @@ export const giftCardProductLd: Product[] = [
     offers: [
       {
         "@type": "Offer",
-        price: "570.00",
+        price: "57000",
         priceCurrency: "NGN",
         availability: "https://schema.org/InStock",
         url: `${SITE_URL}/gift-cards`,

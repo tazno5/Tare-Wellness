@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Check, Copy, CalendarClock, Video, Bell, Leaf, MapPin, ArrowRight, Heart, Mail, MessageSquare, Sparkles, PartyPopper, Clock, Lock, User } from "lucide-react";
+import { Check, Copy, CalendarCheck, CalendarClock, Video, Bell, Leaf, MapPin, ArrowRight, Heart, Mail, MessageSquare, Sparkles, PartyPopper, Clock, Lock, User } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { CopyCodeButton } from "@/components/ui/copy-code-button";
 
 const container = {
   hidden: { opacity: 0 },
@@ -245,9 +246,18 @@ export default function BookingConfirmationPage() {
                 <p className="font-sans text-[10px] font-bold uppercase tracking-[0.16em] text-maroon/60">
                   Confirmation No.
                 </p>
-                <p className="font-fraunces text-lg font-extrabold tracking-wide text-maroon sm:text-xl">
-                  {booking.bookingNumber ?? "BK-2026-PENDING"}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-fraunces text-lg font-extrabold tracking-wide text-maroon sm:text-xl">
+                    {booking.bookingNumber ?? "BK-2026-PENDING"}
+                  </p>
+                  {booking.bookingNumber && (
+                    <CopyCodeButton
+                      code={booking.bookingNumber}
+                      label="booking reference"
+                      size={14}
+                    />
+                  )}
+                </div>
               </div>
             </div>
             <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-[#F10897] px-3 py-1.5 font-sans text-[10px] font-bold uppercase tracking-[0.14em] text-white">
@@ -425,14 +435,11 @@ export default function BookingConfirmationPage() {
               Send a Gift Card
             </Link>
             <Link
-              href="/redeem"
+              href="/book-session"
               className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-white border-[0.3px] border-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-[#F10897] shadow-[0_8px_24px_rgba(78, 0, 48, 0.12)] transition-all duration-200 hover:scale-[1.02] hover:bg-[#E8B6D5]/15 active:scale-95 sm:w-auto"
             >
-              Redeem Another
-              <ArrowRight
-                className="h-4 w-4 transition-transform group-hover:translate-x-1"
-                strokeWidth={2.5}
-              />
+              <CalendarCheck className="h-4 w-4" strokeWidth={2.5} />
+              Book Next Session
             </Link>
           </div>
         </div>
