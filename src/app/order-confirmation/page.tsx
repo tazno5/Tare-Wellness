@@ -33,6 +33,7 @@ import {
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
 import { CopyCodeButton } from "@/components/ui/copy-code-button";
+import PostPurchaseAccountPrompt from "@/components/site/PostPurchaseAccountPrompt";
 
 const CARD_LOOKUP: Record<
   string,
@@ -131,6 +132,9 @@ function OrderConfirmationContent() {
     orderNumber: string;
     status: string;
     totalAmount: number;
+    buyerEmail: string;
+    buyerName: string;
+    userId: string | null;
     orderItems: {
       id: string;
       cardTitle: string;
@@ -862,6 +866,22 @@ function OrderConfirmationContent() {
           </Accordion>
         </motion.div>
       </section>
+
+      {/* ============ POST-PURCHASE ACCOUNT CREATION PROMPT (MODAL) ============ */}
+      {/* Shown only for guests (not logged in) who just completed an order.
+          Renders as a modal overlay (position: fixed) — appears after the
+          page loads with a short delay, dismissible via backdrop click,
+          X button, or ESC. Per-order dismissal stored in localStorage. */}
+      {!user &&
+        apiOrder?.buyerEmail &&
+        apiOrder?.buyerName &&
+        apiOrder?.userId === null && (
+          <PostPurchaseAccountPrompt
+            orderNumber={apiOrder.orderNumber}
+            buyerEmail={apiOrder.buyerEmail}
+            buyerName={apiOrder.buyerName}
+          />
+        )}
 
       {/* ============ BOTTOM NAV ============ */}
       <section className="relative w-full px-5 pb-12 sm:px-8 lg:px-12">

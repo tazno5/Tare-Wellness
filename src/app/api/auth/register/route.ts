@@ -75,6 +75,33 @@ export async function POST(req: Request) {
       },
     });
 
+    // Backfill userId on existing guest orders placed with this email.
+    //
+    // Why this matters: guest checkout lets buyers place orders without
+    // creating an account. When they later sign up (e.g. via the
+    // post-purchase account creation prompt on /order-confirmation),
+    // those past orders have userId = null. Linking them retroactively
+    // means the new user immediately sees their purchase history under
+    // /account?tab=orders — a much better first-time experience than
+    // "you have no orders yet" right after buying something.
+    //
+    // Safe to do unconditionally: only updates orders where userId IS NULL
+    // (so we never overwrite an order already linked to a different user).
+    try {
+      await db.order.updateMany({
+        where: {
+          buyerEmail: email,
+          userId: null,
+        },
+        data: {
+          userId: user.id,
+        },
+      });
+    } catch (linkErr) {
+      // Defensive: don't fail signup if backfill fails — log + continue
+      console.error("[signup] Failed to backfill userId on existing orders:", linkErr);
+    }
+
     // Send welcome email (best-effort, never throws).
     // We AWAIT it here so any rejection inside sendWelcomeEmail is fully
     // observed by THIS try/catch — not leaked as an unhandled rejection
