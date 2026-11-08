@@ -7,6 +7,14 @@
 // check passes — without it, setting INTERNAL_API_SECRET on Vercel
 // would break all internal email sends.
 //
+// IMPORTANT: This helper follows redirects MANUALLY and re-attaches
+// the Authorization header on each redirect. Node.js's built-in fetch
+// follows redirects automatically but STRIPS the Authorization header
+// on cross-origin redirects (e.g. tarewellness.com → www.tarewellness.com).
+// Without manual redirect handling, all internal email calls that go
+// through a redirect silently lose their auth → the email route returns
+// 401 → the email never sends.
+//
 // Usage:
 //   import { internalFetch } from "@/lib/internal-fetch";
 //   await internalFetch("/api/email/send", { method: "POST", body: ... });
@@ -14,7 +22,7 @@
 // Falls back to plain fetch() if INTERNAL_API_SECRET is not set
 // (dev environments without the secret configured).
 
-export function internalFetch(
+export async function internalFetch(
   url: string,
   init: RequestInit = {},
 ): Promise<Response> {
@@ -35,12 +43,6 @@ export function internalFetch(
   //   1. NEXTAUTH_URL (set on Vercel to the production domain — most reliable)
   //   2. VERCEL_URL (automatically set by Vercel for each deployment)
   //   3. localhost (dev)
-  //
-  // PREVIOUS BUG: the old code used a ternary that evaluated as
-  //   (NEXTAUTH_URL || VERCEL_URL) ? `https://${VERCEL_URL}` : localhost
-  // which ALWAYS used VERCEL_URL even when NEXTAUTH_URL was set, and
-  // produced `https://undefined` when VERCEL_URL wasn't set but
-  // NEXTAUTH_URL was. Fixed below to use proper if/else priority.
   let baseUrl: string;
   if (process.env.NEXTAUTH_URL) {
     baseUrl = process.env.NEXTAUTH_URL.replace(/\/$/, "");
@@ -50,7 +52,51 @@ export function internalFetch(
     baseUrl = "http://localhost:3000";
   }
 
-  const fullUrl = url.startsWith("http") ? url : `${baseUrl}${url}`;
+  let fullUrl = url.startsWith("http") ? url : `${baseUrl}${url}`;
 
-  return fetch(fullUrl, { ...init, headers });
+  // Follow redirects MANUALLY (max 5) to preserve the Authorization header.
+  // Node.js's built-in fetch follows redirects but strips Authorization
+  // on cross-origin redirects (e.g. non-www → www). By handling redirects
+  // ourselves, we can re-attach the Authorization header on each hop.
+  const maxRedirects = 5;
+  let response: Response;
+  let currentInit: RequestInit = { ...init, headers };
+
+  for (let i = 0; i <= maxRedirects; i++) {
+    response = await fetch(fullUrl, currentInit);
+
+    // If not a redirect (3xx), return the response
+    if (response.status < 300 || response.status >= 400) {
+      return response;
+    }
+
+    // Get the redirect Location
+    const location = response.headers.get("location");
+    if (!location) {
+      return response; // No Location header — return as-is
+    }
+
+    // Resolve the redirect URL (might be relative)
+    fullUrl = new URL(location, fullUrl).toString();
+
+    // Re-attach the Authorization header for the next request
+    // (Node.js fetch strips it on cross-origin redirects)
+    const redirectHeaders = new Headers(init.headers || {});
+    if (secret) {
+      redirectHeaders.set("Authorization", `Bearer ${secret}`);
+    }
+    if (init.body && !redirectHeaders.has("Content-Type")) {
+      redirectHeaders.set("Content-Type", "application/json");
+    }
+    // 308 preserves the method + body; 301/302/303 change POST to GET
+    if (response.status === 308 || response.status === 307) {
+      currentInit = { ...init, headers: redirectHeaders };
+    } else {
+      // 301/302/303 → follow with GET (no body) but keep auth
+      currentInit = { method: "GET", headers: redirectHeaders };
+    }
+  }
+
+  // Too many redirects — return the last response
+  return response!;
 }
