@@ -867,22 +867,20 @@ function OrderConfirmationContent() {
         </motion.div>
       </section>
 
-      {/* ============ POST-PURCHASE ACCOUNT CREATION PROMPT ============ */}
+      {/* ============ POST-PURCHASE ACCOUNT CREATION PROMPT (MODAL) ============ */}
       {/* Shown only for guests (not logged in) who just completed an order.
-          Pre-fills name + email from the order; user just picks a password.
-          Dismissible + remembered per-order via localStorage so we don't
-          nag on revisits. */}
+          Renders as a modal overlay (position: fixed) — appears after the
+          page loads with a short delay, dismissible via backdrop click,
+          X button, or ESC. Per-order dismissal stored in localStorage. */}
       {!user &&
         apiOrder?.buyerEmail &&
         apiOrder?.buyerName &&
         apiOrder?.userId === null && (
-          <section className="relative w-full px-5 pb-6 sm:px-8 lg:px-12">
-            <PostPurchaseAccountPrompt
-              orderNumber={apiOrder.orderNumber}
-              buyerEmail={apiOrder.buyerEmail}
-              buyerName={apiOrder.buyerName}
-            />
-          </section>
+          <PostPurchaseAccountPrompt
+            orderNumber={apiOrder.orderNumber}
+            buyerEmail={apiOrder.buyerEmail}
+            buyerName={apiOrder.buyerName}
+          />
         )}
 
       {/* ============ BOTTOM NAV ============ */}
