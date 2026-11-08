@@ -374,8 +374,8 @@ export async function POST(req: Request) {
         cardTitle: cardTitleForEmail,
         cardSessionsTotal: cardSessionsForEmail,
       }),
-    }).catch(() => {
-      // Swallow — best-effort, don't fail the booking
+    }).catch((err) => {
+      console.error('[bookings] Failed to send booking confirmation email:', err);
     });
 
     return NextResponse.json(booking, { status: 201 });

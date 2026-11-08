@@ -192,10 +192,7 @@ export async function POST(req: Request) {
       }
     }
 
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[DEV] Bank transfer instructions email not sent - BREVO_API_KEY not set.");
-      console.log(`   To: ${buyerEmail} | Order: ${orderNumber} | Amount: \u20a6${amountNaira}`);
-    }
+    console.warn("📧 Email NOT sent — BREVO_API_KEY is not set.");
 
     return NextResponse.json({ success: true, message: "Logged to console (no provider)" });
   } catch (error) {

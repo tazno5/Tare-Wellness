@@ -254,14 +254,7 @@ export async function POST(req: Request) {
     }
 
     // Dev fallback — no BREVO_API_KEY configured. Log to console.
-    if (process.env.NODE_ENV !== "production") {
-      console.log("📧 [DEV] Booking confirmation email not sent — BREVO_API_KEY not set.");
-      console.log(`   To: ${booking.user.email}`);
-      console.log(`   Subject: ${emailSubject}`);
-      console.log(`   Booking: ${booking.bookingNumber}`);
-      console.log(`   Session: ${booking.sessionTitle} on ${formattedDate} at ${booking.scheduledTime}`);
-      console.log(`   Balance: ${sessionsRemaining} session${sessionsRemaining === 1 ? "" : "s"} remaining on ${resolvedCardTitle}`);
-    }
+    console.warn("📧 Email NOT sent — BREVO_API_KEY is not set.");
 
     return NextResponse.json({
       success: true,
