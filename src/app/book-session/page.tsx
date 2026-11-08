@@ -503,8 +503,8 @@ function BookSessionPage() {
     if (!session) return; // Don't sync until sessionType is selected
     setBooking({
       sessionType,
-      sessionTitle: session.title,
-      sessionPrice: session.price,
+      sessionTitle: session?.title ?? "",
+      sessionPrice: session?.price ?? 0,
       selectedDate: selectedDate ? selectedDate.toISOString() : null,
       selectedTime,
       therapist: booking.therapist,
@@ -676,8 +676,8 @@ function BookSessionPage() {
     // Store the booking details for the confirmation page (always do this so the page works)
     setBooking({
       sessionType,
-      sessionTitle: session.title,
-      sessionPrice: session.price,
+      sessionTitle: session?.title ?? "",
+      sessionPrice: session?.price ?? 0,
       selectedDate: selectedDate.toISOString(),
       selectedTime,
       therapist: "Your Provider",
@@ -689,8 +689,8 @@ function BookSessionPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionType,
-          sessionTitle: session.title,
-          sessionPrice: session.price,
+          sessionTitle: session?.title ?? "",
+          sessionPrice: session?.price ?? 0,
           scheduledDate: formatDateForAPI(selectedDate),
           scheduledTime: selectedTime,
           therapistName: "Your Provider",
@@ -744,8 +744,8 @@ function BookSessionPage() {
       if (bookingResponse?.bookingNumber) {
         setBooking({
           sessionType,
-          sessionTitle: session.title,
-          sessionPrice: session.price,
+          sessionTitle: session?.title ?? "",
+          sessionPrice: session?.price ?? 0,
           selectedDate: selectedDate.toISOString(),
           selectedTime,
           therapist: "Your Provider",
@@ -1204,7 +1204,7 @@ function BookSessionPage() {
                         key={day.toISOString()}
                         type="button"
                         disabled={isDisabled}
-                        onClick={() => setSelectedDate(day); scrollToSection(timeRef)}
+                        onClick={() => { setSelectedDate(day); scrollToSection(timeRef); }}
                         aria-label={day.toDateString()}
                         aria-pressed={!!selected}
                         title={
@@ -1385,7 +1385,7 @@ function BookSessionPage() {
                 <SummaryRow
                   icon={<Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />}
                   label="Service"
-                  value={session.title}
+                  value={session?.title ?? ""}
                 />
                 <SummaryRow
                   icon={<CalendarCheck className="h-3.5 w-3.5" strokeWidth={2.5} />}
@@ -1408,7 +1408,7 @@ function BookSessionPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-blush/80">Session Price</span>
                   <span className="font-bold tabular-nums text-white">
-                    ₦{session.price.toLocaleString()}
+                    ₦{(session?.price ?? 0).toLocaleString()}
                   </span>
                 </div>
                 {selectedGiftCard ? (
@@ -1525,7 +1525,7 @@ function BookSessionPage() {
                 </span>
                 <span className="font-fraunces text-2xl font-extrabold text-white">
                   {isFullyRedeemed
-                    ? `₦${session.price.toLocaleString()}`
+                    ? `₦${(session?.price ?? 0).toLocaleString()}`
                     : total === 0
                       ? "Covered by gift card"
                       : `₦${total.toLocaleString()}`}
