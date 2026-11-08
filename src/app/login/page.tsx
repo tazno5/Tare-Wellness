@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -153,33 +152,14 @@ function LoginContent() {
         <div aria-hidden className="pointer-events-none absolute -left-20 top-10 h-64 w-64 rounded-full bg-[#B5E1C3]/25 blur-3xl" />
         <div aria-hidden className="pointer-events-none absolute -right-16 bottom-10 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />
 
-        {/* Auth split card — hero + form embedded in the same card */}
+        {/* Auth card — single column (hero image removed) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-          className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-3xl bg-white shadow-[0_15px_50px_rgba(78, 0, 48, 0.15)] md:grid md:grid-cols-2"
+          className="relative mx-auto w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-[0_15px_50px_rgba(78, 0, 48, 0.15)]"
         >
-          {/* LEFT: Hero image column (inside the card, but its immediate wrapper has no card styling) */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 24 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex items-center justify-center bg-[#FFF5EE] p-6 sm:p-10 lg:p-12"
-          >
-            <div className="relative aspect-square w-full max-w-[180px] sm:max-w-[240px] lg:max-w-[300px]">
-              <Image
-                src="/hero-login.png"
-                alt="Man wearing black t-shirt holding TARE Be Well gift card"
-                fill
-                priority
-                sizes="(max-width: 768px) 60vw, 300px"
-                className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
-              />
-            </div>
-          </motion.div>
-
-          {/* RIGHT: Auth form column */}
+          {/* Auth form column */}
           <div className="p-6 sm:p-8 lg:p-10">
             {/* Tab toggle — hidden in "forgot" mode */}
             {mode !== "forgot" && (
