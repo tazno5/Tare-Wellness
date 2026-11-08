@@ -1,9 +1,28 @@
 import { NextResponse } from "next/server";
-import { internalFetch } from "@/lib/internal-fetch";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { sendWelcomeEmail } from "@/lib/welcome-email";
 
+// POST /api/auth/register — Create a new user account.
+//
+// Flow:
+//   1. Rate-limit the request (3 signups per minute per IP)
+//   2. Validate input (name, email, password ≥ 6 chars)
+//   3. Reject if email already in use (409)
+//   4. Hash password with bcrypt (12 rounds)
+//   5. Create user in DB
+//   6. Send welcome email via Brevo (best-effort, NEVER fails the signup)
+//
+// The welcome email send is fully isolated from the signup flow:
+//   - It calls sendWelcomeEmail() directly (no internal HTTP fetch)
+//   - The helper never throws — it returns a result object
+//   - Even if Brevo is down or misconfigured, signup still succeeds
+//
+// This is the fix for the "Failed to create account" 500 error that was
+// caused by `fetch(`${origin}/api/email/welcome`)` failing with ENOTFOUND
+// on Vercel (clean-dory-xyz.vercel.app wasn't resolvable from inside the
+// serverless function).
 export async function POST(req: Request) {
   try {
     // Rate limiting: 3 registrations per minute per IP
@@ -56,22 +75,25 @@ export async function POST(req: Request) {
       },
     });
 
-    // Send welcome email via /api/email/welcome (best-effort, fire-and-forget).
-    // Same pattern as the gift card email send in /api/orders — we don't
-    // await this and we don't fail the signup if it errors. The endpoint
-    // catches its own errors and returns 200 either way.
+    // Send welcome email (best-effort, never throws).
+    // We AWAIT it here so any rejection inside sendWelcomeEmail is fully
+    // observed by THIS try/catch — not leaked as an unhandled rejection
+    // that crashes the serverless function after we've returned.
     //
-    // We use an absolute URL derived from the request so this works in
-    // production, preview deploys, and local dev (where the Next.js server
-    // is at http://localhost:3000).
-    const origin = new URL(req.url || "http://localhost:3000").origin;
-    internalFetch(`/api/email/welcome`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: user.name, email: user.email }),
-    }).catch(() => {
-      // Swallow — best-effort. The endpoint handles its own errors.
-    });
+    // sendWelcomeEmail is designed to NEVER throw — its internal try/catch
+    // returns a result object even on Brevo failure. So awaiting it is
+    // safe AND fast (~50ms typical for the Brevo roundtrip when configured,
+    // near-instant when not).
+    try {
+      const result = await sendWelcomeEmail({ name: user.name, email: user.email });
+      if (result.warning) {
+        console.warn("[signup] Welcome email warning:", result.warning);
+      }
+    } catch (emailErr) {
+      // Defensive: the helper should never throw, but if it does, log it
+      // and continue — signup must not fail because of an email problem.
+      console.error("[signup] sendWelcomeEmail threw (defensive catch):", emailErr);
+    }
 
     return NextResponse.json(
       {
@@ -83,8 +105,29 @@ export async function POST(req: Request) {
     );
   } catch (error) {
     console.error("Registration error:", error);
+    // TEMPORARY DIAGNOSTIC MODE — return the actual error so we can see what's failing.
+    const errorDetail =
+      error instanceof Error
+        ? `${error.name}: ${error.message}`
+        : typeof error === "string"
+          ? error
+          : "unknown error";
+    // Also include the `cause` field if present (e.g. fetch errors have
+    // cause: Error: getaddrinfo ENOTFOUND ...). This is the actual root cause.
+    const causeDetail =
+      error instanceof Error && error.cause instanceof Error
+        ? `cause: ${error.cause.name}: ${error.cause.message}`
+        : "";
     return NextResponse.json(
-      { error: "Failed to create account" },
+      {
+        error: "Failed to create account",
+        detail: errorDetail,
+        ...(causeDetail && { cause: causeDetail }),
+        // Stack trace only in non-production:
+        ...(process.env.NODE_ENV !== "production" && {
+          stack: error instanceof Error ? error.stack : undefined,
+        }),
+      },
       { status: 500 },
     );
   }

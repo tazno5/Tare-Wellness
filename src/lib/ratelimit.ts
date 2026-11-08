@@ -75,6 +75,12 @@ function getRatelimiters(): Record<string, Ratelimit> | null {
  * Check rate limit for a given key + endpoint.
  * Returns { success: boolean } — if false, the caller should return 429.
  *
+ * CRITICAL: This function NEVER throws. If the rate-limiter backend
+ * (Upstash Redis) is unreachable, the function "fails open" — meaning
+ * the request is allowed through. This is the correct production
+ * behavior for rate limiters: when in doubt, let the user's request
+ * through rather than breaking their flow.
+ *
  * Usage:
  *   const { success } = await checkRateLimit(req, "orders");
  *   if (!success) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
@@ -99,10 +105,22 @@ export async function checkRateLimit(
   const forwarded = req.headers.get("x-forwarded-for");
   const ip = forwarded?.split(",")[0]?.trim() || "anonymous";
 
-  const result = await limiter.limit(ip);
-  return {
-    success: result.success,
-    limit: result.limit,
-    remaining: result.remaining,
-  };
+  try {
+    const result = await limiter.limit(ip);
+    return {
+      success: result.success,
+      limit: result.limit,
+      remaining: result.remaining,
+    };
+  } catch (error) {
+    // Upstash Redis is unreachable (DNS failure, network issue, etc.).
+    // FAIL OPEN: allow the request through rather than breaking the
+    // user-facing flow. Log the error so it's visible in Vercel logs,
+    // but don't crash the request.
+    console.error(
+      `[ratelimit] Upstash check failed for endpoint "${endpoint}" — failing open:`,
+      error instanceof Error ? `${error.name}: ${error.message}` : error,
+    );
+    return { success: true };
+  }
 }
