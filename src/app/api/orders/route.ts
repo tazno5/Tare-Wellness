@@ -67,15 +67,23 @@ export async function POST(req: Request) {
 
     const session = await getServerSession(authOptions);
 
-    // CRITICAL #1: Require authentication — no guest orders
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: "Authentication required to place an order" },
-        { status: 401 },
-      );
-    }
-
-    const userId = (session.user as { id: string }).id;
+    // Guest checkout: authenticated users have a session, anonymous users
+    // don't. We support BOTH flows:
+    //   - Logged-in user → order is linked to their account via userId
+    //     (visible in /account, /admin, order history).
+    //   - Guest user → order is created without a userId; the only link
+    //     to the buyer is buyerEmail (the recipient gets the gift card
+    //     via email regardless of auth status).
+    //
+    // Both flows are valid because:
+    //   - The Order.userId column is already nullable (String?)
+    //   - The Order.user relation is already optional (User?)
+    //   - buyerEmail + buyerName are always required (validated by Zod)
+    //   - The recipient gets the gift card via email regardless of auth
+    //
+    // The client decides whether to require auth — see the corresponding
+    // auth-gate removal in /cart-review, /checkout, /order-confirmation.
+    const userId = (session?.user as { id?: string } | undefined)?.id ?? null;
 
     // HIGH #4: Validate input with Zod
     const body = await req.json();
@@ -279,7 +287,10 @@ export async function POST(req: Request) {
             // itself is paid (verified card payment). For pending bank
             // transfers, sessions are granted when admin confirms payment
             // (see /api/admin/orders/[id] PATCH).
-            ...(isSelfGift && isVerifiedCardPayment
+            // For guest orders (userId is null), skip the userId field —
+            // the redemption stays "active" without a linked user, and the
+            // recipient can still redeem it via the code on /redeem.
+            ...(isSelfGift && isVerifiedCardPayment && userId
               ? { userId, redeemedAt: new Date() }
               : {}),
           },

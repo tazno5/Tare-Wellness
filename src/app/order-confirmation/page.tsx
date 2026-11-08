@@ -157,15 +157,11 @@ function OrderConfirmationContent() {
   // Fetch real order data from API if we have an order ID
   const orderId = searchParams.get("id");
 
-  // Auth gate: hard-redirect logged-out users to /login with a callbackUrl
-  useEffect(() => {
-    if (!user) {
-      const callbackUrl = orderId
-        ? `/order-confirmation?id=${orderId}`
-        : "/order-confirmation";
-      router.replace(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
-    }
-  }, [user, router, orderId]);
+  // Auth gate REMOVED — guests can see their order confirmation without
+  // signing in. The order is fetched by orderId (passed in the URL after
+  // a successful checkout). For guest orders, the order has no userId, but
+  // the page can still display it because the lookup is by orderId, not
+  // by the current user's session.
 
   useEffect(() => {
     if (orderId) {
@@ -429,21 +425,26 @@ function OrderConfirmationContent() {
       <div aria-hidden className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-[#C7B2E2]/20 blur-3xl" />
       <div aria-hidden className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl" />
 
-      {/* ============ AUTH GATE (fallback during redirect) ============ */}
+      {/* ============ GUEST BANNER (shown when not logged in) ============ */}
       {!user ? (
-        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
-            <Lock className="h-10 w-10 text-white" strokeWidth={2} />
+        <div className="mx-auto mb-4 flex w-full max-w-3xl items-center justify-between gap-3 rounded-2xl bg-[#FFF5EE] p-3 sm:p-4">
+          <div className="flex items-center gap-2.5 text-xs text-[#4E0030]/80 sm:text-sm">
+            <Lock className="h-4 w-4 shrink-0 text-[#F10897]" strokeWidth={2.5} />
+            <span>
+              <span className="font-semibold text-[#4E0030]">Viewing as guest.</span>{" "}
+              <Link
+                href={`/login?callbackUrl=${encodeURIComponent(orderId ? `/order-confirmation?id=${orderId}` : "/order-confirmation")}`}
+                className="font-bold text-[#F10897] underline-offset-2 hover:underline"
+              >
+                Sign in
+              </Link>{" "}
+              to save this order to your account.
+            </span>
           </div>
-          <h2 className="font-fraunces text-3xl font-bold text-[#4E0030]">Sign in to view your order</h2>
-          <p className="mt-3 max-w-sm font-sans text-sm text-[#4E0030]/70">
-            You&apos;ll need an account to view this order. Redirecting you to sign in…
-          </p>
-          <Link href={`/login?callbackUrl=${encodeURIComponent(orderId ? `/order-confirmation?id=${orderId}` : "/order-confirmation")}`} className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#F10897] px-7 py-3.5 font-sans text-sm font-semibold text-white shadow-lg transition-all hover:scale-[1.03] hover:bg-[#d4007d]">
-            Sign In / Sign Up <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-          </Link>
-        </section>
-      ) : receipts.length === 0 && !apiOrder ? (
+        </div>
+      ) : null}
+
+      {receipts.length === 0 && !apiOrder ? (
         <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white/20">
             <Gift className="h-10 w-10 text-white" strokeWidth={2} />

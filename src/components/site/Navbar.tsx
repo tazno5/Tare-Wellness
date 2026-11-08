@@ -74,11 +74,10 @@ export default function Navbar() {
   //   navigates to after the user picks cards).
   const handleSendGift = () => {
     setOpen(false);
-    if (user) {
-      router.push("/gift-cards");
-    } else {
-      router.push("/login?callbackUrl=/gift-cards");
-    }
+    // Allow guests to browse gift cards directly — they can check out as
+    // guests too (the /cart-review and /checkout pages no longer require
+    // auth). They'll be prompted to enter their email at checkout.
+    router.push("/gift-cards");
   };
 
   return (
