@@ -155,16 +155,18 @@ export async function sendWelcomeEmail(params: {
   }
 
   // Dev fallback — no BREVO_API_KEY configured. Log to console.
-  if (process.env.NODE_ENV !== "production") {
-    console.log("📧 [DEV] Welcome email not sent — BREVO_API_KEY not set.");
-    console.log(`   To: ${email}`);
-    console.log(`   Subject: ${subject}`);
-  }
+  // Log in BOTH dev and production so Vercel Runtime Logs show the issue.
+  console.warn(
+    "📧 Welcome email NOT sent — BREVO_API_KEY is not set.",
+    `   To: ${email}`,
+    `   Subject: ${subject}`,
+  );
 
   return {
     success: true,
     sentTo: email,
     emailId: null,
-    message: "Welcome email logged to console (no provider configured)",
+    warning: "BREVO_API_KEY not set — email was not sent. Set BREVO_API_KEY in your Vercel environment variables.",
+    message: "Welcome email not sent (no email provider configured)",
   };
 }
