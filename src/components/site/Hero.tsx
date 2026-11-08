@@ -41,15 +41,12 @@ export default function Hero() {
   const router = useRouter();
   const user = useStore((s) => s.user);
 
-  // Auth-aware "Send a Gift Card" click handler.
-  // - Authenticated: go straight to /gift-cards.
-  // - Unauthenticated: redirect to /login with callbackUrl=/gift-cards.
+  // "Send a Gift Card" click handler.
+  // Allow guests to go straight to /gift-cards — they can check out as
+  // guests (no account needed). They'll be asked for their email at
+  // checkout. Sign-in is still optional via the Login link in the navbar.
   const handleSendGiftCard = () => {
-    if (user) {
-      router.push("/gift-cards");
-    } else {
-      router.push("/login?callbackUrl=/gift-cards");
-    }
+    router.push("/gift-cards");
   };
 
   return (
