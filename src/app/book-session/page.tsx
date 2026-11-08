@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, Suspense } from "react";
+import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -238,10 +238,25 @@ function BookSessionPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(
     booking.selectedDate ? new Date(booking.selectedDate) : null,
   );
-  const [sessionType, setSessionType] = useState<BookingDetails["sessionType"]>(
-    booking.sessionType,
-  );
-  const [selectedTime, setSelectedTime] = useState<string>(booking.selectedTime);
+  const [sessionType, setSessionType] = useState<BookingDetails["sessionType"]>("" as BookingDetails["sessionType"]);
+  const [selectedTime, setSelectedTime] = useState<string>("");
+
+  // Refs for auto-scroll behavior:
+  // When user selects session type → scroll to calendar
+  // When user selects date → scroll to time section
+  // When user selects time → scroll to confirm button
+  const sessionTypeRef = useRef<HTMLDivElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const timeRef = useRef<HTMLDivElement>(null);
+  const confirmRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll helpers — smooth scroll to a section, with a small delay
+  // to allow the UI to update (e.g. calendar rendering, time slots loading).
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
+    setTimeout(() => {
+      ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300);
+  };
 
   // Fetch counselor schedule from admin settings (configurable via /admin → Settings)
   const [counselorSchedule, setCounselorSchedule] = useState<Record<string, string[]>>({
@@ -484,11 +499,12 @@ function BookSessionPage() {
 
   // On any selection change, write booking details to the store
   useEffect(() => {
-    const session = SESSION_TYPES.find((s) => s.id === sessionType)!;
+    const session = SESSION_TYPES.find((s) => s.id === sessionType);
+    if (!session) return; // Don't sync until sessionType is selected
     setBooking({
       sessionType,
-      sessionTitle: session.title,
-      sessionPrice: session.price,
+      sessionTitle: session?.title ?? "",
+      sessionPrice: session?.price ?? 0,
       selectedDate: selectedDate ? selectedDate.toISOString() : null,
       selectedTime,
       therapist: booking.therapist,
@@ -557,7 +573,7 @@ function BookSessionPage() {
   // Time display: show selected time, or 'Select a time' if none chosen
   const formattedTime = selectedTime || "Select a time";
 
-  const session = SESSION_TYPES.find((s) => s.id === sessionType)!;
+  const session = SESSION_TYPES.find((s) => s.id === sessionType);
   // ============ AUTHORITATIVE SESSION-BALANCE MATH ============
   // Use BOTH `sessionsRemaining` AND the derived `cardSessions - sessionsUsed`
   // as a defensive cross-check. They should always agree, but in cases where
@@ -592,7 +608,7 @@ function BookSessionPage() {
   // Total displayed to the user is "Covered by gift card" when sessions are
   // still available, otherwise the full ₦ price (so they know they need to
   // buy another card).
-  const total = availableBalance > 0 ? 0 : session.price;
+  const total = availableBalance > 0 ? 0 : (session?.price ?? 0);
 
   const [confirming, setConfirming] = useState(false);
 
@@ -660,8 +676,8 @@ function BookSessionPage() {
     // Store the booking details for the confirmation page (always do this so the page works)
     setBooking({
       sessionType,
-      sessionTitle: session.title,
-      sessionPrice: session.price,
+      sessionTitle: session?.title ?? "",
+      sessionPrice: session?.price ?? 0,
       selectedDate: selectedDate.toISOString(),
       selectedTime,
       therapist: "Your Provider",
@@ -673,8 +689,8 @@ function BookSessionPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionType,
-          sessionTitle: session.title,
-          sessionPrice: session.price,
+          sessionTitle: session?.title ?? "",
+          sessionPrice: session?.price ?? 0,
           scheduledDate: formatDateForAPI(selectedDate),
           scheduledTime: selectedTime,
           therapistName: "Your Provider",
@@ -728,8 +744,8 @@ function BookSessionPage() {
       if (bookingResponse?.bookingNumber) {
         setBooking({
           sessionType,
-          sessionTitle: session.title,
-          sessionPrice: session.price,
+          sessionTitle: session?.title ?? "",
+          sessionPrice: session?.price ?? 0,
           selectedDate: selectedDate.toISOString(),
           selectedTime,
           therapist: "Your Provider",
@@ -1055,8 +1071,9 @@ function BookSessionPage() {
 
             {/* Session type */}
             <motion.article
+              ref={sessionTypeRef}
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6 scroll-mt-28"
             >
               <div className="flex items-center gap-2">
                 <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
@@ -1070,7 +1087,7 @@ function BookSessionPage() {
                     <button
                       key={s.id}
                       type="button"
-                      onClick={() => setSessionType(s.id)}
+                      onClick={() => { setSessionType(s.id); scrollToSection(calendarRef); }}
                       aria-pressed={active}
                       className={`group flex items-start gap-3 rounded-2xl border-2 p-4 text-left transition-all duration-200 ${
                         active
@@ -1117,8 +1134,9 @@ function BookSessionPage() {
 
             {/* Calendar */}
             <motion.article
+              ref={calendarRef}
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6 scroll-mt-28"
             >
               <div className="flex items-center justify-between">
                 <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
@@ -1186,7 +1204,7 @@ function BookSessionPage() {
                         key={day.toISOString()}
                         type="button"
                         disabled={isDisabled}
-                        onClick={() => setSelectedDate(day)}
+                        onClick={() => { setSelectedDate(day); scrollToSection(timeRef); }}
                         aria-label={day.toDateString()}
                         aria-pressed={!!selected}
                         title={
@@ -1230,8 +1248,9 @@ function BookSessionPage() {
 
             {/* Time slots */}
             <motion.article
+              ref={timeRef}
               variants={itemUp}
-              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6"
+              className="rounded-3xl bg-white/85 p-5 shadow-[0_10px_40px_rgba(78, 0, 48, 0.10)] backdrop-blur-sm sm:p-6 scroll-mt-28"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-maroon/70">
                 Pick a Time
@@ -1302,7 +1321,7 @@ function BookSessionPage() {
                             <button
                               key={t}
                               type="button"
-                              onClick={() => setSelectedTime(t)}
+                              onClick={() => { setSelectedTime(t); scrollToSection(confirmRef); }}
                               aria-pressed={active}
                               className={`rounded-full px-3 py-2 font-sans text-xs font-bold transition-all ${
                                 active
@@ -1354,8 +1373,9 @@ function BookSessionPage() {
           {/* RIGHT: Booking Summary — sticky */}
           <motion.div variants={container} initial="hidden" animate="show">
             <motion.article
+              ref={confirmRef}
               variants={itemUp}
-              className="sticky top-28 rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(78, 0, 48, 0.30)] sm:p-6"
+              className="sticky top-28 rounded-3xl bg-[#4E0030] p-5 text-white shadow-[0_14px_40px_rgba(78, 0, 48, 0.30)] sm:p-6 scroll-mt-28"
             >
               <h2 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-blush">
                 Booking Summary
@@ -1365,7 +1385,7 @@ function BookSessionPage() {
                 <SummaryRow
                   icon={<Sparkles className="h-3.5 w-3.5" strokeWidth={2.5} />}
                   label="Service"
-                  value={session.title}
+                  value={session?.title ?? ""}
                 />
                 <SummaryRow
                   icon={<CalendarCheck className="h-3.5 w-3.5" strokeWidth={2.5} />}
@@ -1388,7 +1408,7 @@ function BookSessionPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-blush/80">Session Price</span>
                   <span className="font-bold tabular-nums text-white">
-                    ₦{session.price.toLocaleString()}
+                    ₦{(session?.price ?? 0).toLocaleString()}
                   </span>
                 </div>
                 {selectedGiftCard ? (
@@ -1505,7 +1525,7 @@ function BookSessionPage() {
                 </span>
                 <span className="font-fraunces text-2xl font-extrabold text-white">
                   {isFullyRedeemed
-                    ? `₦${session.price.toLocaleString()}`
+                    ? `₦${(session?.price ?? 0).toLocaleString()}`
                     : total === 0
                       ? "Covered by gift card"
                       : `₦${total.toLocaleString()}`}

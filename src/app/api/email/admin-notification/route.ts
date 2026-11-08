@@ -195,10 +195,7 @@ const subject = `New Order ${orderNumber} - ${paymentMethod === "transfer" ? "Ba
       }
     }
 
-    if (process.env.NODE_ENV !== "production") {
-      console.log("[DEV] Admin notification not sent - BREVO_API_KEY not set.");
-      console.log(`   New order: ${orderNumber} - \u20a6${amountNaira} - ${paymentMethod}`);
-    }
+    console.warn("📧 Email NOT sent — BREVO_API_KEY is not set.");
 
     return NextResponse.json({ success: true, message: "Logged to console (no provider)" });
   } catch (error) {

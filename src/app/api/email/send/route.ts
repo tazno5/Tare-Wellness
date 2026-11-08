@@ -213,12 +213,7 @@ export async function POST(req: Request) {
     }
 
     // Dev fallback — no BREVO_API_KEY configured. Log to console.
-    if (process.env.NODE_ENV !== "production") {
-      console.log("📧 [DEV] Email not sent — BREVO_API_KEY not set.");
-      console.log(`   To: ${orderItem.recipientEmail}`);
-      console.log(`   Subject: ${emailSubject}`);
-      console.log(`   Redemption code: ${orderItem.redemption.code}`);
-    }
+    console.warn("📧 Email NOT sent — BREVO_API_KEY is not set.");
 
     return NextResponse.json({
       success: true,
