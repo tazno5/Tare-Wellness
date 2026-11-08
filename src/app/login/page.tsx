@@ -318,6 +318,33 @@ function LoginContent() {
               </button>
             </form>
 
+            {/* Continue as Guest — visible in both login and signup modes.
+                Lets the user skip auth and go straight to the callbackUrl
+                (defaults to home). Useful for browsing/buying gift cards
+                without committing to an account first. Hidden in "forgot"
+                password mode since it doesn't apply there. */}
+            {mode !== "forgot" && (
+              <>
+                {/* Divider */}
+                <div className="mt-5 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-[#4E0030]/10" />
+                  <span className="font-sans text-xs font-medium uppercase tracking-[0.15em] text-[#4E0030]/40">
+                    or
+                  </span>
+                  <div className="h-px flex-1 bg-[#4E0030]/10" />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => router.push(safeCallbackUrl)}
+                  className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#4E0030]/15 bg-white px-7 py-3.5 font-sans text-sm font-semibold text-[#4E0030] transition-all duration-200 hover:border-[#F10897]/40 hover:text-[#F10897] active:scale-95 sm:text-base"
+                >
+                  Continue as Guest
+                  <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                </button>
+              </>
+            )}
+
             {/* Balance hint if redeemed */}
             {redemption.redeemed && mode === "login" && (
               <div className="mt-5 flex items-center gap-2 rounded-2xl bg-[#FFF5EE] p-3">
