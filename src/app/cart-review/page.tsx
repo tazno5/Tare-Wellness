@@ -171,7 +171,24 @@ function CartReviewContent() {
       });
       return;
     }
-    router.push(`/checkout?${forwardQuery}`);
+
+    const checkoutUrl = `/checkout?${forwardQuery}`;
+
+    if (user) {
+      // Logged-in users go straight to checkout
+      router.push(checkoutUrl);
+    } else {
+      // Guests are sent to /login first, where they choose one of three
+      // options: Sign In, Sign Up, or Continue as Guest. After completing
+      // any of the three, the login page routes them back to the checkout
+      // URL (via the callbackUrl query param) with the cart state intact.
+      //
+      // Why we do this: the auth choice is presented at the natural decision
+      // boundary (between reviewing the cart and paying), not as a hard
+      // redirect. Guests who pick "Continue as Guest" proceed straight to
+      // checkout with no account required.
+      router.push(`/login?callbackUrl=${encodeURIComponent(checkoutUrl)}`);
+    }
   };
 
   const formatPrice = (n: number) => `₦${n.toLocaleString()}`;
