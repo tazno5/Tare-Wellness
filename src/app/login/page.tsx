@@ -29,6 +29,16 @@ function LoginContent() {
 
   const [form, setForm] = useState({ name: "", email: "", password: "" });
 
+  // Pre-select the Sign Up tab if ?signup=1 is in the URL (used by the
+  // redeem page's auth-required modal — when a guest picks "Create an
+  // account", they're routed here with signup=1 so they don't have to
+  // click the Sign Up tab manually).
+  useEffect(() => {
+    if (searchParams.get("signup") === "1") {
+      setMode("signup");
+    }
+  }, [searchParams, setMode]);
+
   if (typeof document !== "undefined") {
     document.body.style.setProperty("--page-gradient-from", "#FFF5EE");
     document.body.style.setProperty("--page-gradient-to", "#FFF5EE");
