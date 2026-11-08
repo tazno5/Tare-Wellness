@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useToast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { CopyCodeButton } from "@/components/ui/copy-code-button";
 
 const OPTIONS = [
@@ -102,18 +102,30 @@ const itemUp = {
 };
 
 export default function RedeemPage() {
+  // useSearchParams requires a Suspense boundary in Next.js 13+.
+  // We wrap the actual content in Suspense to avoid the build-time error
+  // "useSearchParams() should be wrapped in a suspense boundary".
+  return (
+    <Suspense fallback={null}>
+      <RedeemContent />
+    </Suspense>
+  );
+}
+
+function RedeemContent() {
   const { toast } = useToast();
   const { redemption, setRedemption, clearRedemption, demoCodes, user } = useStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [code, setCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Auth gate: redirect unauthenticated users to /login with callbackUrl=/redeem
-  useEffect(() => {
-    if (!user) {
-      router.replace("/login?callbackUrl=/redeem");
-    }
-  }, [user, router]);
+  // Auth gate REMOVED — guests can now see the /redeem page (and enter their
+  // code) without being redirected to /login first. When they click Redeem
+  // and they're not logged in, the API returns "Please sign in" — at that
+  // point, we show a modal offering Sign In / Sign Up (with the code
+  // pre-filled in the callbackUrl so they don't have to re-type it).
 
   // Reset the redemption state on mount so the page always starts fresh.
   //
@@ -130,9 +142,22 @@ export default function RedeemPage() {
   //   - Only after a successful redemption does the button morph to
   //     "Book a Session" + the success banner appears
   //   - If the user leaves and comes back, the state resets again
+  //
+  // Also: if there's a ?code= query param (e.g. when the user was sent
+  // here from /login after signing in to redeem), pre-fill the code field
+  // with it. They can then click "Redeem Gift" to actually apply it.
+  // (We don't auto-submit because the user should see the code entered.)
   useEffect(() => {
     clearRedemption();
-    setCode("");
+    const codeFromUrl = searchParams.get("code");
+    if (codeFromUrl) {
+      // Auto-format the code with dashes (XXXX-XXXX-XXXX-XXXX)
+      const clean = codeFromUrl.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const formatted = clean.replace(/(.{4})(?=.)/g, "$1-");
+      setCode(formatted);
+    } else {
+      setCode("");
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Set gradient — render + useEffect
@@ -165,12 +190,6 @@ export default function RedeemPage() {
 
   const handleRedeem = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    // Require authentication — if not logged in, redirect to login
-    if (!user) {
-      router.push("/login?callbackUrl=/redeem");
-      return;
-    }
 
     if (!isValid) {
       toast({
@@ -217,6 +236,15 @@ export default function RedeemPage() {
 
       if (!res.ok) {
         // Differentiate error messages based on status code
+        if (res.status === 401) {
+          // Guest user trying to redeem — show the auth-required modal.
+          // Routes them to /login with the code pre-filled in callbackUrl
+          // so after they sign in/up they come back to /redeem and the
+          // code is already entered (auto-submitted via the ?code= param).
+          setShowAuthModal(true);
+          setSubmitting(false);
+          return;
+        }
         if (res.status === 404) {
           throw new Error("Code not found — check the code from your gift email and try again.");
         }
@@ -270,28 +298,25 @@ export default function RedeemPage() {
         className="pointer-events-none absolute -right-20 top-40 h-72 w-72 rounded-full bg-[#E8B6D5]/20 blur-3xl"
       />
 
-      {/* Auth gate fallback — shown briefly while redirecting to /login */}
+      {/* ============ GUEST BANNER (shown when not logged in) ============ */}
       {!user ? (
-        <section className="relative flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
-          <div className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_8px_30px_rgba(78,0,48,0.10)]">
-            <Lock className="h-6 w-6 text-[#F10897]" strokeWidth={2.5} />
+        <div className="mx-auto mb-4 mt-2 flex w-full max-w-3xl items-center justify-between gap-3 rounded-2xl bg-[#FFF5EE] p-3 sm:p-4">
+          <div className="flex items-center gap-2.5 text-xs text-[#4E0030]/80 sm:text-sm">
+            <Lock className="h-4 w-4 shrink-0 text-[#F10897]" strokeWidth={2.5} />
+            <span>
+              <span className="font-semibold text-[#4E0030]">Viewing as guest.</span>{" "}
+              <Link
+                href="/login?callbackUrl=/redeem"
+                className="font-bold text-[#F10897] underline-offset-2 hover:underline"
+              >
+                Sign in
+              </Link>{" "}
+              to redeem faster next time.
+            </span>
           </div>
-          <h2 className="mt-4 font-fraunces text-xl font-bold text-maroon sm:text-2xl">
-            Sign in to redeem your gift
-          </h2>
-          <p className="mt-2 max-w-sm font-sans text-sm text-maroon/70">
-            You need to be signed in to redeem a gift card. Redirecting you to the login page...
-          </p>
-          <Link
-            href="/login?callbackUrl=/redeem"
-            className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#F10897] px-6 py-3 font-sans text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#d4007d]"
-          >
-            Go to sign in
-            <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-          </Link>
-        </section>
-      ) : (
-      <>
+        </div>
+      ) : null}
+
       {/* ============ HERO + CODE ENTRY ============ */}
       <section className="relative w-full overflow-hidden px-5 pb-10 pt-6 sm:px-8 sm:pb-14 lg:px-12">
         <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center text-center">
@@ -426,7 +451,7 @@ export default function RedeemPage() {
                         >
                           <PartyPopper className="h-5 w-5" strokeWidth={2.5} />
                         </motion.div>
-                        {user ? "Redeem Gift" : "Sign in to Redeem"}
+                        "Redeem Gift"
                       </>
                     )}
                   </motion.button>
@@ -654,8 +679,115 @@ export default function RedeemPage() {
           )}
         </div>
       </section>
-      </>
-      )}
+
+      {/* ============ AUTH-REQUIRED MODAL (shown when a guest submits a code) ============ */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6"
+            aria-modal="true"
+            role="dialog"
+            aria-labelledby="redeem-auth-modal-title"
+            onClick={() => setShowAuthModal(false)}
+          >
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-maroon/50 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl bg-white p-6 shadow-[0_24px_80px_rgba(78,0,48,0.25)] sm:p-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* X dismiss button */}
+              <button
+                type="button"
+                onClick={() => setShowAuthModal(false)}
+                className="absolute right-4 top-4 z-20 rounded-full p-1.5 text-maroon/40 transition-colors hover:bg-maroon/5 hover:text-maroon"
+                aria-label="Close"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+
+              {/* Header */}
+              <div className="flex items-start gap-3 pr-8">
+                <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-magenta/10 text-magenta">
+                  <Lock className="h-5 w-5" strokeWidth={2.5} />
+                </div>
+                <div className="flex-1">
+                  <h3
+                    id="redeem-auth-modal-title"
+                    className="font-serif text-xl font-semibold text-maroon sm:text-2xl"
+                  >
+                    Sign in to redeem your gift
+                  </h3>
+                  <p className="mt-1 text-sm text-maroon/70">
+                    Your gift card credit gets saved to your account so you can use
+                    it across sessions — today, next week, whenever you&apos;re
+                    ready. It takes 30 seconds.
+                  </p>
+                </div>
+              </div>
+
+              {/* Pre-filled code (read-only, so they know what they entered) */}
+              {code && (
+                <div className="mt-5">
+                  <label className="block text-[11px] font-bold uppercase tracking-[0.14em] text-maroon/55">
+                    Your code (saved for after you sign in)
+                  </label>
+                  <div className="relative mt-1.5">
+                    <Gift className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-maroon/40" strokeWidth={2.5} />
+                    <input
+                      type="text"
+                      value={code}
+                      readOnly
+                      tabIndex={-1}
+                      className="h-11 w-full rounded-2xl border border-maroon/10 bg-blush/30 pl-10 pr-3 font-mono text-sm text-maroon/80 focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* CTA buttons */}
+              <div className="mt-6 flex flex-col gap-2.5">
+                {/* Sign In (returning users) */}
+                <Link
+                  href={`/login?callbackUrl=${encodeURIComponent(`/redeem?code=${encodeURIComponent(code)}`)}`}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-magenta px-6 py-3.5 font-sans text-sm font-semibold text-white shadow-[0_8px_24px_rgba(241,8,151,0.30)] transition-all hover:scale-[1.01] hover:bg-magenta-600 active:scale-[0.99]"
+                >
+                  Sign In
+                  <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
+                </Link>
+                {/* Sign Up (new users) */}
+                <Link
+                  href={`/login?signup=1&callbackUrl=${encodeURIComponent(`/redeem?code=${encodeURIComponent(code)}`)}`}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 font-sans text-sm font-semibold text-maroon shadow-sm ring-1 ring-maroon/15 transition-all hover:scale-[1.01] hover:text-magenta active:scale-[0.99]"
+                >
+                  Create an account
+                </Link>
+                {/* Dismiss */}
+                <button
+                  type="button"
+                  onClick={() => setShowAuthModal(false)}
+                  className="font-sans text-xs font-medium text-maroon/55 underline-offset-2 transition-colors hover:text-maroon hover:underline"
+                >
+                  Not now — I&apos;ll try later
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
