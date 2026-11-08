@@ -75,12 +75,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (redemption.status === "expired") {
-      return NextResponse.json(
-        { error: "This gift card has expired" },
-        { status: 410 },
-      );
-    }
+    // Gift cards do not expire - no expired status check needed
 
     // IDEMPOTENT SELF-PURCHASE HANDLING:
     // If this redemption is ALREADY attached to the current user (a self-

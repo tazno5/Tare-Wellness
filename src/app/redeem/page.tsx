@@ -252,7 +252,7 @@ function RedeemContent() {
           throw new Error("This gift card has already been redeemed.");
         }
         if (res.status === 410) {
-          throw new Error("This gift card has expired.");
+          throw new Error("This gift card is no longer available.");
         }
         throw new Error(data.error || "Invalid code");
       }

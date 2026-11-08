@@ -64,10 +64,7 @@ const FAQS = [
     q: "When will my recipient receive the gift card?",
     a: "Immediately. The moment your payment is confirmed, we email their personalized gift card straight to their inbox — no waiting required.",
   },
-  {
-    q: "Does the gift card expire?",
-    a: "Never. Tare gift cards carry no expiration date. They can redeem it on their schedule, whenever the moment feels right.",
-  },
+  
   {
     q: "Can I get a refund?",
     a: "Yes — within 14 days of purchase, as long as the gift card hasn't been redeemed. Reach out to our care team and we'll handle it gently.",

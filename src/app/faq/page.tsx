@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -33,7 +32,7 @@ type QA = { q: string; a: string; category: Category };
 const QUESTIONS: QA[] = [
   {
     q: "How do Tare wellness gift cards work?",
-    a: "You purchase a Tare gift card for one, two, or three sessions. We email it to your recipient with your personalized note. They enter the code on our redeem page to unlock session credit, then book a time that fits their life — no expiration, no pressure.",
+    a: "You purchase a Tare gift card for one, two, or three sessions. We email it to your recipient with your personalized note. They enter the code on our redeem page to unlock session credit, then book a time that fits their life — no pressure.",
     category: "Gift Cards",
   },
   {
@@ -41,11 +40,7 @@ const QUESTIONS: QA[] = [
     a: "Head to the Redeem page, type in the 16-character code from your gift email (we'll auto-format it as you type), and tap Redeem. Your credit appears instantly and you can book a session right away.",
     category: "Gift Cards",
   },
-  {
-    q: "Do Tare gift cards expire?",
-    a: "Never. Your gift card has no expiration date. Redeem it tomorrow, next month, or whenever the moment feels right — the credit stays yours.",
-    category: "Gift Cards",
-  },
+
   {
     q: "Can I buy a gift card for someone outside my country?",
     a: "Yes. Gift cards are delivered by email and can be redeemed from anywhere. Sessions are scheduled in your recipient's local time zone, so the booking page adapts automatically.",
@@ -86,16 +81,8 @@ const QUESTIONS: QA[] = [
     a: "Life happens. Cancel up to 24 hours in advance and your credit returns to your balance, ready to rebook whenever suits you. Cancellations within 24 hours may incur a small fee.",
     category: "Booking",
   },
-  {
-    q: "Which payment methods do you accept?",
-    a: "We accept all major debit and credit cards, as well as direct bank transfers. Payments are processed securely with 256-bit encryption end-to-end.",
-    category: "Payments",
-  },
-  {
-    q: "Can I get a refund?",
-    a: "Yes — within 14 days of purchase, as long as the gift card hasn't been redeemed. Reach out to our care team and we'll handle it gently, no questions asked.",
-    category: "Payments",
-  },
+
+
 ];
 
 const CATEGORIES = ["All", "Gift Cards", "Delivery", "Booking", "Payments"] as const;
@@ -104,7 +91,7 @@ type Tab = (typeof CATEGORIES)[number];
 const POPULAR = [
   {
     q: "How do Tare wellness gift cards work?",
-    a: "You buy a card, we email it to them with your note, they redeem the code and book a session whenever they're ready. No expiration, no pressure.",
+    a: "You buy a card, we email it to them with your note, they redeem the code and book a session whenever they're ready. No pressure.",
     tag: "Most asked",
   },
   {
@@ -196,21 +183,7 @@ export default function FaqPage() {
       {/* ============ HERO ============ */}
       <section className="relative w-full overflow-hidden px-5 pb-6 pt-6 sm:px-8 sm:pb-10 lg:px-12">
         <div className="relative mx-auto flex w-full max-w-4xl flex-col items-center text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.94, y: 24 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="relative mt-2 aspect-[534/500] w-full max-w-[260px] sm:max-w-[300px] lg:max-w-[340px]"
-          >
-          <Image
-              src="/hero-faq.png"
-              alt="A friendly whimsical creature with a question mark floating above its head, surrounded by soft glowing shapes"
-              fill
-              priority
-              sizes="(max-width: 640px) 65vw, (max-width: 1024px) 300px, 340px"
-              className="relative animate-float-slow object-contain transition-all duration-500 ease-out hover:scale-[1.02] hover:drop-shadow-[0_0_30px_rgba(219,39,119,0.35)]"
-            />
-          </motion.div>
+          
 
           <motion.div
             initial={{ opacity: 0, y: -10 }}
