@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 const OVERVIEW_CARDS = [
-  { icon: Gift, title: "Gift Card Purchases", description: "Terms governing the purchase, delivery, and expiration of digital wellness gifts." },
+  { icon: Gift, title: "Gift Card Purchases", description: "Terms governing the purchase and delivery of digital wellness gifts." },
   { icon: CalendarCheck, title: "Session Bookings", description: "Policies for scheduling, rescheduling, and preparing for your sessions." },
   { icon: CreditCard, title: "Payments & Billing", description: "Information on accepted payment methods, subscription billing, and refunds." },
   { icon: Heart, title: "Wellness Services", description: "Scope of practice, professional qualifications, and limitations of digital care." },
@@ -21,7 +21,7 @@ const OVERVIEW_CARDS = [
 const TABS = ["Acceptance of Terms", "Gift Card Terms", "Purchases & Payments", "Redemption Policies", "Wellness Services", "Booking & Cancellations"];
 
 const ACCORDIONS = [
-  { title: "Gift Card Terms", icon: Gift, bullets: ["Tare Wellness Gift Cards are non-refundable and cannot be redeemed for cash, except where required by law.", "Gift Cards do not expire, and we do not assess any inactivity fees.", "We are not responsible if a Gift Card is lost, stolen, destroyed, or used without your permission."] },
+  { title: "Gift Card Terms", icon: Gift, bullets: ["Tare Wellness Gift Cards are non-refundable and cannot be redeemed for cash, except where required by law.", "We are not responsible if a Gift Card is lost, stolen, destroyed, or used without your permission."] },
   { title: "Purchases & Payments", icon: ShoppingCart, bullets: ["All payments are processed securely through PCI-compliant payment gateways.", "We accept major credit cards (Visa, Mastercard) and bank transfers.", "Prices are listed in Nigerian Naira and include all applicable taxes.", "No processing fees are charged — the price you see is the price you pay."] },
   { title: "Redemption Policies", icon: Settings, bullets: ["Gift cards are redeemed by entering the unique code at checkout or in your account dashboard.", "Redeemed credit can be applied to any wellness session on our network.", "If a session costs less than the gift card balance, remaining credit stays on the account.", "Gift card credit is non-transferable between accounts."] },
   { title: "Wellness Sessions", icon: User, bullets: ["All professionals in our network are licensed, vetted, and carefully selected practitioners.", "Sessions are conducted via secure video call and are completely confidential.", "Tare Wellness is a platform facilitating connections — we do not provide medical advice directly.", "Practitioners operate independently and are solely responsible for their clinical decisions."] },

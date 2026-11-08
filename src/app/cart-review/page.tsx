@@ -383,7 +383,7 @@ function CartReviewContent() {
                 {
                   icon: <Heart className="h-4 w-4" strokeWidth={2.5} />,
                   title: "Care First",
-                  body: "No expiry, ever",
+                  body: "Redeem anytime",
                 },
               ].map((b) => (
                 <div
