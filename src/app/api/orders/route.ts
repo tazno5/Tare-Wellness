@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { internalFetch } from "@/lib/internal-fetch";
+import { sendAdminNotificationEmail, sendBankTransferInstructionsEmail, sendGiftCardEmail } from "@/lib/email-helpers";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
@@ -309,11 +309,7 @@ export async function POST(req: Request) {
       const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
       await Promise.all(
         order.orderItems.map((item) =>
-          internalFetch(`/api/email/send`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderItemId: item.id }),
-          }).catch((err) => {
+          sendGiftCardEmail(item.id).catch((err) => {
             console.error(`[orders] Failed to send gift card email for order item ${item.id}:`, err);
           }),
         ),
@@ -326,18 +322,14 @@ export async function POST(req: Request) {
     // bank account + confirm in the admin dashboard."
     if (order) {
       const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-      internalFetch(`/api/email/admin-notification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          orderNumber: order.orderNumber,
-          buyerName: order.buyerName,
-          buyerEmail: order.buyerEmail,
-          totalAmount: order.totalAmount,
-          paymentMethod: order.paymentMethod,
-          recipientCount: order.orderItems?.length ?? 0,
-          recipientNames: order.orderItems?.map((item) => item.recipientName) ?? [],
-        }),
+      sendAdminNotificationEmail({
+        orderNumber: order.orderNumber,
+        buyerName: order.buyerName,
+        buyerEmail: order.buyerEmail,
+        totalAmount: order.totalAmount,
+        paymentMethod: order.paymentMethod,
+        recipientCount: order.orderItems?.length ?? 0,
+        recipientNames: order.orderItems?.map((item) => item.recipientName) ?? [],
       }).catch((err) => {
         console.error("[orders] Failed to send admin notification email:", err);
       });
@@ -346,15 +338,11 @@ export async function POST(req: Request) {
       // with the bank details + order reference so they have a permanent
       // record (even if they close the browser tab).
       if (order.status === "pending") {
-        internalFetch(`/api/email/bank-transfer-instructions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            orderNumber: order.orderNumber,
-            buyerName: order.buyerName,
-            buyerEmail: order.buyerEmail,
-            totalAmount: order.totalAmount,
-          }),
+        sendBankTransferInstructionsEmail({
+          orderNumber: order.orderNumber,
+          buyerName: order.buyerName,
+          buyerEmail: order.buyerEmail,
+          totalAmount: order.totalAmount,
         }).catch((err) => {
           console.error("[orders] Failed to send bank transfer instructions email:", err);
         });

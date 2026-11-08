@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { internalFetch } from "@/lib/internal-fetch";
+import { sendBookingConfirmationEmail } from "@/lib/email-helpers";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
@@ -362,18 +362,16 @@ export async function POST(req: Request) {
           ? `https://${process.env.VERCEL_URL}`
           : "http://localhost:3000";
 
-    internalFetch(`/api/email/booking-confirmation`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        bookingId: booking.id,
-        // Pass the computed post-booking values so the email endpoint
-        // doesn't have to re-fetch the redemption (cheaper + race-free).
-        sessionsRemainingAfter: updatedSessionsRemaining,
-        sessionsUsedAfter: updatedSessionsUsed,
-        cardTitle: cardTitleForEmail,
-        cardSessionsTotal: cardSessionsForEmail,
-      }),
+    sendBookingConfirmationEmail({
+      bookingId: booking.id,
+      bookingNumber: booking.bookingNumber,
+      userEmail: (session.user as { email: string }).email,
+      userName: (session.user as { name: string }).name,
+      sessionTitle: booking.sessionTitle,
+      scheduledDate: new Date(booking.scheduledDate).toLocaleDateString("en-NG", { weekday: "long", year: "numeric", month: "long", day: "numeric" }),
+      scheduledTime: booking.scheduledTime,
+      therapistName: booking.therapistName,
+      sessionsRemaining: updatedSessionsRemaining,
     }).catch((err) => {
       console.error('[bookings] Failed to send booking confirmation email:', err);
     });
