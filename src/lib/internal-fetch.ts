@@ -63,7 +63,7 @@ export async function internalFetch(
   let currentInit: RequestInit = { ...init, headers };
 
   for (let i = 0; i <= maxRedirects; i++) {
-    response = await fetch(fullUrl, currentInit);
+    response = await fetch(fullUrl, { ...currentInit, redirect: "manual" });
 
     // If not a redirect (3xx), return the response
     if (response.status < 300 || response.status >= 400) {
