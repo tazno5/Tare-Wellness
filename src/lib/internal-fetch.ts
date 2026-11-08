@@ -31,12 +31,25 @@ export function internalFetch(
     headers.set("Content-Type", "application/json");
   }
 
-  // Build the absolute URL if a relative path was passed
-  const baseUrl =
-    process.env.NEXTAUTH_URL ||
-    process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
+  // Build the absolute URL. Priority:
+  //   1. NEXTAUTH_URL (set on Vercel to the production domain — most reliable)
+  //   2. VERCEL_URL (automatically set by Vercel for each deployment)
+  //   3. localhost (dev)
+  //
+  // PREVIOUS BUG: the old code used a ternary that evaluated as
+  //   (NEXTAUTH_URL || VERCEL_URL) ? `https://${VERCEL_URL}` : localhost
+  // which ALWAYS used VERCEL_URL even when NEXTAUTH_URL was set, and
+  // produced `https://undefined` when VERCEL_URL wasn't set but
+  // NEXTAUTH_URL was. Fixed below to use proper if/else priority.
+  let baseUrl: string;
+  if (process.env.NEXTAUTH_URL) {
+    baseUrl = process.env.NEXTAUTH_URL.replace(/\/$/, "");
+  } else if (process.env.VERCEL_URL) {
+    baseUrl = `https://${process.env.VERCEL_URL}`;
+  } else {
+    baseUrl = "http://localhost:3000";
+  }
+
   const fullUrl = url.startsWith("http") ? url : `${baseUrl}${url}`;
 
   return fetch(fullUrl, { ...init, headers });

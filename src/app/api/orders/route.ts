@@ -313,7 +313,9 @@ export async function POST(req: Request) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ orderItemId: item.id }),
-          }).catch(() => {}),
+          }).catch((err) => {
+            console.error(`[orders] Failed to send gift card email for order item ${item.id}:`, err);
+          }),
         ),
       );
     }
@@ -336,8 +338,8 @@ export async function POST(req: Request) {
           recipientCount: order.orderItems?.length ?? 0,
           recipientNames: order.orderItems?.map((item) => item.recipientName) ?? [],
         }),
-      }).catch(() => {
-        // Swallow — best-effort, don't fail the order
+      }).catch((err) => {
+        console.error("[orders] Failed to send admin notification email:", err);
       });
 
       // For pending (bank transfer) orders, also send the buyer an email
@@ -353,8 +355,8 @@ export async function POST(req: Request) {
             buyerEmail: order.buyerEmail,
             totalAmount: order.totalAmount,
           }),
-        }).catch(() => {
-          // Swallow — best-effort
+        }).catch((err) => {
+          console.error("[orders] Failed to send bank transfer instructions email:", err);
         });
       }
     }
