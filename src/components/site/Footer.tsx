@@ -27,7 +27,6 @@ const DEFAULT_SOCIALS = [
   { key: "threadsLink", label: "Threads", href: "https://www.threads.net/@tarebewell", Icon: AtSign },
   { key: "twitterLink", label: "X (Twitter)", href: "https://x.com/Tarebewell", Icon: Twitter },
   { key: "whatsappLink", label: "WhatsApp", href: "https://wa.me/2348000000000", Icon: MessageCircle },
-  { label: "Email", href: "mailto:hello@tarewellness.com", Icon: AtSign },
 ];
 
 export default function Footer() {
