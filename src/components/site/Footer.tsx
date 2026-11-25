@@ -3,7 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Instagram, Twitter, AtSign } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Instagram, Twitter, AtSign, MessageCircle } from "lucide-react";
 
 const SHOP_LINKS = [
   { label: "Gift Cards", href: "/gift-cards" },
@@ -19,13 +20,38 @@ const RESOURCE_LINKS = [
   { label: "FAQ", href: "/faq" },
 ];
 
-const SOCIALS = [
-  { label: "Instagram", href: "https://www.instagram.com/tarebewell", Icon: Instagram },
-  { label: "X (Twitter)", href: "https://x.com/Tarebewell", Icon: Twitter },
+// Default social links — used until the admin updates them via /admin → Settings
+// Once the admin saves new links, these defaults are overridden by the API values
+const DEFAULT_SOCIALS = [
+  { key: "instagramLink", label: "Instagram", href: "https://www.instagram.com/tarebewell", Icon: Instagram },
+  { key: "threadsLink", label: "Threads", href: "https://www.threads.net/@tarebewell", Icon: AtSign },
+  { key: "twitterLink", label: "X (Twitter)", href: "https://x.com/Tarebewell", Icon: Twitter },
+  { key: "whatsappLink", label: "WhatsApp", href: "https://wa.me/2348000000000", Icon: MessageCircle },
   { label: "Email", href: "mailto:hello@tarewellness.com", Icon: AtSign },
 ];
 
 export default function Footer() {
+  const [socialLinks, setSocialLinks] = useState<Record<string, string>>({});
+
+  // Fetch social links from the admin settings API on mount
+  // Uses a public endpoint (no auth needed) — see /api/settings/social-links
+  useEffect(() => {
+    fetch("/api/settings/social-links")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data) setSocialLinks(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Build the socials list: use API values if available, fall back to defaults
+  const SOCIALS = DEFAULT_SOCIALS.map((s) => {
+    if (s.key && socialLinks[s.key]) {
+      return { ...s, href: socialLinks[s.key] };
+    }
+    return s;
+  });
+
   return (
     <footer className="relative z-10 w-full bg-transparent px-5 pb-10 pt-14 sm:px-8 lg:px-12 lg:pt-20">
       <div className="mx-auto w-full max-w-7xl">

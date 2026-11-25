@@ -98,7 +98,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [loading, setLoading] = useState(false);
   const [confirmingOrderId, setConfirmingOrderId] = useState<string | null>(null);
-  const [bankDetails, setBankDetails] = useState({ bankName: "", accountName: "", accountNumber: "", whatsappNumber: "", therapistName: "" });
+  const [bankDetails, setBankDetails] = useState({ bankName: "", accountName: "", accountNumber: "", whatsappNumber: "", therapistName: "", whatsappLink: "", instagramLink: "", threadsLink: "", twitterLink: "" });
   const [savingBank, setSavingBank] = useState(false);
   const [bankLoaded, setBankLoaded] = useState(false);
 
@@ -276,7 +276,7 @@ export default function AdminPage() {
         bankName: data.bankName || "",
         accountName: data.accountName || "",
         accountNumber: data.accountNumber || "",
-        whatsappNumber: data.whatsappNumber || "",
+        whatsappNumber: data.whatsappNumber || "", whatsappLink: data.whatsappLink || "", instagramLink: data.instagramLink || "", threadsLink: data.threadsLink || "", twitterLink: data.twitterLink || "",
         therapistName: data.therapistName || "",
       });
       // Load counselor schedule if it exists
@@ -821,6 +821,69 @@ export default function AdminPage() {
                   <p className="mt-2 font-sans text-[11px] text-[#4E0030]/50">
                     Separate time slots with commas. Format: &ldquo;3:00 PM, 4:00 PM&rdquo;. All times are in WAT (West Africa Time).
                   </p>
+                </div>
+
+                {/* ============ SOCIAL MEDIA LINKS ============ */}
+                <div className="mt-5 rounded-2xl bg-white/60 p-4">
+                  <h3 className="font-sans text-xs font-bold uppercase tracking-[0.18em] text-[#4E0030]/70">
+                    Social Media Links
+                  </h3>
+                  <p className="mt-1 font-sans text-[11px] text-[#4E0030]/50">
+                    These links appear in the website footer. Update them here anytime — changes take effect immediately.
+                  </p>
+                  <div className="mt-3 space-y-3">
+                    <div>
+                      <label className="block font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-[#4E0030]/60">
+                        WhatsApp Link
+                      </label>
+                      <input
+                        type="text"
+                        value={bankDetails.whatsappLink}
+                        onChange={(e) => setBankDetails({ ...bankDetails, whatsappLink: e.target.value })}
+                        placeholder="https://wa.me/2348000000000"
+                        className="mt-1 h-10 w-full rounded-lg border border-[#4E0030]/15 bg-white px-3 font-sans text-sm text-[#4E0030] focus:border-[#F10897] focus:outline-none focus:ring-1 focus:ring-[#F10897]/30"
+                      />
+                      <p className="mt-1 font-sans text-[10px] text-[#4E0030]/40">
+                        Format: https://wa.me/2348000000000 (replace with your number, country code first, no +)
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-[#4E0030]/60">
+                        Instagram Link
+                      </label>
+                      <input
+                        type="text"
+                        value={bankDetails.instagramLink}
+                        onChange={(e) => setBankDetails({ ...bankDetails, instagramLink: e.target.value })}
+                        placeholder="https://www.instagram.com/yourhandle"
+                        className="mt-1 h-10 w-full rounded-lg border border-[#4E0030]/15 bg-white px-3 font-sans text-sm text-[#4E0030] focus:border-[#F10897] focus:outline-none focus:ring-1 focus:ring-[#F10897]/30"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-[#4E0030]/60">
+                        Threads Link
+                      </label>
+                      <input
+                        type="text"
+                        value={bankDetails.threadsLink}
+                        onChange={(e) => setBankDetails({ ...bankDetails, threadsLink: e.target.value })}
+                        placeholder="https://www.threads.net/@yourhandle"
+                        className="mt-1 h-10 w-full rounded-lg border border-[#4E0030]/15 bg-white px-3 font-sans text-sm text-[#4E0030] focus:border-[#F10897] focus:outline-none focus:ring-1 focus:ring-[#F10897]/30"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-sans text-[11px] font-bold uppercase tracking-[0.1em] text-[#4E0030]/60">
+                        X (Twitter) Link
+                      </label>
+                      <input
+                        type="text"
+                        value={bankDetails.twitterLink}
+                        onChange={(e) => setBankDetails({ ...bankDetails, twitterLink: e.target.value })}
+                        placeholder="https://x.com/yourhandle"
+                        className="mt-1 h-10 w-full rounded-lg border border-[#4E0030]/15 bg-white px-3 font-sans text-sm text-[#4E0030] focus:border-[#F10897] focus:outline-none focus:ring-1 focus:ring-[#F10897]/30"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <button
